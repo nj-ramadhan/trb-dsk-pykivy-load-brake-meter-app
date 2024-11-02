@@ -213,8 +213,8 @@
 						id: layout_sound
 
 						AsyncImage:
-							source: 'assets/axle_load.png'
-							pos_hint: {'x':.0, 'y':.0}
+							source: 'assets/speed-dashboard.png'
+							pos_hint: {'x':.0, 'y':-0.06}
 							fit_mode: 'contain' #scale-down, fill, contain, cover						
 
 						MDLabel:
@@ -223,9 +223,8 @@
 							halign: "center"
 							valign: "middle"
 							font_style: 'H6'
-							pos_hint: {'x':.0, 'y':.30}
+							pos_hint: {'x':.0, 'y':.45}
 
-						
 						MDLabel:
 							id:lb_speed_val
 							text: "..."
@@ -233,7 +232,7 @@
 							valign: "middle"
 							font_style: 'Display'
 							font_size: '50dp'
-							pos_hint: {'x':.0, 'y':.0}
+							pos_hint: {'x':0.0, 'y':0.0}
 
 						MDRectangleFlatIconButton:
 						# MDFloatingActionButton:

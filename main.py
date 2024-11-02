@@ -400,15 +400,12 @@ class ScreenMain(MDScreen):
                 screen_load.ids.lb_test_subtitle.text = "HASIL PENGUKURAN"
                 screen_load.ids.lb_load_l_val.text = str(np.round(dt_load_l_value, 2))
                 screen_load.ids.lb_load_r_val.text = str(np.round(dt_load_r_value, 2))
-                screen_load.ids.lb_info.text = f"Ambang Batas Beban yang diperbolehkan adalah {STANDARD_MAX_AXLE_LOAD} kg"
 
                 screen_brake.ids.lb_test_subtitle.text = "HASIL PENGUKURAN"
                 screen_brake.ids.lb_brake_val.text = str(np.round(dt_brake_value, 2))
-                screen_brake.ids.lb_info.text = f"Ambang Batas Rem yang diperbolehkan adalah {STANDARD_MAX_BRAKE} kg"
 
                 screen_speed.ids.lb_test_subtitle.text = "HASIL PENGUKURAN"
                 screen_speed.ids.lb_speed_val.text = str(np.round(dt_speed_value, 2))
-                screen_speed.ids.lb_info.text = f"Ambang Batas Kecepatan yang diperbolehkan adalah {STANDARD_MIN_SPEED} rpm"
 
             elif(count_starting > 0):
                 if(flag_play):
@@ -435,7 +432,7 @@ class ScreenMain(MDScreen):
             else:
                 screen_brake.ids.lb_info.text = "Kekuatan Pengereman Kendaraan Anda Diluar Ambang Batas"
 
-            if(dt_speed_value <= STANDARD_MIN_SPEED):
+            if(dt_speed_value >= STANDARD_MIN_SPEED):
                 screen_speed.ids.lb_info.text = "Deviasi Kecepatan Kendaraan Anda Dalam Range Ambang Batas"
             else:
                 screen_speed.ids.lb_info.text = "Deviasi Kecepatan Kendaraan Anda Diluar Ambang Batas"
@@ -479,14 +476,18 @@ class ScreenMain(MDScreen):
                         screen_speed.ids.lb_test_result.text_color = colors['Red']['A700']
 
             elif(count_get_data > 0):
-                    screen_load.ids.lb_test_result.md_bg_color = "#EEEEEE"
-                    screen_load.ids.lb_test_result.text = ""
+                screen_load.ids.lb_test_result.md_bg_color = "#EEEEEE"
+                screen_load.ids.lb_test_result.text = ""
 
-                    screen_brake.ids.lb_test_result.md_bg_color = "#EEEEEE"
-                    screen_brake.ids.lb_test_result.text = ""
+                screen_brake.ids.lb_test_result.md_bg_color = "#EEEEEE"
+                screen_brake.ids.lb_test_result.text = ""
 
-                    screen_speed.ids.lb_test_result.md_bg_color = "#EEEEEE"
-                    screen_speed.ids.lb_test_result.text = ""
+                screen_speed.ids.lb_test_result.md_bg_color = "#EEEEEE"
+                screen_speed.ids.lb_test_result.text = ""
+
+                screen_load.ids.lb_info.text = f"Ambang Batas Beban yang diperbolehkan adalah {STANDARD_MAX_AXLE_LOAD} kg"
+                screen_brake.ids.lb_info.text = f"Ambang Batas Rem yang diperbolehkan adalah {STANDARD_MAX_BRAKE} kg"
+                screen_speed.ids.lb_info.text = f"Ambang Batas Kecepatan yang diperbolehkan adalah {STANDARD_MIN_SPEED} rpm"
 
             self.ids.lb_operator.text = dt_user
             screen_login.ids.lb_operator.text = dt_user

@@ -35,7 +35,7 @@
 
 				MDLabel:
 					id: subtitle            
-					text: "AXLE LOAD, BRAKE AND SPEED"
+					text: "AXLE LOAD & BRAKE TEST"
 					halign: "left"
 					valign: "middle"
 					font_style: 'H5'
@@ -218,6 +218,36 @@
 							valign: "middle"
 							font_style: 'H6'
 
+					MDBoxLayout:
+						orientation: "horizontal"
+						size_hint_x: 1
+						padding: 10
+						spacing: 10
+
+						MDRectangleFlatIconButton:
+						# MDFloatingActionButton:
+							id: bt_cylinder_up
+							text: "SILINDER NAIK"
+							icon: "arrow-up"
+							theme_text_color: "Custom"
+							text_color: "#EEEEEE"
+							md_bg_color: "#2CA02C"
+							size_hint_x: 0.5
+							on_press: root.exec_cylinder_up()
+							on_release: root.exec_cylinder_stop()
+
+						MDRectangleFlatIconButton:
+						# MDFloatingActionButton:
+							id: bt_cylinder_down
+							text: "SILINDER TURUN"
+							icon: "arrow-down"
+							theme_text_color: "Custom"
+							text_color: "#EEEEEE"
+							md_bg_color: "#FF2A2A"
+							size_hint_x: 0.5
+							on_press: root.exec_cylinder_up()
+							on_release: root.exec_cylinder_stop()
+
 					MDRectangleFlatIconButton:
 						id: bt_start_load
 						icon: "play"
@@ -225,7 +255,7 @@
 						halign: "center"
 						theme_text_color: "Custom"
 						text_color: "#EEEEEE"
-						md_bg_color: "#19A56B"	
+						md_bg_color: "#2CA02C"	
 						size_hint_x: 1						
 						disabled: True
 						on_press: root.exec_start_load()
@@ -237,22 +267,10 @@
 						halign: "center"
 						theme_text_color: "Custom"
 						text_color: "#EEEEEE"
-						md_bg_color: "#19A56B"	
+						md_bg_color: "#2CA02C"	
 						size_hint_x: 1						
 						disabled: True
 						on_press: root.exec_start_brake()
-
-					MDRectangleFlatIconButton:
-						id: bt_start_speed
-						icon: "play"
-						text: "MULAI TEST SPEED"
-						halign: "center"
-						theme_text_color: "Custom"
-						text_color: "#EEEEEE"
-						md_bg_color: "#19A56B"	
-						size_hint_x: 1						
-						disabled: True
-						on_press: root.exec_start_speed()
 
 		# footer layout
         MDBoxLayout:

@@ -81,9 +81,9 @@ TB_USER = config['mysql']['TB_USER']
 
 STANDARD_MAX_AXLE_LOAD = float(config['standard']['STANDARD_MAX_AXLE_LOAD']) # in kg
 STANDARD_MAX_BRAKE = float(config['standard']['STANDARD_MAX_BRAKE']) # in kg
+
 COUNT_STARTING = 3
 COUNT_ACQUISITION = 4
-
 TIME_OUT = 500
 
 dt_load_l_value = 0

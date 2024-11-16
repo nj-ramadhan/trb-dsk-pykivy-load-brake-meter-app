@@ -132,7 +132,7 @@ class ScreenLogin(MDScreen):
             hashed_password = hashlib.md5(dataBase_password.encode())
 
             mycursor = mydb.cursor()
-            mycursor.execute("SELECT id_user, nama, username, password, nama FROM users WHERE username = '"+str(input_username)+"' and password = '"+str(hashed_password.hexdigest())+"'")
+            mycursor.execute(f"SELECT id_user, nama, username, password, nama FROM {TB_USER} WHERE username = '"+str(input_username)+"' and password = '"+str(hashed_password.hexdigest())+"'")
             myresult = mycursor.fetchone()
             db_users = np.array(myresult).T
             #if invalid

@@ -76,7 +76,7 @@ DB_HOST = config['mysql']['DB_HOST']
 DB_USER = config['mysql']['DB_USER']
 DB_PASSWORD = config['mysql']['DB_PASSWORD']
 DB_NAME = config['mysql']['DB_NAME']
-TB_LBS = config['mysql']['TB_LBS']
+TB_DATA = config['mysql']['TB_DATA']
 TB_USER = config['mysql']['TB_USER']
 
 STANDARD_MAX_AXLE_LOAD = float(config['standard']['STANDARD_MAX_AXLE_LOAD']) # in kg
@@ -408,10 +408,19 @@ class ScreenMain(MDScreen):
                 screen_load.ids.lb_test_subtitle.text = "HASIL PENGUKURAN"
                 screen_load.ids.lb_load_l_val.text = str(np.round(dt_load_l_value, 2))
                 screen_load.ids.lb_load_r_val.text = str(np.round(dt_load_r_value, 2))
-
                 screen_brake.ids.lb_test_subtitle.text = "HASIL PENGUKURAN"
                 screen_brake.ids.lb_brake_l_val.text = str(np.round(dt_brake_value, 2))
                 screen_brake.ids.lb_brake_r_val.text = str(np.round(dt_brake_value, 2))
+
+                if(dt_load_l_value <= STANDARD_MAX_AXLE_LOAD):
+                    screen_load.ids.lb_info.text = f"Ambang Batas Beban yang diperbolehkan adalah {STANDARD_MAX_AXLE_LOAD} kg.\nBerat Roda Kendaraan Anda Dalam Range Ambang Batas"
+                else:
+                    screen_load.ids.lb_info.text = f"Ambang Batas Beban yang diperbolehkan adalah {STANDARD_MAX_AXLE_LOAD} kg.\nBerat Roda Kendaraan Anda Diluar Ambang Batas"
+
+                if(dt_brake_value <= STANDARD_MAX_BRAKE):
+                    screen_brake.ids.lb_info.text = f"Ambang Batas Beban yang diperbolehkan adalah {STANDARD_MAX_AXLE_LOAD} kg.\nKekuatan Pengereman Kendaraan Anda Dalam Range Ambang Batas"
+                else:
+                    screen_brake.ids.lb_info.text = f"Ambang Batas Beban yang diperbolehkan adalah {STANDARD_MAX_AXLE_LOAD} kg.\nKekuatan Pengereman Kendaraan Anda Diluar Ambang Batas"                
 
             elif(count_starting > 0):
                 if(flag_play):
@@ -424,16 +433,6 @@ class ScreenMain(MDScreen):
                     screen_brake.ids.lb_brake_l_val.text = str(count_starting)
                     screen_brake.ids.lb_brake_r_val.text = " "
                     screen_brake.ids.lb_info.text = "Silahkan Tempatkan Kendaraan Anda Pada Tempat yang Sudah Disediakan"
-
-            if(dt_load_l_value <= STANDARD_MAX_AXLE_LOAD):
-                screen_load.ids.lb_info.text = "Berat Roda Kendaraan Anda Dalam Range Ambang Batas"
-            else:
-                screen_load.ids.lb_info.text = "Berat Roda Kendaraan Anda Diluar Ambang Batas"
-
-            if(dt_brake_value <= STANDARD_MAX_BRAKE):
-                screen_brake.ids.lb_info.text = "Kekuatan Pengereman Kendaraan Anda Dalam Range Ambang Batas"
-            else:
-                screen_brake.ids.lb_info.text = "Kekuatan Pengereman Kendaraan Anda Diluar Ambang Batas"
 
             if(count_get_data <= 0):
                 if(not flag_play):
@@ -468,9 +467,6 @@ class ScreenMain(MDScreen):
                 screen_brake.ids.lb_test_result.md_bg_color = "#EEEEEE"
                 screen_brake.ids.lb_test_result.text = ""
 
-                screen_load.ids.lb_info.text = f"Ambang Batas Beban yang diperbolehkan adalah {STANDARD_MAX_AXLE_LOAD} kg"
-                screen_brake.ids.lb_info.text = f"Ambang Batas Rem yang diperbolehkan adalah {STANDARD_MAX_BRAKE} kg"
-
             self.ids.lb_operator.text = dt_user
             screen_login.ids.lb_operator.text = dt_user
             screen_load.ids.lb_operator.text = dt_user
@@ -484,7 +480,7 @@ class ScreenMain(MDScreen):
         global mydb, db_antrian
         try:
             mycursor = mydb.cursor()
-            mycursor.execute("SELECT noantrian, nopol, nouji, user, idjeniskendaraan, load_flag, brake_flag FROM tb_cekident")
+            mycursor.execute(f"SELECT noantrian, nopol, nouji, user, idjeniskendaraan, load_flag, brake_flag FROM {TB_DATA}")
             myresult = mycursor.fetchall()
             db_antrian = np.array(myresult).T
 
@@ -572,7 +568,7 @@ class ScreenLoad(MDScreen):
 
         mycursor = mydb.cursor()
 
-        sql = "UPDATE tb_cekident SET load_flag = %s, load_l_value = %s, load_r_value = %s, load_user = %s, load_post = %s WHERE noantrian = %s"
+        sql = f"UPDATE {TB_DATA} SET load_flag = %s, load_l_value = %s, load_r_value = %s, load_user = %s, load_post = %s WHERE noantrian = %s"
         sql_load_flag = (1 if dt_load_flag == "Lulus" else 2)
         dt_load_post = str(time.strftime("%Y/%m/%d %H:%M:%S", time.localtime()))
         print_datetime = str(time.strftime("%d %B %Y %H:%M:%S", time.localtime()))
@@ -646,7 +642,7 @@ class ScreenBrake(MDScreen):
 
         mycursor = mydb.cursor()
 
-        sql = "UPDATE tb_cekident SET brake_flag = %s, brake_value = %s, brake_user = %s, brake_post = %s WHERE noantrian = %s"
+        sql = f"UPDATE {TB_DATA} SET brake_flag = %s, brake_value = %s, brake_user = %s, brake_post = %s WHERE noantrian = %s"
         sql_brake_flag = (1 if dt_brake_flag == "Lulus" else 2)
         dt_brake_post = str(time.strftime("%Y/%m/%d %H:%M:%S", time.localtime()))
         print_datetime = str(time.strftime("%d %B %Y %H:%M:%S", time.localtime()))

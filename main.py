@@ -2,82 +2,47 @@ from kivy.clock import Clock
 from kivy.lang import Builder
 from kivy.core.window import Window
 from kivy.core.text import LabelBase
-from kivymd.font_definitions import theme_font_styles
-from kivymd.uix.datatables import MDDataTable
+from kivy.resources import resource_add_path
 from kivy.uix.screenmanager import ScreenManager
+from kivymd.font_definitions import theme_font_styles
 from kivymd.uix.screen import MDScreen
-from kivymd.app import MDApp
-from kivy.metrics import dp
+from kivymd.uix.label import MDLabel
+from kivymd.uix.card import MDCard
 from kivymd.toast import toast
-import numpy as np
-import time
-import mysql.connector
-from escpos.printer import Serial as printerSerial
-import configparser
-import serial.tools.list_ports as ports
-import hashlib
-import serial
+from kivymd.app import MDApp
+import os, sys, time, numpy as np
+import configparser, hashlib, mysql.connector
 from pymodbus.client import ModbusTcpClient
-from kivy.logger import Logger
-
 
 colors = {
-    "Red": {
-        "A200": "#FF2A2A",
-        "A500": "#FF8080",
-        "A700": "#FFD5D5",
-    },
+    "Red"   : {"A200": "#FF2A2A","A500": "#FF8080","A700": "#FFD5D5",},
+    "Gray"  : {"200": "#CCCCCC","500": "#ECECEC","700": "#F9F9F9",},
+    "Blue"  : {"200": "#4471C4","500": "#5885D8","700": "#6C99EC",},
+    "Green" : {"200": "#2CA02C","500": "#2DB97F", "700": "#D5FFD5",},
+    "Yellow": {"200": "#ffD42A","500": "#ffE680","700": "#fff6D5",},
 
-    "Gray": {
-        "200": "#CCCCCC",
-        "500": "#ECECEC",
-        "700": "#F9F9F9",
-    },
-
-    "Blue": {
-        "200": "#4471C4",
-        "500": "#5885D8",
-        "700": "#6C99EC",
-    },
-
-    "Green": {
-        "200": "#2CA02C", #41cd93
-        "500": "#2DB97F",
-        "700": "#D5FFD5",
-    },
-
-    "Yellow": {
-        "200": "#ffD42A",
-        "500": "#ffE680",
-        "700": "#fff6D5",
-    },
-
-    "Light": {
-        "StatusBar": "E0E0E0",
-        "AppBar": "#202020",
-        "Background": "#EEEEEE",
-        "CardsDialogs": "#FFFFFF",
-        "FlatButtonDown": "#CCCCCC",
-    },
-
-    "Dark": {
-        "StatusBar": "101010",
-        "AppBar": "#E0E0E0",
-        "Background": "#111111",
-        "CardsDialogs": "#222222",
-        "FlatButtonDown": "#DDDDDD",
-    },
+    "Light" : {"StatusBar": "E0E0E0","AppBar": "#202020","Background": "#EEEEEE","CardsDialogs": "#FFFFFF","FlatButtonDown": "#CCCCCC",},
+    "Dark"  : {"StatusBar": "101010","AppBar": "#E0E0E0","Background": "#111111","CardsDialogs": "#222222","FlatButtonDown": "#DDDDDD",},
 }
 
-#load credentials from config.ini
+if getattr(sys, 'frozen', False):
+    app_path = os.path.dirname(os.path.abspath(__file__))
+else:
+    app_path = os.path.dirname(os.path.abspath(__file__))
+
+config_path = os.path.join(app_path, 'config.ini')
+print(f"Path config.ini: {config_path}")
+
 config = configparser.ConfigParser()
-config.read('config.ini')
+config.read(config_path)
 DB_HOST = config['mysql']['DB_HOST']
 DB_USER = config['mysql']['DB_USER']
 DB_PASSWORD = config['mysql']['DB_PASSWORD']
 DB_NAME = config['mysql']['DB_NAME']
 TB_DATA = config['mysql']['TB_DATA']
 TB_USER = config['mysql']['TB_USER']
+
+MODBUS_CLIENT = ModbusTcpClient(config['modbus']['MODBUS_CLIENT'])
 
 STANDARD_MAX_AXLE_LOAD = float(config['standard']['STANDARD_MAX_AXLE_LOAD']) # in kg
 STANDARD_MAX_BRAKE = float(config['standard']['STANDARD_MAX_BRAKE']) # in kg
@@ -96,16 +61,12 @@ dt_brake_flag = 0
 dt_brake_user = 1
 dt_brake_post = str(time.strftime("%Y/%m/%d %H:%M:%S", time.localtime()))
 
-dt_user = "SILAHKAN LOGIN"
+dt_user = ""
 dt_no_antrian = ""
 dt_no_reg = ""
 dt_no_uji = ""
 dt_nama = ""
 dt_jenis_kendaraan = ""
-
-modbus_client = ModbusTcpClient('192.168.1.111')
-
-flag_cylinder = False
 
 class ScreenLogin(MDScreen):
     def __init__(self, **kwargs):
@@ -117,7 +78,8 @@ class ScreenLogin(MDScreen):
             self.ids.tx_password.text = ""    
 
         except Exception as e:
-            toast_msg = f'error Login: {e}'
+            toast_msg = f'Error Cancel Login: {e}'
+            toast(toast_msg)
 
     def exec_login(self):
         global mydb, db_users
@@ -125,20 +87,15 @@ class ScreenLogin(MDScreen):
 
         try:
             input_username = self.ids.tx_username.text
-            input_password = self.ids.tx_password.text        
-            # Adding salt at the last of the password
-            dataBase_password = input_password
-            # Encoding the password
-            hashed_password = hashlib.md5(dataBase_password.encode())
+            input_password = self.ids.tx_password.text   
+            hashed_password = hashlib.md5(input_password.encode())
 
             mycursor = mydb.cursor()
             mycursor.execute(f"SELECT id_user, nama, username, password, nama FROM {TB_USER} WHERE username = '"+str(input_username)+"' and password = '"+str(hashed_password.hexdigest())+"'")
             myresult = mycursor.fetchone()
             db_users = np.array(myresult).T
-            #if invalid
             if myresult == 0:
                 toast('Gagal Masuk, Nama Pengguna atau Password Salah')
-            #else, if valid
             else:
                 toast_msg = f'Berhasil Masuk, Selamat Datang {myresult[1]}'
                 toast(toast_msg)
@@ -149,7 +106,7 @@ class ScreenLogin(MDScreen):
                 self.screen_manager.current = 'screen_main'
 
         except Exception as e:
-            toast_msg = f'error Login: {e}'
+            toast_msg = f'Error Login: {e}'
             toast(toast_msg)        
             toast('Gagal Masuk, Nama Pengguna atau Password Salah')
 
@@ -160,6 +117,7 @@ class ScreenMain(MDScreen):
         global flag_conn_stat, flag_play
         global count_starting, count_get_data
 
+        Clock.schedule_interval(self.regular_update_connection, 5)
         Clock.schedule_once(self.delayed_init, 1)
 
         flag_conn_stat = False
@@ -167,150 +125,37 @@ class ScreenMain(MDScreen):
 
         count_starting = COUNT_STARTING
         count_get_data = COUNT_ACQUISITION
+
         try:
-            mydb = mysql.connector.connect(
-            host = DB_HOST,
-            user = DB_USER,
-            password = DB_PASSWORD,
-            database = DB_NAME
-            )
+            mydb = mysql.connector.connect(host = DB_HOST,user = DB_USER,password = DB_PASSWORD,database = DB_NAME)
 
         except Exception as e:
-            toast_msg = f'error initiate Database: {e}'
+            toast_msg = f'Error Initiate Database: {e}'
             toast(toast_msg)     
-        
+
     def delayed_init(self, dt):
-        Clock.schedule_interval(self.regular_update_connection, 5)
         Clock.schedule_interval(self.regular_update_display, 1)
-        layout = self.ids.layout_table
-        
-        self.data_tables = MDDataTable(
-            use_pagination=True,
-            pagination_menu_pos="auto",
-            rows_num=10,
-            column_data=[
-                ("No.", dp(10), self.sort_on_num),
-                ("Antrian", dp(20)),
-                ("No. Reg", dp(25)),
-                ("No. Uji", dp(35)),
-                ("Nama", dp(35)),
-                ("Jenis", dp(50)),
-                ("Status Load", dp(20)),
-                ("Status Brake", dp(20)),
-            ],
-        )
-        self.data_tables.bind(on_row_press=self.on_row_press)
-        layout.add_widget(self.data_tables)
         self.exec_reload_table()
 
-    def regular_update_connection(self, dt):
-        global flag_conn_stat
-
-        try:
-            modbus_client.connect()
-            flag_conn_stat = modbus_client.connected
-            modbus_client.close()
-
-            
-        except Exception as e:
-            toast_msg = f'{e}'
-            toast(toast_msg)   
-            flag_conn_stat = False
-
-    def regular_get_data(self, dt):
-        global count_starting, count_get_data
-        global dt_load_l_value,dt_load_r_value, dt_brake_value
-        global flag_play
-        try:
-            if(count_starting > 0):
-                count_starting -= 1              
-
-            if(count_get_data > 0):
-                count_get_data -= 1
-                
-            elif(count_get_data <= 0):
-                flag_play = False
-                Clock.unschedule(self.regular_get_data)
-
-            if flag_conn_stat:
-                modbus_client.connect()
-                axle_load_registers = modbus_client.read_holding_registers(1712, 2, slave=1) #V1200 - V1201
-                brake_registers = modbus_client.read_holding_registers(1862, 1, slave=1) #V1350
-                modbus_client.close()
-
-                dt_load_l_value = axle_load_registers.registers[0]
-                dt_load_r_value = axle_load_registers.registers[1]
-                dt_brake_value = brake_registers.registers[0]
-                
-        except Exception as e:
-            print(e)
-
-    def sort_on_num(self, data):
-        try:
-            return zip(*sorted(enumerate(data),key=lambda l: l[0][0]))
-        except:
-            toast("Error sorting data")
-
-    def on_row_press(self, table, row):
+    def on_row_press(self, instance):
         global dt_no_antrian, dt_no_reg, dt_no_uji, dt_nama, dt_jenis_kendaraan
         global dt_load_flag, dt_load_l_value, dt_load_r_value, dt_load_user, dt_load_post
-        global dt_brake_flag, dt_brake_value, dt_brake_user, dt_brake_post
+        global dt_brake_flag, dt_brake_value, dt_brake_user, dt_brake_post        
+        global db_antrian
 
         try:
-            start_index, end_index  = row.table.recycle_data[row.index]["range"]
-            dt_no_antrian           = row.table.recycle_data[start_index + 1]["text"]
-            dt_no_reg               = row.table.recycle_data[start_index + 2]["text"]
-            dt_no_uji               = row.table.recycle_data[start_index + 3]["text"]
-            dt_nama                 = row.table.recycle_data[start_index + 4]["text"]
-            dt_jenis_kendaraan      = row.table.recycle_data[start_index + 5]["text"]
-            dt_load_flag            = row.table.recycle_data[start_index + 6]["text"]
-            dt_brake_flag           = row.table.recycle_data[start_index + 7]["text"]
+            row = int(str(instance.id).replace("card",""))
+            dt_no_antrian           = f"{db_antrian[0, row]}"
+            dt_no_reg               = f"{db_antrian[1, row]}"
+            dt_no_uji               = f"{db_antrian[2, row]}"
+            dt_nama                 = f"{db_antrian[3, row]}"
+            dt_jenis_kendaraan      = f"{db_antrian[4, row]}"
+            dt_load_flag            = 'Belum Tes' if (int(db_antrian[5, row]) == 0) else 'Lulus' if (int(db_antrian[5, row]) == 1) else 'Gagal'
+            dt_brake_flag           = 'Belum Tes' if (int(db_antrian[6, row]) == 0) else 'Lulus' if (int(db_antrian[6, row]) == 1) else 'Gagal'
 
         except Exception as e:
-            toast_msg = f'error update table: {e}'
+            toast_msg = f'Error Update Table: {e}'
             toast(toast_msg)   
-
-    def exec_cylinder_up(self):
-        global flag_conn_stat
-        global flag_cylinder
-
-        if(not flag_cylinder):
-            flag_cylinder = True
-
-        try:
-            if flag_conn_stat:
-                modbus_client.connect()
-                modbus_client.write_coil(3082, flag_cylinder, slave=1) #M10
-                modbus_client.close()
-        except:
-            toast("error send exec_cylinder_up data to PLC Slave") 
-
-    def exec_cylinder_down(self):
-        global flag_conn_stat
-        global flag_cylinder
-
-        if(flag_cylinder):
-            flag_cylinder = False
-
-        try:
-            if flag_conn_stat:
-                modbus_client.connect()
-                modbus_client.write_coil(3083, not flag_cylinder, slave=1) #M11
-                modbus_client.close()
-        except:
-            toast("error send exec_cylinder_down data to PLC Slave") 
-
-    def exec_cylinder_stop(self):
-        global flag_conn_stat
-
-        try:
-            if flag_conn_stat:
-                modbus_client.connect()
-                modbus_client.write_coil(3082, False, slave=1) #M10
-                modbus_client.write_coil(3083, False, slave=1) #M11
-                modbus_client.close()
-        except:
-            toast("error send exec_cylinder_stop data to PLC Slave") 
 
     def regular_update_display(self, dt):
         global flag_conn_stat
@@ -467,14 +312,59 @@ class ScreenMain(MDScreen):
                 screen_brake.ids.lb_test_result.md_bg_color = "#EEEEEE"
                 screen_brake.ids.lb_test_result.text = ""
 
-            self.ids.lb_operator.text = dt_user
-            screen_login.ids.lb_operator.text = dt_user
-            screen_load.ids.lb_operator.text = dt_user
-            screen_brake.ids.lb_operator.text = dt_user
+            self.ids.lb_operator.text = f'Nama Pengguna: {dt_user}' if dt_user != '' else 'Silahkan Login'
+            screen_login.ids.lb_operator.text = f'Nama Pengguna: {dt_user}' if dt_user != '' else 'Silahkan Login'
+            screen_load.ids.lb_operator.text = f'Nama Pengguna: {dt_user}' if dt_user != '' else 'Silahkan Login'
+            screen_brake.ids.lb_operator.text = f'Nama Pengguna: {dt_user}' if dt_user != '' else 'Silahkan Login'
 
         except Exception as e:
-            toast_msg = f'error update display: {e}'
-            toast(toast_msg)                
+            toast_msg = f'Error Update Display: {e}'
+            toast(toast_msg)            
+
+    def regular_get_data(self, dt):
+        global flag_play
+        global dt_no_antrian
+        global count_starting, count_get_data
+        global mydb
+        global dt_load_l_value, dt_load_r_value, dt_brake_value
+        
+        try:
+            if(count_starting > 0):
+                count_starting -= 1              
+
+            if(count_get_data > 0):
+                count_get_data -= 1
+                
+            elif(count_get_data <= 0):
+                flag_play = False
+                Clock.unschedule(self.regular_get_data)
+
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                axle_load_registers = MODBUS_CLIENT.read_holding_registers(1712, 2, slave=1) #V1200 - V1201
+                brake_registers = MODBUS_CLIENT.read_holding_registers(1862, 1, slave=1) #V1350
+                MODBUS_CLIENT.close()
+
+                dt_load_l_value = axle_load_registers.registers[0]
+                dt_load_r_value = axle_load_registers.registers[1]
+                dt_brake_value = brake_registers.registers[0]
+                
+        except Exception as e:
+            toast_msg = f'Error Get Data: {e}'
+            print(toast_msg) 
+
+    def regular_update_connection(self, dt):
+        global flag_conn_stat
+
+        try:
+            MODBUS_CLIENT.connect()
+            flag_conn_stat = MODBUS_CLIENT.connected
+            MODBUS_CLIENT.close()
+            
+        except Exception as e:
+            toast_msg = f'Error Update Connection: {e}'
+            toast(toast_msg)   
+            flag_conn_stat = False
 
     def exec_reload_table(self):
         global mydb, db_antrian
@@ -482,15 +372,41 @@ class ScreenMain(MDScreen):
             mycursor = mydb.cursor()
             mycursor.execute(f"SELECT noantrian, nopol, nouji, user, idjeniskendaraan, load_flag, brake_flag FROM {TB_DATA}")
             myresult = mycursor.fetchall()
+            mydb.commit()
             db_antrian = np.array(myresult).T
 
-            self.data_tables.row_data=[(f"{i+1}", f"{db_antrian[0, i]}", f"{db_antrian[1, i]}", f"{db_antrian[2, i]}", f"{db_antrian[3, i]}" ,f"{db_antrian[4, i]}", 
-                                        'Belum Tes' if (int(db_antrian[5, i]) == 0) else ('Lulus' if (int(db_antrian[5, i]) == 1) else 'Tidak Lulus'),
-                                        'Belum Tes' if (int(db_antrian[6, i]) == 0) else ('Lulus' if (int(db_antrian[6, i]) == 1) else 'Tidak Lulus')) 
-                                        for i in range(len(db_antrian[0]))]
+            layout_list = self.ids.layout_list
+            layout_list.clear_widgets(children=None)
 
         except Exception as e:
-            toast_msg = f'error reload table: {e}'
+            toast_msg = f'Error Remove Widget: {e}'
+            print(toast_msg)
+        
+        try:           
+            layout_list = self.ids.layout_list
+            for i in range(db_antrian[0,:].size):
+                layout_list.add_widget(
+                    MDCard(
+                        MDLabel(text=f"{i+1}", size_hint_x= 0.1),
+                        MDLabel(text=f"{db_antrian[0, i]}", size_hint_x= 0.2),
+                        MDLabel(text=f"{db_antrian[1, i]}", size_hint_x= 0.3),
+                        MDLabel(text=f"{db_antrian[2, i]}", size_hint_x= 0.3),
+                        MDLabel(text=f"{db_antrian[3, i]}", size_hint_x= 0.3),
+                        MDLabel(text=f"{db_antrian[4, i]}", size_hint_x= 0.4),
+                        MDLabel(text='Belum Tes' if (int(db_antrian[5, i]) == 0) else 'Lulus' if (int(db_antrian[5, i]) == 1) else 'Gagal', size_hint_x= 0.2),
+                        MDLabel(text='Belum Tes' if (int(db_antrian[6, i]) == 0) else 'Lulus' if (int(db_antrian[6, i]) == 1) else 'Gagal', size_hint_x= 0.2),
+
+                        ripple_behavior = True,
+                        on_press = self.on_row_press,
+                        padding = 10,
+                        id=f"card{i}",
+                        size_hint_y=None,
+                        height="60dp",
+                        )
+                    )
+                
+        except Exception as e:
+            toast_msg = f'Error Reload Table: {e}'
             print(toast_msg)
 
     def exec_start_load(self):
@@ -516,6 +432,9 @@ class ScreenMain(MDScreen):
         self.screen_manager.current = 'screen_brake'
 
     def exec_logout(self):
+        global dt_user
+
+        dt_user = ""
         self.screen_manager.current = 'screen_login'
 
 class ScreenLoad(MDScreen):        
@@ -591,6 +510,9 @@ class ScreenLoad(MDScreen):
         self.screen_manager.current = 'screen_main'
 
     def exec_logout(self):
+        global dt_user
+
+        dt_user = ""
         self.screen_manager.current = 'screen_login'
 
 class ScreenBrake(MDScreen):        
@@ -665,8 +587,10 @@ class ScreenBrake(MDScreen):
         self.screen_manager.current = 'screen_main'
 
     def exec_logout(self):
-        self.screen_manager.current = 'screen_login'
+        global dt_user
 
+        dt_user = ""
+        self.screen_manager.current = 'screen_login'
 
 class RootScreen(ScreenManager):
     pass             
@@ -691,13 +615,13 @@ class LoadBrakeMeterApp(MDApp):
             "Orbitron-Regular", 72, False, 0.15]       
         
         Window.fullscreen = 'auto'
-        # Window.borderless = False
-        # Window.size = 900, 1440
-        # Window.size = 450, 720
-        # Window.allow_screensaver = True
-
         Builder.load_file('main.kv')
         return RootScreen()
 
 if __name__ == '__main__':
-    LoadBrakeMeterApp().run()
+    try:
+        if hasattr(sys, '_MEIPASS'):
+            resource_add_path(os.path.join(sys._MEIPASS))
+        LoadBrakeMeterApp().run()
+    except Exception as e:
+        print(e)

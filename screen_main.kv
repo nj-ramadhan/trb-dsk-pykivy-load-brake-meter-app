@@ -35,7 +35,7 @@
 
 				MDLabel:
 					id: subtitle            
-					text: "AXLE LOAD & BRAKE TEST"
+					text: "AXLE LOAD & BRAKE METER"
 					halign: "left"
 					valign: "middle"
 					font_style: 'H5'
@@ -50,9 +50,9 @@
 					id: bt_logout
 					icon: "logout"
 					text: "LOGOUT"
-					md_bg_color: "#FF2A2A"
 					theme_text_color: "Custom"
 					text_color: "#EEEEEE"
+					md_bg_color: "#FF2A2A"
 					size_hint_x: 1
 					on_press: root.exec_logout()
 
@@ -127,6 +127,12 @@
 
 					MDBoxLayout:
 						id: layout_table
+						orientation: "vertical"
+						MDScrollView:
+							id: layout_scroll
+							scroll_timeout:100
+							MDList:
+								id: layout_list
 
 				MDBoxLayout:
 					orientation: "vertical"
@@ -217,35 +223,6 @@
 							halign: "left"
 							valign: "middle"
 							font_style: 'H6'
-
-					MDBoxLayout:
-						orientation: "horizontal"
-						size_hint_x: 1
-						spacing: 10
-
-						MDRectangleFlatIconButton:
-						# MDFloatingActionButton:
-							id: bt_cylinder_up
-							text: "SILINDER NAIK"
-							icon: "arrow-up"
-							theme_text_color: "Custom"
-							text_color: "#EEEEEE"
-							md_bg_color: "#2CA02C"
-							size_hint_x: 0.5
-							on_press: root.exec_cylinder_up()
-							on_release: root.exec_cylinder_stop()
-
-						MDRectangleFlatIconButton:
-						# MDFloatingActionButton:
-							id: bt_cylinder_down
-							text: "SILINDER TURUN"
-							icon: "arrow-down"
-							theme_text_color: "Custom"
-							text_color: "#EEEEEE"
-							md_bg_color: "#FF2A2A"
-							size_hint_x: 0.5
-							on_press: root.exec_cylinder_down()
-							on_release: root.exec_cylinder_stop()
 
 					MDRectangleFlatIconButton:
 						id: bt_start_load

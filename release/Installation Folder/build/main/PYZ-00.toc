@@ -1,4 +1,5 @@
-('D:\\PRJ\\GitHub\\trb-dsk-pykivy-load-brake-test-app\\release\\Installation '
+('D:\\PRJ\\TRB - Vehicle Inspection Integration Management '
+ 'System\\trb-dsk-pykivy-load-brake-meter-app\\release\\Installation '
  'Folder\\build\\main\\PYZ-00.pyz',
  [('PIL',
    'C:\\Users\\Nur '

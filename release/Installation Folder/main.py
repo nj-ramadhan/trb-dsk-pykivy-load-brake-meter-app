@@ -70,6 +70,7 @@ dt_no_uji = ""
 dt_nama = ""
 dt_jenis_kendaraan = ""
 
+dt_test_number = 1
 dt_dash_pendaftaran = 0
 dt_dash_belum_uji = 0
 dt_dash_sudah_uji = 0
@@ -249,6 +250,7 @@ class ScreenMain(MDScreen):
         global dt_user, dt_no_antrian, dt_no_pol, dt_no_uji, dt_nama, dt_jenis_kendaraan
         global dt_load_flag, dt_load_l_value, dt_load_r_value, dt_load_user, dt_load_post
         global dt_brake_flag, dt_brake_value, dt_brake_user, dt_brake_post
+        global dt_test_number
         
         try:
             screen_home = self.screen_manager.get_screen('screen_home')
@@ -374,27 +376,15 @@ class ScreenMain(MDScreen):
 
             if(count_get_data <= 0):
                 if(not flag_play):
-                    if(dt_load_l_value <= STANDARD_MAX_AXLE_LOAD):
-                        screen_load_meter.ids.lb_test_result.md_bg_color = colors['Green']['200']
-                        screen_load_meter.ids.lb_test_result.text = "LULUS"
-                        dt_load_flag = "Lulus"
-                        screen_load_meter.ids.lb_test_result.text_color = colors['Green']['700']
-                    else:
-                        screen_load_meter.ids.lb_test_result.md_bg_color = colors['Red']['A200']
-                        screen_load_meter.ids.lb_test_result.text = "TIDAK LULUS"
-                        dt_load_flag = "Tidak Lulus"
-                        screen_load_meter.ids.lb_test_result.text_color = colors['Red']['A700']
+                    screen_load_meter.ids.lb_test_result.md_bg_color = colors['Green']['200']
+                    screen_load_meter.ids.lb_test_result.text_color = colors['Green']['700']
+                    screen_load_meter.ids.lb_test_result.text = f"S{dt_test_number} : KIRI {dt_load_l_value}, KANAN {dt_load_r_value}"
+                    dt_load_flag = "Lulus"
 
-                    if(dt_brake_value <= STANDARD_MAX_AXLE_LOAD):
-                        screen_brake_meter.ids.lb_test_result.md_bg_color = colors['Green']['200']
-                        screen_brake_meter.ids.lb_test_result.text = "LULUS"
-                        dt_brake_flag = "Lulus"
-                        screen_brake_meter.ids.lb_test_result.text_color = colors['Green']['700']
-                    else:
-                        screen_brake_meter.ids.lb_test_result.md_bg_color = colors['Red']['A200']
-                        screen_brake_meter.ids.lb_test_result.text = "TIDAK LULUS"
-                        dt_brake_flag = "Tidak Lulus"
-                        screen_brake_meter.ids.lb_test_result.text_color = colors['Red']['A700']
+                    screen_brake_meter.ids.lb_test_result.md_bg_color = colors['Green']['200']
+                    screen_brake_meter.ids.lb_test_result.text_color = colors['Green']['700']
+                    screen_brake_meter.ids.lb_test_result.text = f"S{dt_test_number} : KIRI {dt_brake_value}, KANAN {dt_brake_value}"
+                    dt_brake_flag = "Lulus"
 
             elif(count_get_data > 0):
                 screen_load_meter.ids.lb_test_result.md_bg_color = "#EEEEEE"
@@ -528,7 +518,6 @@ class ScreenMain(MDScreen):
     def exec_start(self):
         global dt_load_flag, dt_brake_flag, dt_no_antrian, dt_user
         global flag_play
-
         if (dt_user != ''):
             if (dt_load_flag == 'Belum Tes'):
                 if(not flag_play):
@@ -538,7 +527,7 @@ class ScreenMain(MDScreen):
             elif (dt_brake_flag == 'Belum Tes'):
                 if(not flag_play):
                     Clock.schedule_interval(self.regular_get_data, 1)
-                    self.open_screen_load_meter()
+                    self.open_screen_brake_meter()
                     flag_play = True
             else:
                 toast(f'No. Antrian {dt_no_antrian} Sudah Tes')
@@ -781,6 +770,9 @@ class ScreenBrakeMeter(MDScreen):
         self.screen_manager.current = 'screen_main'
 
     def open_screen_load_meter(self):
+        global dt_test_number
+
+        dt_test_number = dt_test_number + 1
         self.exec_reload()
         self.screen_manager.current = 'screen_load_meter'
 

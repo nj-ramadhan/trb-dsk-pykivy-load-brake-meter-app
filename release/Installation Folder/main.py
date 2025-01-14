@@ -70,6 +70,12 @@ dt_no_uji = ""
 dt_nama = ""
 dt_jenis_kendaraan = ""
 
+dt_dash_pendaftaran = 0
+dt_dash_belum_uji = 0
+dt_dash_sudah_uji = 0
+
+flag_cylinder = False
+
 class ScreenHome(MDScreen):
     def __init__(self, **kwargs):
         super(ScreenHome, self).__init__(**kwargs)
@@ -668,6 +674,48 @@ class ScreenBrakeMeter(MDScreen):
         
     def delayed_init(self, dt):
         pass
+
+    def exec_cylinder_up(self):
+        global flag_conn_stat
+        global flag_cylinder
+
+        if(not flag_cylinder):
+            flag_cylinder = True
+
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_coil(3082, flag_cylinder, slave=1) #M10
+                MODBUS_CLIENT.close()
+        except:
+            toast("error send exec_cylinder_up data to PLC Slave") 
+
+    def exec_cylinder_down(self):
+        global flag_conn_stat
+        global flag_cylinder
+
+        if(flag_cylinder):
+            flag_cylinder = False
+
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_coil(3083, not flag_cylinder, slave=1) #M11
+                MODBUS_CLIENT.close()
+        except:
+            toast("error send exec_cylinder_down data to PLC Slave") 
+
+    def exec_cylinder_stop(self):
+        global flag_conn_stat
+
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_coil(3082, False, slave=1) #M10
+                MODBUS_CLIENT.write_coil(3083, False, slave=1) #M11
+                MODBUS_CLIENT.close()
+        except:
+            toast("error send exec_cylinder_stop data to PLC Slave")   
 
     def exec_start_brake(self):
         global flag_play

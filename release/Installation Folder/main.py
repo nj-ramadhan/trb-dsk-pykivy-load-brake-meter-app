@@ -444,22 +444,21 @@ class ScreenMain(MDScreen):
                     screen_handbrake_meter.ids.lb_handbrake_r_val.text = " "
                     screen_handbrake_meter.ids.lb_info.text = "Silahkan Tempatkan Kendaraan Anda Pada Tempat yang Sudah Disediakan"
 
-
             if(count_get_data <= 0):
                 if(not flag_play):
                     screen_load_meter.ids.lb_test_result.md_bg_color = colors['Green']['200']
                     screen_load_meter.ids.lb_test_result.text_color = colors['Green']['700']
-                    screen_load_meter.ids.lb_test_result.text = f"S{dt_test_number} : KIRI {dt_load_l_value}, KANAN {dt_load_r_value}"
+                    screen_load_meter.ids.lb_test_result.text = f"S{dt_test_number}\nTOTAL {dt_load_total_value}"
                     dt_load_flag = "Lulus"
 
                     screen_brake_meter.ids.lb_test_result.md_bg_color = colors['Green']['200']
                     screen_brake_meter.ids.lb_test_result.text_color = colors['Green']['700']
-                    screen_brake_meter.ids.lb_test_result.text = f"S{dt_test_number} : KIRI {dt_brake_l_value}, KANAN {dt_brake_r_value}"
+                    screen_brake_meter.ids.lb_test_result.text = f"S{dt_test_number}\nTOTAL {dt_brake_total_value}"
                     dt_brake_flag = "Lulus"
 
                     screen_handbrake_meter.ids.lb_test_result.md_bg_color = colors['Green']['200']
                     screen_handbrake_meter.ids.lb_test_result.text_color = colors['Green']['700']
-                    screen_handbrake_meter.ids.lb_test_result.text = f"S{dt_test_number} : KIRI {dt_handbrake_l_value}, KANAN {dt_handbrake_r_value}"
+                    screen_handbrake_meter.ids.lb_test_result.text = f"S{dt_test_number}\nTOTAL {dt_handbrake_total_value}"
                     dt_handbrake_flag = "Lulus"
 
             elif(count_get_data > 0):
@@ -518,7 +517,7 @@ class ScreenMain(MDScreen):
 
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
-                axle_load_registers = MODBUS_CLIENT.read_holding_registers(1712, 2, slave=1) #V1200 - V1201
+                axle_load_registers = MODBUS_CLIENT.read_holding_registers(1712, count=2, slave=1) #V1200 - V1201
                 brake_registers = MODBUS_CLIENT.read_holding_registers(1862, 2, slave=1) #V1350
                 MODBUS_CLIENT.close()
 

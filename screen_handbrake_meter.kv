@@ -1,6 +1,6 @@
 #:kivy 2.1.0
 
-<ScreenLoadMeter>:
+<ScreenHandbrakeMeter>:
     MDBoxLayout:
         orientation: "vertical"
 
@@ -34,7 +34,7 @@
 
 				MDLabel:
 					id: subtitle            
-					text: "AXLE LOAD METER"
+					text: "HAND BRAKE METER"
 					halign: "left"
 					valign: "middle"
 					font_style: 'H5'
@@ -182,13 +182,20 @@
 						MDBoxLayout:
 							orientation: "horizontal"
 							MDLabel:
-								text: "Axle Load Total"
+								id: lb_status
+								halign: "left"
+								valign: "middle"
+								font_style: 'H6'
+						MDBoxLayout:
+							orientation: "horizontal"
+							MDLabel:
+								text: "Total Hand Brake"
 								halign: "left"
 								valign: "middle"
 								font_style: 'H4'
 
 							MDLabel:
-								id: lb_load_total
+								id: lb_handbrake_total
 								halign: "left"
 								valign: "middle"
 								font_style: 'H4'
@@ -196,10 +203,30 @@
 						MDBoxLayout:
 							orientation: "horizontal"
 							MDLabel:
-								id: lb_status
+								text: "Efisiensi Hand Brake"
 								halign: "left"
 								valign: "middle"
-								font_style: 'H6'
+								font_style: 'H4'
+
+							MDLabel:
+								id: lb_handbrake_efficiency
+								halign: "left"
+								valign: "middle"
+								font_style: 'H4'
+
+						MDBoxLayout:
+							orientation: "horizontal"
+							MDLabel:
+								text: "Simpangan Hand Brake"
+								halign: "left"
+								valign: "middle"
+								font_style: 'H4'
+
+							MDLabel:
+								id: lb_handbrake_difference
+								halign: "left"
+								valign: "middle"
+								font_style: 'H4'
 
 					MDLabel:
 						id: lb_test_result
@@ -216,7 +243,7 @@
 					MDFloatLayout:
 						id: layout_display
 						AsyncImage:
-							source: 'assets/images/display-load.png'
+							source: 'assets/images/display-brake.png'
 							pos_hint: {'x':.0, 'y':.0}
 							fit_mode: 'contain' #scale-down, fill, contain, cover						
 
@@ -229,13 +256,13 @@
 							pos_hint: {'x':.0, 'y':.45}
 
 						MDLabel:
-							id:lb_load_l_val
+							id:lb_handbrake_l_val
 							text: "..."
 							halign: "center"
 							valign: "middle"
 							font_style: 'Display'
 							font_size: '50dp'
-							pos_hint: {'x':-0.35, 'y':0.0}
+							pos_hint: {'x':-0.35, 'y':.0}
 
 						MDLabel:
 							text: "kg"
@@ -246,13 +273,13 @@
 							pos_hint: {'x':-0.35, 'y':-0.1}
 
 						MDLabel:
-							id:lb_load_r_val
+							id:lb_handbrake_r_val
 							text: "..."
 							halign: "center"
 							valign: "middle"
 							font_style: 'Display'
 							font_size: '50dp'
-							pos_hint: {'x':0.35, 'y':0.0}
+							pos_hint: {'x':0.35, 'y':.0}
 
 						MDLabel:
 							text: "kg"
@@ -263,7 +290,7 @@
 							pos_hint: {'x':0.35, 'y':-0.1}
 
 						MDLabel:
-							id:lb_load_total_val
+							id:lb_handbrake_total_val
 							text: "..."
 							halign: "center"
 							valign: "middle"
@@ -278,6 +305,28 @@
 							font_style: 'Display'
 							font_size: '30dp'
 							pos_hint: {'x':0.0, 'y':-0.1}
+
+						MDRectangleFlatIconButton:
+							id: bt_cylinder_up
+							text: "CYLINDER"
+							icon: "arrow-up"
+							theme_text_color: "Custom"
+							text_color: "#EEEEEE"
+							md_bg_color: "#FF2A2A"
+							pos_hint: {'x':0.425, 'y':0.25}
+							on_press: root.exec_cylinder_up()
+							on_release: root.exec_cylinder_stop()
+
+						MDRectangleFlatIconButton:
+							id: bt_cylinder_down
+							text: "CYLINDER"
+							icon: "arrow-down"
+							theme_text_color: "Custom"
+							text_color: "#EEEEEE"
+							md_bg_color: "#2CA02C"
+							pos_hint: {'x':0.425, 'y':0.15}
+							on_press: root.exec_cylinder_down()
+							on_release: root.exec_cylinder_stop()
 
 						MDRectangleFlatIconButton:
 							id: bt_reload
@@ -312,15 +361,14 @@
 							on_press: root.open_screen_main()
 
 						MDRectangleFlatIconButton:
-							id: bt_brake
-							text: "MAIN BRAKE TEST"
+							id: bt_load
+							text: "AXLE LOAD TEST"
 							icon: "arrow-right"
 							theme_text_color: "Custom"
 							text_color: "#EEEEEE"
 							md_bg_color: "4471C4"
 							pos_hint: {'x':.650, 'y':.06}
-							on_press: root.open_screen_brake_meter()
-
+							on_press: root.open_screen_load_meter()
 		# footer layout
         MDBoxLayout:
             orientation: "horizontal"

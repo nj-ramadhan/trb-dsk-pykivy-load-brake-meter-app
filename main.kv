@@ -6,6 +6,7 @@
 #:include screen_main.kv
 #:include screen_load_meter.kv
 #:include screen_brake_meter.kv
+#:include screen_handbrake_meter.kv
 
 # ScreenManager:
 <RootScreen>:
@@ -37,4 +38,8 @@
         name: 'screen_brake_meter'
         screen_manager: screen_manager   
 
+    ScreenHandbrakeMeter:
+        id: screen_handbrake_meter
+        name: 'screen_handbrake_meter'
+        screen_manager: screen_manager   
 

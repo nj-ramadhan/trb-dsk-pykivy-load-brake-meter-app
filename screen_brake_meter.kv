@@ -34,7 +34,7 @@
 
 				MDLabel:
 					id: subtitle            
-					text: "BRAKE METER"
+					text: "MAIN BRAKE METER"
 					halign: "left"
 					valign: "middle"
 					font_style: 'H5'
@@ -182,6 +182,48 @@
 						MDBoxLayout:
 							orientation: "horizontal"
 							MDLabel:
+								text: "Total Main Brake "
+								halign: "left"
+								valign: "middle"
+								font_style: 'H4'
+
+							MDLabel:
+								id: lb_brake_total
+								halign: "left"
+								valign: "middle"
+								font_style: 'H4'
+
+						MDBoxLayout:
+							orientation: "horizontal"
+							MDLabel:
+								text: "Efisiensi Main Brake"
+								halign: "left"
+								valign: "middle"
+								font_style: 'H4'
+
+							MDLabel:
+								id: lb_brake_efficiency
+								halign: "left"
+								valign: "middle"
+								font_style: 'H4'
+
+						MDBoxLayout:
+							orientation: "horizontal"
+							MDLabel:
+								text: "Simpangan Main Brake"
+								halign: "left"
+								valign: "middle"
+								font_style: 'H4'
+
+							MDLabel:
+								id: lb_brake_difference
+								halign: "left"
+								valign: "middle"
+								font_style: 'H4'
+
+						MDBoxLayout:
+							orientation: "horizontal"
+							MDLabel:
 								id: lb_status
 								halign: "left"
 								valign: "middle"
@@ -248,6 +290,23 @@
 							font_size: '30dp'
 							pos_hint: {'x':0.35, 'y':-0.1}
 
+						MDLabel:
+							id:lb_brake_total_val
+							text: "..."
+							halign: "center"
+							valign: "middle"
+							font_style: 'Display'
+							font_size: '50dp'
+							pos_hint: {'x':0.0, 'y':0.0}
+
+						MDLabel:
+							text: "kg"
+							halign: "center"
+							valign: "middle"
+							font_style: 'Display'
+							font_size: '30dp'
+							pos_hint: {'x':0.0, 'y':-0.1}
+
 						MDRectangleFlatIconButton:
 							id: bt_cylinder_up
 							text: "CYLINDER"
@@ -303,14 +362,14 @@
 							on_press: root.open_screen_main()
 
 						MDRectangleFlatIconButton:
-							id: bt_load
-							text: "LANJUT UJI LOAD"
+							id: bt_handbrake
+							text: "HAND BRAKE TEST"
 							icon: "arrow-right"
 							theme_text_color: "Custom"
 							text_color: "#EEEEEE"
 							md_bg_color: "4471C4"
 							pos_hint: {'x':.650, 'y':.06}
-							on_press: root.open_screen_load_meter()
+							on_press: root.open_screen_handbrake_meter()
 		# footer layout
         MDBoxLayout:
             orientation: "horizontal"

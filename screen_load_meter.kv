@@ -182,20 +182,6 @@
 						MDBoxLayout:
 							orientation: "horizontal"
 							MDLabel:
-								text: "Axle Load Total"
-								halign: "left"
-								valign: "middle"
-								font_style: 'H4'
-
-							MDLabel:
-								id: lb_load_total
-								halign: "left"
-								valign: "middle"
-								font_style: 'H4'
-
-						MDBoxLayout:
-							orientation: "horizontal"
-							MDLabel:
 								id: lb_status
 								halign: "left"
 								valign: "middle"
@@ -286,20 +272,9 @@
 							theme_text_color: "Custom"
 							text_color: "#EEEEEE"
 							md_bg_color: "#FF2A2A"
-							pos_hint: {'x':.175, 'y':.06}
-							disabled: True
-							on_press: root.exec_reload()
-
-						MDRectangleFlatIconButton:
-							id: bt_save
-							text: "SIMPAN"
-							icon: "printer"
-							theme_text_color: "Custom"
-							text_color: "#EEEEEE"
-							md_bg_color: "#2CA02C"
 							pos_hint: {'x':.325, 'y':.06}
 							disabled: True
-							on_press: root.exec_save()
+							on_press: root.exec_reload()
 
 						MDRectangleFlatIconButton:
 							id: bt_back
@@ -309,17 +284,8 @@
 							text_color: "#EEEEEE"
 							md_bg_color: "4471C4"
 							pos_hint: {'x':.475, 'y':.06}
-							on_press: root.open_screen_main()
+							on_press: root.open_screen_resume()
 
-						MDRectangleFlatIconButton:
-							id: bt_brake
-							text: "MAIN BRAKE TEST"
-							icon: "arrow-right"
-							theme_text_color: "Custom"
-							text_color: "#EEEEEE"
-							md_bg_color: "4471C4"
-							pos_hint: {'x':.650, 'y':.06}
-							on_press: root.open_screen_brake_meter()
 
 		# footer layout
         MDBoxLayout:

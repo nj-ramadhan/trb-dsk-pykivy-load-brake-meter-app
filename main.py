@@ -25,16 +25,24 @@ colors = {
     "Dark"  : {"StatusBar": "101010","AppBar": "#E0E0E0","Background": "#111111","CardsDialogs": "#222222","FlatButtonDown": "#DDDDDD",},
 }
 
+config_name = 'config.ini'
 if getattr(sys, 'frozen', False):
-    app_path = os.path.dirname(os.path.abspath(__file__))
+    application_path = os.path.dirname(sys.executable)
+    running_mode = 'Frozen/executable'
 else:
-    app_path = os.path.dirname(os.path.abspath(__file__))
+    try:
+        app_full_path = os.path.realpath(__file__)
+        application_path = os.path.dirname(app_full_path)
+        running_mode = "Non-interactive (e.g. 'python myapp.py')"
+    except NameError:
+        application_path = os.getcwd()
+        running_mode = 'Interactive'
 
-config_path = os.path.join(app_path, 'config.ini')
-print(f"Path config.ini: {config_path}")
-
+config_full_path = os.path.join(application_path, config_name)
 config = configparser.ConfigParser()
-config.read(config_path)
+config.read(config_full_path)
+
+# SQL setting
 DB_HOST = config['mysql']['DB_HOST']
 DB_USER = config['mysql']['DB_USER']
 DB_PASSWORD = config['mysql']['DB_PASSWORD']
@@ -43,32 +51,48 @@ TB_DATA = config['mysql']['TB_DATA']
 TB_USER = config['mysql']['TB_USER']
 TB_MERK = config['mysql']['TB_MERK']
 
-STANDARD_MAX_AXLE_LOAD = float(config['standard']['STANDARD_MAX_AXLE_LOAD']) # in kg
-STANDARD_MAX_BRAKE = float(config['standard']['STANDARD_MAX_BRAKE']) # in kg
+# system setting
+TIME_OUT = int(config['setting']['TIME_OUT'])
+COUNT_STARTING = int(config['setting']['COUNT_STARTING'])
+COUNT_ACQUISITION = int(config['setting']['COUNT_ACQUISITION'])
+UPDATE_CAROUSEL_INTERVAL = float(config['setting']['UPDATE_CAROUSEL_INTERVAL'])
+UPDATE_CONNECTION_INTERVAL = float(config['setting']['UPDATE_CONNECTION_INTERVAL'])
+GET_DATA_INTERVAL = float(config['setting']['GET_DATA_INTERVAL'])
 
 MODBUS_IP_PLC = config['setting']['MODBUS_IP_PLC']
 MODBUS_CLIENT = ModbusTcpClient(MODBUS_IP_PLC)
+REGISTER_DATA_LOAD = int(config['setting']['REGISTER_DATA_LOAD'])
+REGISTER_DATA_BRAKE = int(config['setting']['REGISTER_DATA_BRAKE'])
 
-COUNT_STARTING = 3
-COUNT_ACQUISITION = 4
-TIME_OUT = 500
+# system standard
+STANDARD_MAX_AXLE_LOAD = float(config['standard']['STANDARD_MAX_AXLE_LOAD']) # in kg
+STANDARD_MAX_BRAKE = float(config['standard']['STANDARD_MAX_BRAKE']) # %
 
-dt_load_l_value = 0
-dt_load_r_value = 0
+db_load_left_value = np.zeros(10, dtype=float)
+db_load_right_value = np.zeros(10, dtype=float)
+db_load_total_value = np.zeros(10, dtype=float)
 dt_load_total_value = 0
 dt_load_flag = 0
 dt_load_user = 1
 dt_load_post = str(time.strftime("%Y/%m/%d %H:%M:%S", time.localtime()))
-dt_brake_l_value = 0
-dt_brake_r_value = 0
+
+db_brake_left_value = np.zeros(10, dtype=float)
+db_brake_right_value = np.zeros(10, dtype=float)
+db_brake_total_value = np.zeros(10, dtype=float)
+db_brake_efficiency_value = np.zeros(10, dtype=float)
+db_brake_difference_value = np.zeros(10, dtype=float)
 dt_brake_total_value = 0
 dt_brake_efficiency_value = 0
 dt_brake_difference_value = 0
 dt_brake_flag = 0
 dt_brake_user = 1
 dt_brake_post = str(time.strftime("%Y/%m/%d %H:%M:%S", time.localtime()))
-dt_handbrake_l_value = 0
-dt_handbrake_r_value = 0
+
+db_handbrake_left_value = np.zeros(10, dtype=float)
+db_handbrake_right_value = np.zeros(10, dtype=float)
+db_handbrake_total_value = np.zeros(10, dtype=float)
+db_handbrake_efficiency_value = np.zeros(10, dtype=float)
+db_handbrake_difference_value = np.zeros(10, dtype=float)
 dt_handbrake_total_value = 0
 dt_handbrake_efficiency_value = 0
 dt_handbrake_difference_value = 0
@@ -83,7 +107,7 @@ dt_no_uji = ""
 dt_nama = ""
 dt_jenis_kendaraan = ""
 
-dt_test_number = 1
+dt_test_number = 0
 dt_dash_pendaftaran = 0
 dt_dash_belum_uji = 0
 dt_dash_sudah_uji = 0
@@ -96,9 +120,9 @@ class ScreenHome(MDScreen):
         Clock.schedule_once(self.delayed_init, 1)
 
     def delayed_init(self, dt):
-        Clock.schedule_interval(self.regular_update_display, 3)
+        Clock.schedule_interval(self.regular_update_carousel, UPDATE_CAROUSEL_INTERVAL)
 
-    def regular_update_display(self, dt):
+    def regular_update_carousel(self, dt):
         try:
             self.ids.carousel.index += 1
             
@@ -227,7 +251,7 @@ class ScreenMain(MDScreen):
         count_get_data = COUNT_ACQUISITION
         
         Clock.schedule_interval(self.regular_update_display, 1)
-        Clock.schedule_interval(self.regular_update_connection, 10)
+        Clock.schedule_interval(self.regular_update_connection, UPDATE_CONNECTION_INTERVAL)
         self.exec_reload_database()
         self.exec_reload_table()
 
@@ -262,14 +286,16 @@ class ScreenMain(MDScreen):
         global flag_conn_stat
         global count_starting, count_get_data
         global dt_user, dt_no_antrian, dt_no_pol, dt_no_uji, dt_nama, dt_jenis_kendaraan
-        global dt_load_flag, dt_load_l_value, dt_load_r_value, dt_load_total_value, dt_load_user, dt_load_post
-        global dt_brake_flag, dt_brake_l_value, dt_brake_r_value, dt_brake_total_value, dt_brake_efficiency_value, dt_brake_difference_value, dt_brake_user, dt_brake_post
-        global dt_handbrake_flag, dt_handbrake_l_value, dt_handbrake_r_value, dt_handbrake_total_value, dt_handbrake_efficiency_value, dt_handbrake_difference_value, dt_handbrake_user, dt_handbrake_post
+        global dt_load_flag, db_load_left_value, db_load_right_value, db_load_total_value, dt_load_user, dt_load_post
+        global dt_brake_flag, db_brake_left_value, db_brake_right_value, db_brake_total_value, db_brake_efficiency_value, db_brake_difference_value, dt_brake_user, dt_brake_post
+        global dt_handbrake_flag, db_handbrake_left_value, db_handbrake_right_value, db_handbrake_total_value, db_handbrake_efficiency_value, db_handbrake_difference_value, dt_handbrake_user, dt_handbrake_post
+        global dt_load_total_value, dt_brake_total_value, dt_brake_efficiency_value, dt_brake_difference_value, dt_handbrake_total_value, dt_handbrake_efficiency_value, dt_handbrake_difference_value
         global dt_test_number
         
         try:
             screen_home = self.screen_manager.get_screen('screen_home')
             screen_login = self.screen_manager.get_screen('screen_login')
+            screen_resume = self.screen_manager.get_screen('screen_resume')
             screen_load_meter = self.screen_manager.get_screen('screen_load_meter')
             screen_brake_meter = self.screen_manager.get_screen('screen_brake_meter')
             screen_handbrake_meter = self.screen_manager.get_screen('screen_handbrake_meter')
@@ -280,6 +306,8 @@ class ScreenMain(MDScreen):
             screen_home.ids.lb_date.text = str(time.strftime("%d/%m/%Y", time.localtime()))
             screen_login.ids.lb_time.text = str(time.strftime("%H:%M:%S", time.localtime()))
             screen_login.ids.lb_date.text = str(time.strftime("%d/%m/%Y", time.localtime()))
+            screen_resume.ids.lb_time.text = str(time.strftime("%H:%M:%S", time.localtime()))
+            screen_resume.ids.lb_date.text = str(time.strftime("%d/%m/%Y", time.localtime()))
             screen_load_meter.ids.lb_time.text = str(time.strftime("%H:%M:%S", time.localtime()))
             screen_load_meter.ids.lb_date.text = str(time.strftime("%d/%m/%Y", time.localtime()))
             screen_brake_meter.ids.lb_time.text = str(time.strftime("%H:%M:%S", time.localtime()))
@@ -290,7 +318,13 @@ class ScreenMain(MDScreen):
             self.ids.lb_dash_pendaftaran.text = str(dt_dash_pendaftaran)
             self.ids.lb_dash_belum_uji.text = str(dt_dash_belum_uji)
             self.ids.lb_dash_sudah_uji.text = str(dt_dash_sudah_uji)
-            
+
+            screen_resume.ids.lb_no_antrian.text = str(dt_no_antrian)
+            screen_resume.ids.lb_no_pol.text = str(dt_no_pol)
+            screen_resume.ids.lb_no_uji.text = str(dt_no_uji)
+            screen_resume.ids.lb_nama.text = str(dt_nama)
+            screen_resume.ids.lb_jenis_kendaraan.text = str(dt_jenis_kendaraan)
+
             screen_load_meter.ids.lb_no_antrian.text = str(dt_no_antrian)
             screen_load_meter.ids.lb_no_pol.text = str(dt_no_pol)
             screen_load_meter.ids.lb_no_uji.text = str(dt_no_uji)
@@ -309,66 +343,31 @@ class ScreenMain(MDScreen):
             screen_handbrake_meter.ids.lb_nama.text = str(dt_nama)
             screen_handbrake_meter.ids.lb_jenis_kendaraan.text = str(dt_jenis_kendaraan)
 
-            screen_load_meter.ids.lb_load_l_val.text = str(dt_load_l_value)
-            screen_load_meter.ids.lb_load_r_val.text = str(dt_load_r_value)
-            screen_load_meter.ids.lb_load_total_val.text = str(dt_load_total_value)
-            screen_load_meter.ids.lb_load_total.text = str(dt_load_total_value)
-            screen_brake_meter.ids.lb_brake_l_val.text = str(dt_brake_l_value)
-            screen_brake_meter.ids.lb_brake_r_val.text = str(dt_brake_r_value)
-            screen_brake_meter.ids.lb_brake_total_val.text = str(dt_brake_total_value)
-            screen_brake_meter.ids.lb_brake_total.text = str(dt_brake_total_value)
-            screen_brake_meter.ids.lb_brake_efficiency.text = str(dt_brake_efficiency_value)
-            screen_brake_meter.ids.lb_brake_difference.text = str(dt_brake_difference_value)
-            screen_handbrake_meter.ids.lb_handbrake_l_val.text = str(dt_handbrake_l_value)
-            screen_handbrake_meter.ids.lb_handbrake_r_val.text = str(dt_handbrake_r_value)
-            screen_handbrake_meter.ids.lb_handbrake_total_val.text = str(dt_handbrake_total_value)
-            screen_handbrake_meter.ids.lb_handbrake_total.text = str(dt_handbrake_total_value)
-            screen_handbrake_meter.ids.lb_handbrake_efficiency.text = str(dt_handbrake_efficiency_value)
-            screen_handbrake_meter.ids.lb_handbrake_difference.text = str(dt_handbrake_difference_value)
+            screen_load_meter.ids.lb_load_l_val.text = str(db_load_left_value[dt_test_number])
+            screen_load_meter.ids.lb_load_r_val.text = str(db_load_right_value[dt_test_number])
+            screen_load_meter.ids.lb_load_total_val.text = str(db_load_total_value[dt_test_number])
+            screen_brake_meter.ids.lb_brake_l_val.text = str(db_brake_left_value[dt_test_number])
+            screen_brake_meter.ids.lb_brake_r_val.text = str(db_brake_right_value[dt_test_number])
+            screen_brake_meter.ids.lb_brake_total_val.text = str(db_brake_total_value[dt_test_number])
+            screen_handbrake_meter.ids.lb_handbrake_l_val.text = str(db_handbrake_left_value[dt_test_number])
+            screen_handbrake_meter.ids.lb_handbrake_r_val.text = str(db_handbrake_right_value[dt_test_number])
+            screen_handbrake_meter.ids.lb_handbrake_total_val.text = str(db_handbrake_total_value[dt_test_number])
 
             if(not flag_play):
-                screen_load_meter.ids.bt_save.md_bg_color = colors['Green']['200']
-                screen_load_meter.ids.bt_save.disabled = False
+                screen_resume.ids.bt_save.md_bg_color = colors['Green']['200']
+                screen_resume.ids.bt_save.disabled = False
                 screen_load_meter.ids.bt_reload.md_bg_color = colors['Red']['A200']
                 screen_load_meter.ids.bt_reload.disabled = False
-
-                screen_brake_meter.ids.bt_save.md_bg_color = colors['Green']['200']
-                screen_brake_meter.ids.bt_save.disabled = False
                 screen_brake_meter.ids.bt_reload.md_bg_color = colors['Red']['A200']
                 screen_brake_meter.ids.bt_reload.disabled = False
-
-                screen_handbrake_meter.ids.bt_save.md_bg_color = colors['Green']['200']
-                screen_handbrake_meter.ids.bt_save.disabled = False
                 screen_handbrake_meter.ids.bt_reload.md_bg_color = colors['Red']['A200']
                 screen_handbrake_meter.ids.bt_reload.disabled = False
-
-                if(not (dt_brake_flag == "Belum Tes")):
-                    screen_load_meter.ids.bt_brake.disabled = False
-                else:
-                    screen_load_meter.ids.bt_brake.disabled = True
-
-                if(not (dt_handbrake_flag == "Belum Tes")):
-                    screen_brake_meter.ids.bt_handbrake.disabled = False
-                else:
-                    screen_brake_meter.ids.bt_handbrake.disabled = True
-
-                if(not (dt_load_flag == "Belum Tes")):
-                    screen_handbrake_meter.ids.bt_load.disabled = False
-                else:
-                    screen_handbrake_meter.ids.bt_load.disabled = True
                     
             else:
+                screen_resume.ids.bt_save.disabled = True
                 screen_load_meter.ids.bt_reload.disabled = True
-                screen_load_meter.ids.bt_save.disabled = True
-                screen_load_meter.ids.bt_brake.disabled = True
-
                 screen_brake_meter.ids.bt_reload.disabled = True
-                screen_brake_meter.ids.bt_save.disabled = True
-                screen_brake_meter.ids.bt_handbrake.disabled = True
-
                 screen_handbrake_meter.ids.bt_reload.disabled = True
-                screen_handbrake_meter.ids.bt_save.disabled = True
-                screen_handbrake_meter.ids.bt_load.disabled = True
 
             if(not flag_conn_stat):
                 self.ids.lb_comm.color = colors['Red']['A200']
@@ -400,29 +399,29 @@ class ScreenMain(MDScreen):
 
             if(count_starting <= 0):
                 screen_load_meter.ids.lb_test_subtitle.text = "HASIL PENGUKURAN"
-                screen_load_meter.ids.lb_load_l_val.text = str(np.round(dt_load_l_value, 2))
-                screen_load_meter.ids.lb_load_r_val.text = str(np.round(dt_load_r_value, 2))
-                screen_load_meter.ids.lb_load_total_val.text = str(np.round(dt_load_total_value, 2))
+                screen_load_meter.ids.lb_load_l_val.text = str(db_load_left_value[dt_test_number])
+                screen_load_meter.ids.lb_load_r_val.text = str(db_load_right_value[dt_test_number])
+                screen_load_meter.ids.lb_load_total_val.text = str(db_load_total_value[dt_test_number])
                 screen_brake_meter.ids.lb_test_subtitle.text = "HASIL PENGUKURAN"
-                screen_brake_meter.ids.lb_brake_l_val.text = str(np.round(dt_brake_l_value, 2))
-                screen_brake_meter.ids.lb_brake_r_val.text = str(np.round(dt_brake_r_value, 2))
-                screen_brake_meter.ids.lb_brake_total_val.text = str(np.round(dt_brake_total_value, 2))
+                screen_brake_meter.ids.lb_brake_l_val.text = str(db_brake_left_value[dt_test_number])
+                screen_brake_meter.ids.lb_brake_r_val.text = str(db_brake_right_value[dt_test_number])
+                screen_brake_meter.ids.lb_brake_total_val.text = str(db_brake_total_value[dt_test_number])
                 screen_handbrake_meter.ids.lb_test_subtitle.text = "HASIL PENGUKURAN"
-                screen_handbrake_meter.ids.lb_handbrake_l_val.text = str(np.round(dt_handbrake_l_value, 2))
-                screen_handbrake_meter.ids.lb_handbrake_r_val.text = str(np.round(dt_handbrake_r_value, 2))
-                screen_handbrake_meter.ids.lb_handbrake_total_val.text = str(np.round(dt_handbrake_total_value, 2))
+                screen_handbrake_meter.ids.lb_handbrake_l_val.text = str(db_handbrake_left_value[dt_test_number])
+                screen_handbrake_meter.ids.lb_handbrake_r_val.text = str(db_handbrake_right_value[dt_test_number])
+                screen_handbrake_meter.ids.lb_handbrake_total_val.text = str(db_handbrake_total_value[dt_test_number])
 
-                if(dt_load_total_value <= STANDARD_MAX_AXLE_LOAD):
+                if(db_load_total_value[dt_test_number] <= STANDARD_MAX_AXLE_LOAD):
                     screen_load_meter.ids.lb_info.text = f"Ambang Batas Beban yang diperbolehkan adalah {STANDARD_MAX_AXLE_LOAD} kg.\nBerat Roda Kendaraan Anda Dalam Range Ambang Batas"
                 else:
                     screen_load_meter.ids.lb_info.text = f"Ambang Batas Beban yang diperbolehkan adalah {STANDARD_MAX_AXLE_LOAD} kg.\nBerat Roda Kendaraan Anda Diluar Ambang Batas"
 
-                if(dt_brake_total_value <= STANDARD_MAX_BRAKE):
+                if(db_brake_total_value[dt_test_number] <= STANDARD_MAX_BRAKE):
                     screen_brake_meter.ids.lb_info.text = f"Ambang Batas Beban yang diperbolehkan adalah {STANDARD_MAX_AXLE_LOAD} kg.\nKekuatan Pengereman Kendaraan Anda Dalam Range Ambang Batas"
                 else:
                     screen_brake_meter.ids.lb_info.text = f"Ambang Batas Beban yang diperbolehkan adalah {STANDARD_MAX_AXLE_LOAD} kg.\nKekuatan Pengereman Kendaraan Anda Diluar Ambang Batas"                
 
-                if(dt_handbrake_total_value <= STANDARD_MAX_BRAKE):
+                if(db_handbrake_total_value[dt_test_number] <= STANDARD_MAX_BRAKE):
                     screen_handbrake_meter.ids.lb_info.text = f"Ambang Batas Beban yang diperbolehkan adalah {STANDARD_MAX_AXLE_LOAD} kg.\nKekuatan Pengereman Kendaraan Anda Dalam Range Ambang Batas"
                 else:
                     screen_handbrake_meter.ids.lb_info.text = f"Ambang Batas Beban yang diperbolehkan adalah {STANDARD_MAX_AXLE_LOAD} kg.\nKekuatan Pengereman Kendaraan Anda Diluar Ambang Batas"                
@@ -448,17 +447,17 @@ class ScreenMain(MDScreen):
                 if(not flag_play):
                     screen_load_meter.ids.lb_test_result.md_bg_color = colors['Green']['200']
                     screen_load_meter.ids.lb_test_result.text_color = colors['Green']['700']
-                    screen_load_meter.ids.lb_test_result.text = f"S{dt_test_number}\nTOTAL {dt_load_total_value}"
+                    screen_load_meter.ids.lb_test_result.text = f"S{dt_test_number + 1}\nTOTAL {db_load_total_value[dt_test_number]}"
                     dt_load_flag = "Lulus"
 
                     screen_brake_meter.ids.lb_test_result.md_bg_color = colors['Green']['200']
                     screen_brake_meter.ids.lb_test_result.text_color = colors['Green']['700']
-                    screen_brake_meter.ids.lb_test_result.text = f"S{dt_test_number}\nTOTAL {dt_brake_total_value}"
+                    screen_brake_meter.ids.lb_test_result.text = f"S{dt_test_number + 1}\nTOTAL {db_brake_total_value[dt_test_number]}"
                     dt_brake_flag = "Lulus"
 
                     screen_handbrake_meter.ids.lb_test_result.md_bg_color = colors['Green']['200']
                     screen_handbrake_meter.ids.lb_test_result.text_color = colors['Green']['700']
-                    screen_handbrake_meter.ids.lb_test_result.text = f"S{dt_test_number}\nTOTAL {dt_handbrake_total_value}"
+                    screen_handbrake_meter.ids.lb_test_result.text = f"S{dt_test_number + 1}\nTOTAL {db_handbrake_total_value[dt_test_number]}"
                     dt_handbrake_flag = "Lulus"
 
             elif(count_get_data > 0):
@@ -470,7 +469,31 @@ class ScreenMain(MDScreen):
                 
                 screen_handbrake_meter.ids.lb_test_result.md_bg_color = "#EEEEEE"
                 screen_handbrake_meter.ids.lb_test_result.text = ""
+            
+            for i in range(10):
+                screen_resume.ids[f'lb_load_total{i}'].text = str(db_load_total_value[dt_test_number])
+                screen_resume.ids[f'lb_brake_total{i}'].text = str(db_brake_total_value[dt_test_number])
+                # screen_resume.ids[f'lb_brake_efficiency{i}'].text = str(db_brake_efficiency_value[dt_test_number])
+                # screen_resume.ids[f'lb_brake_difference{i}'].text = str(db_brake_difference_value[dt_test_number])
+                screen_resume.ids[f'lb_handbrake_total{i}'].text = str(db_handbrake_total_value[dt_test_number])
+                # screen_resume.ids[f'lb_handbrake_efficiency{i}'].text = str(db_handbrake_efficiency_value[dt_test_number])
+                # screen_resume.ids[f'lb_handbrake_difference{i}'].text = str(db_handbrake_difference_value[dt_test_number])
 
+                if(dt_test_number == i):
+                    screen_resume.ids[f'bt_S{i}'].md_bg_color = colors['Red']['A200']
+                else:
+                    screen_resume.ids[f'bt_S{i}'].md_bg_color = colors['Green']['200']
+
+            screen_resume.ids.lb_load_total_sum.text = str(dt_load_total_value)
+            screen_resume.ids.lb_brake_total_sum.text = str(dt_brake_total_value)
+            # screen_resume.ids.lb_brake_efficiency_sum.text = str(db_brake_efficiency_value)
+            # screen_resume.ids.lb_brake_difference_sum.text = str(db_brake_difference_value)
+            screen_resume.ids.lb_handbrake_total_sum.text = str(dt_handbrake_difference_value)
+            # screen_resume.ids.lb_handbrake_efficiency_sum.text = str(dt_load_total_value)
+            # screen_resume.ids.lb_handbrake_difference_sum.text = str(dt_load_total_value)
+
+            self.ids.bt_logout.disabled = False if dt_user != '' else True
+            
             self.ids.lb_operator.text = f'Login Sebagai: {dt_user}' if dt_user != '' else 'Silahkan Login'
             screen_home.ids.lb_operator.text = f'Login Sebagai: {dt_user}' if dt_user != '' else 'Silahkan Login'
             screen_login.ids.lb_operator.text = f'Login Sebagai: {dt_user}' if dt_user != '' else 'Silahkan Login'
@@ -500,9 +523,11 @@ class ScreenMain(MDScreen):
         global dt_no_antrian
         global count_starting, count_get_data
         global mydb
-        global dt_load_l_value, dt_load_r_value, dt_load_total_value
-        global dt_brake_l_value, dt_brake_r_value, dt_brake_total_value, dt_brake_efficiency_value, dt_brake_difference_value
-        global dt_handbrake_l_value, dt_handbrake_r_value, dt_handbrake_total_value, dt_handbrake_efficiency_value, dt_handbrake_difference_value
+        global db_load_left_value, db_load_right_value, db_load_total_value
+        global db_brake_left_value, db_brake_right_value, db_brake_total_value, db_brake_efficiency_value, db_brake_difference_value
+        global db_handbrake_left_value, db_handbrake_right_value, db_handbrake_total_value, db_handbrake_efficiency_value, db_handbrake_difference_value
+        global dt_load_total_value, dt_brake_total_value, dt_brake_efficiency_value, dt_brake_difference_value, dt_handbrake_total_value, dt_handbrake_efficiency_value, dt_handbrake_difference_value
+        global dt_test_number
 
         try:
             if(count_starting > 0):
@@ -517,23 +542,34 @@ class ScreenMain(MDScreen):
 
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
-                axle_load_registers = MODBUS_CLIENT.read_holding_registers(1712, count=2, slave=1) #V1200 - V1201
-                brake_registers = MODBUS_CLIENT.read_holding_registers(1862, 2, slave=1) #V1350
+                axle_load_registers = MODBUS_CLIENT.read_holding_registers(REGISTER_DATA_LOAD, count=2, slave=1) #V1200 - V1201
+                brake_registers = MODBUS_CLIENT.read_holding_registers(REGISTER_DATA_BRAKE, count=2, slave=1) #V1250 - V1201
                 MODBUS_CLIENT.close()
 
-                dt_load_l_value = axle_load_registers.registers[0]
-                dt_load_r_value = axle_load_registers.registers[1]
-                dt_load_total_value = dt_load_l_value + dt_load_r_value
-                dt_brake_l_value = brake_registers.registers[0]
-                dt_brake_r_value = brake_registers.registers[1]
-                dt_brake_total_value = dt_brake_l_value + dt_brake_r_value
-                dt_brake_efficiency_value = (dt_brake_total_value / dt_load_total_value) * 100
-                dt_brake_difference_value = (abs(dt_brake_l_value - dt_brake_r_value) / dt_load_total_value) * 100
-                dt_handbrake_l_value = brake_registers.registers[0]
-                dt_handbrake_r_value = brake_registers.registers[1]
-                dt_handbrake_total_value = dt_handbrake_l_value + dt_handbrake_r_value
-                dt_handbrake_efficiency_value = (dt_handbrake_total_value / dt_load_total_value) * 100
-                dt_handbrake_difference_value = (abs(dt_handbrake_l_value - dt_handbrake_r_value) / dt_load_total_value) * 100
+                db_load_left_value[dt_test_number] = np.round(axle_load_registers.registers[0] / 10 , 2)
+                db_load_right_value[dt_test_number] = np.round(axle_load_registers.registers[1] / 10 , 2) 
+                if(dt_test_number == 0 and db_load_right_value[dt_test_number] >= 60):
+                    db_load_right_value[dt_test_number] = db_load_right_value[dt_test_number] - 60
+                db_load_total_value[dt_test_number] = db_load_left_value[dt_test_number] + db_load_right_value[dt_test_number]
+                dt_load_total_value = np.sum(db_load_total_value)
+
+                db_brake_left_value[dt_test_number] = np.round(brake_registers.registers[0] / 10 , 2) 
+                db_brake_right_value[dt_test_number] = np.round(brake_registers.registers[1] / 10 , 2) 
+                db_brake_total_value[dt_test_number] = db_brake_left_value[dt_test_number] + db_brake_right_value[dt_test_number]
+                db_brake_efficiency_value[dt_test_number] = ((db_brake_total_value[dt_test_number] - db_load_total_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100
+                db_brake_difference_value[dt_test_number] = (np.abs(db_brake_total_value[dt_test_number] - db_brake_total_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100
+                dt_brake_total_value = np.sum(db_brake_total_value)
+                dt_brake_efficiency_value = np.sum(db_brake_efficiency_value)
+                dt_brake_difference_value = np.sum(db_brake_difference_value)
+
+                db_handbrake_left_value[dt_test_number] = np.round(brake_registers.registers[0] / 10 , 2) 
+                db_handbrake_right_value[dt_test_number] = np.round(brake_registers.registers[1] / 10 , 2) 
+                db_handbrake_total_value[dt_test_number] = db_handbrake_left_value[dt_test_number] + db_handbrake_right_value[dt_test_number]
+                db_handbrake_efficiency_value[dt_test_number] = ((db_handbrake_total_value[dt_test_number] - db_load_total_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100
+                db_handbrake_difference_value[dt_test_number] = (np.abs(db_handbrake_total_value[dt_test_number] - db_handbrake_total_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100
+                dt_handbrake_total_value = np.sum(db_handbrake_total_value)
+                dt_handbrake_efficiency_value = np.sum(db_handbrake_efficiency_value)
+                dt_handbrake_difference_value = np.sum(db_handbrake_difference_value)
 
         except Exception as e:
             toast_msg = f'Error Get Data: {e}'
@@ -612,25 +648,14 @@ class ScreenMain(MDScreen):
         global flag_play
         if (dt_user != ''):
             if (dt_load_flag == 'Belum Tes'):
-                if(not flag_play):
-                    Clock.schedule_interval(self.regular_get_data, 1)
-                    self.open_screen_load_meter()
-                    flag_play = True
-            elif (dt_brake_flag == 'Belum Tes'):
-                if(not flag_play):
-                    Clock.schedule_interval(self.regular_get_data, 1)
-                    self.open_screen_brake_meter()
-                    flag_play = True
+                self.open_screen_resume()
             else:
                 toast(f'No. Antrian {dt_no_antrian} Sudah Tes')
         else:
             toast(f'Silahkan Login Untuk Melakukan Pengujian')        
 
-    def open_screen_load_meter(self):
-        self.screen_manager.current = 'screen_load_meter'
-
-    def open_screen_brake_meter(self):
-        self.screen_manager.current = 'screen_brake_meter'
+    def open_screen_resume(self):
+        self.screen_manager.current = 'screen_resume'
 
     def exec_logout(self):
         global dt_user
@@ -665,14 +690,19 @@ class ScreenMain(MDScreen):
         except Exception as e:
             toast_msg = f'Error Navigate to Main Screen: {e}'
             toast(toast_msg)   
-             
-class ScreenLoadMeter(MDScreen):        
+
+class ScreenResume(MDScreen):        
     def __init__(self, **kwargs):
-        super(ScreenLoadMeter, self).__init__(**kwargs)
+        super(ScreenResume, self).__init__(**kwargs)
         Clock.schedule_once(self.delayed_init, 2)        
 
     def delayed_init(self, dt):
         pass
+
+    def exec_select_axle(self, number):
+        global dt_test_number
+
+        dt_test_number = number - 1
 
     def exec_start_load(self):
         global flag_play
@@ -684,69 +714,112 @@ class ScreenLoadMeter(MDScreen):
         count_get_data = COUNT_ACQUISITION
 
         if(not flag_play):
-            Clock.schedule_interval(screen_main.regular_get_data, 1)
+            Clock.schedule_interval(screen_main.regular_get_data, GET_DATA_INTERVAL)
+            self.open_screen_load_meter()
             flag_play = True
 
-    def exec_reload(self):
+    def exec_start_brake(self):
         global flag_play
-        global count_starting, count_get_data, dt_load_l_value, dt_load_r_value
+        global count_starting, count_get_data
 
         screen_main = self.screen_manager.get_screen('screen_main')
 
         count_starting = COUNT_STARTING
         count_get_data = COUNT_ACQUISITION
-        dt_load_l_value = 0
-        dt_load_r_value = 0
-        self.ids.bt_reload.disabled = True
-        self.ids.lb_load_l_val.text = "..."
-        self.ids.lb_load_r_val.text = " "
 
         if(not flag_play):
-            Clock.schedule_interval(screen_main.regular_get_data, 1)
+            Clock.schedule_interval(screen_main.regular_get_data, GET_DATA_INTERVAL)
+            self.open_screen_brake_meter()
             flag_play = True
+
+    def exec_start_handbrake(self):
+        global flag_play
+        global count_starting, count_get_data
+
+        screen_main = self.screen_manager.get_screen('screen_main')
+
+        count_starting = COUNT_STARTING
+        count_get_data = COUNT_ACQUISITION
+
+        if(not flag_play):
+            Clock.schedule_interval(screen_main.regular_get_data, GET_DATA_INTERVAL)
+            self.open_screen_handbrake_meter()
+            flag_play = True
+
+    def exec_navigate_main(self):
+        try:
+            self.screen_manager.current = 'screen_main'
+
+        except Exception as e:
+            toast_msg = f'Error Navigate to Main Screen: {e}'
+            toast(toast_msg)   
+
+    def open_screen_load_meter(self):
+        self.screen_manager.current = 'screen_load_meter'
+
+    def open_screen_brake_meter(self):
+        self.screen_manager.current = 'screen_brake_meter'
+
+    def open_screen_handbrake_meter(self):
+        self.screen_manager.current = 'screen_handbrake_meter'
 
     def exec_save(self):
         global flag_play
         global count_starting, count_get_data
         global mydb, db_antrian
         global dt_no_antrian, dt_no_pol, dt_no_uji, dt_nama, dt_jenis_kendaraan
-        global dt_load_flag, dt_load_l_value, dt_load_r_value, dt_load_user, dt_load_post
+        global dt_load_flag, db_load_left_value, db_load_right_value, dt_load_user, dt_load_post
+        global dt_test_number
 
         self.ids.bt_save.disabled = True
 
         mycursor = mydb.cursor()
 
-        sql = f"UPDATE {TB_DATA} SET load_flag = %s, load_l_value = %s, load_r_value = %s, load_user = %s, load_post = %s WHERE noantrian = %s"
+        sql = f"UPDATE {TB_DATA} SET load_flag = %s, load_l_value = %s, load_r_value = %s, load_total_value = %s, load_user = %s, load_post = %s WHERE noantrian = %s"
         sql_load_flag = (1 if dt_load_flag == "Lulus" else 2)
         dt_load_post = str(time.strftime("%Y/%m/%d %H:%M:%S", time.localtime()))
         print_datetime = str(time.strftime("%d %B %Y %H:%M:%S", time.localtime()))
-        sql_val = (sql_load_flag, dt_load_l_value,dt_load_r_value, dt_load_user, dt_load_post, dt_no_antrian)
+        sql_val = (sql_load_flag, db_load_left_value[dt_test_number], db_load_right_value[dt_test_number], db_load_right_value[dt_test_number], dt_load_user, dt_load_post, dt_no_antrian)
         mycursor.execute(sql, sql_val)
         mydb.commit()
 
-        self.open_screen_main()
+        self.open_screen_resume()
 
-    def open_screen_main(self):
-        global flag_play        
-        global count_starting, count_get_data
+class ScreenLoadMeter(MDScreen):        
+    def __init__(self, **kwargs):
+        super(ScreenLoadMeter, self).__init__(**kwargs)
+        Clock.schedule_once(self.delayed_init, 2)        
+
+    def delayed_init(self, dt):
+        pass
+
+    def exec_reload(self):
+        global flag_play
+        global count_starting, count_get_data, db_load_left_value, db_load_right_value
+        global dt_test_number
 
         screen_main = self.screen_manager.get_screen('screen_main')
 
         count_starting = COUNT_STARTING
         count_get_data = COUNT_ACQUISITION
+        db_load_left_value[dt_test_number] = 0
+        db_load_right_value[dt_test_number] = 0
+        self.ids.bt_reload.disabled = True
+        self.ids.lb_load_l_val.text = "..."
+        self.ids.lb_load_r_val.text = " "
+
+        if(not flag_play):
+            Clock.schedule_interval(screen_main.regular_get_data, GET_DATA_INTERVAL)
+            flag_play = True
+
+    def open_screen_resume(self):
+        global flag_play        
+        global count_starting, count_get_data
+
+        count_starting = COUNT_STARTING
+        count_get_data = COUNT_ACQUISITION
         flag_play = False   
-        screen_main.exec_reload_table()
-        self.screen_manager.current = 'screen_main'
-
-    def open_screen_brake_meter(self):
-        self.exec_reload()
-        self.screen_manager.current = 'screen_brake_meter'
-
-    def exec_logout(self):
-        global dt_user
-
-        dt_user = ""
-        self.screen_manager.current = 'screen_login'
+        self.screen_manager.current = 'screen_resume'
 
 class ScreenBrakeMeter(MDScreen):        
     def __init__(self, **kwargs):
@@ -798,79 +871,33 @@ class ScreenBrakeMeter(MDScreen):
         except:
             toast("error send exec_cylinder_stop data to PLC Slave")   
 
-    def exec_start_brake(self):
-        global flag_play
-        global count_starting, count_get_data
-
-        screen_main = self.screen_manager.get_screen('screen_main')
-
-        count_starting = COUNT_STARTING
-        count_get_data = COUNT_ACQUISITION
-
-        if(not flag_play):
-            Clock.schedule_interval(screen_main.regular_get_data, 1)
-            flag_play = True
-
     def exec_reload(self):
         global flag_play
-        global count_starting, count_get_data, dt_brake_l_value, dt_brake_r_value
+        global count_starting, count_get_data, db_brake_left_value, db_brake_right_value
+        global dt_test_number
 
         screen_main = self.screen_manager.get_screen('screen_main')
 
         count_starting = COUNT_STARTING
         count_get_data = COUNT_ACQUISITION
-        dt_brake_l_value = 0
-        dt_brake_r_value = 0
+        db_brake_left_value[dt_test_number] = 0
+        db_brake_right_value[dt_test_number] = 0
         self.ids.bt_reload.disabled = True
         self.ids.lb_brake_l_val.text = "..."
         self.ids.lb_brake_r_val.text = " "
 
         if(not flag_play):
-            Clock.schedule_interval(screen_main.regular_get_data, 1)
+            Clock.schedule_interval(screen_main.regular_get_data, GET_DATA_INTERVAL)
             flag_play = True
 
-    def exec_save(self):
-        global flag_play
-        global count_starting, count_get_data
-        global mydb, db_antrian
-        global dt_no_antrian, dt_no_pol, dt_no_uji, dt_nama, dt_jenis_kendaraan
-        global dt_brake_flag, dt_brake_l_value, dt_brake_r_value, dt_brake_user, dt_brake_post
-
-        self.ids.bt_save.disabled = True
-
-        mycursor = mydb.cursor()
-
-        sql = f"UPDATE {TB_DATA} SET brake_flag = %s, brake_l_value = %s, brake_r_value = %s, brake_user = %s, brake_post = %s WHERE noantrian = %s"
-        sql_brake_flag = (1 if dt_brake_flag == "Lulus" else 2)
-        dt_brake_post = str(time.strftime("%Y/%m/%d %H:%M:%S", time.localtime()))
-        print_datetime = str(time.strftime("%d %B %Y %H:%M:%S", time.localtime()))
-        sql_val = (sql_brake_flag, dt_brake_l_value, dt_brake_r_value, dt_brake_user, dt_brake_post, dt_no_antrian)
-        mycursor.execute(sql, sql_val)
-        mydb.commit()
-
-        self.open_screen_main()
-
-    def open_screen_main(self):
+    def open_screen_resume(self):
         global flag_play        
         global count_starting, count_get_data
-
-        screen_main = self.screen_manager.get_screen('screen_main')
 
         count_starting = COUNT_STARTING
         count_get_data = COUNT_ACQUISITION
         flag_play = False   
-        screen_main.exec_reload_table()
-        self.screen_manager.current = 'screen_main'
-
-    def open_screen_handbrake_meter(self):
-        self.exec_reload()
-        self.screen_manager.current = 'screen_handbrake_meter'
-
-    def exec_logout(self):
-        global dt_user
-
-        dt_user = ""
-        self.screen_manager.current = 'screen_login'
+        self.screen_manager.current = 'screen_resume'
 
 class ScreenHandbrakeMeter(MDScreen):        
     def __init__(self, **kwargs):
@@ -922,87 +949,34 @@ class ScreenHandbrakeMeter(MDScreen):
         except:
             toast("error send exec_cylinder_stop data to PLC Slave")   
 
-    def exec_start_handbrake(self):
-        global flag_play
-        global count_starting, count_get_data
-
-        screen_main = self.screen_manager.get_screen('screen_main')
-
-        count_starting = COUNT_STARTING
-        count_get_data = COUNT_ACQUISITION
-
-        if(not flag_play):
-            Clock.schedule_interval(screen_main.regular_get_data, 1)
-            flag_play = True
-
     def exec_reload(self):
         global flag_play
-        global count_starting, count_get_data, dt_handbrake_l_value, dt_handbrake_r_value
+        global count_starting, count_get_data, db_handbrake_left_value, db_handbrake_right_value
+        global dt_test_number
 
         screen_main = self.screen_manager.get_screen('screen_main')
 
         count_starting = COUNT_STARTING
         count_get_data = COUNT_ACQUISITION
-        dt_handbrake_l_value = 0
-        dt_handbrake_r_value = 0
+        db_handbrake_left_value[dt_test_number] = 0
+        db_handbrake_right_value[dt_test_number] = 0
         self.ids.bt_reload.disabled = True
         self.ids.lb_brake_l_val.text = "..."
         self.ids.lb_brake_r_val.text = " "
 
         if(not flag_play):
-            Clock.schedule_interval(screen_main.regular_get_data, 1)
+            Clock.schedule_interval(screen_main.regular_get_data, GET_DATA_INTERVAL)
             flag_play = True
 
-    def exec_save(self):
-        global flag_play
-        global count_starting, count_get_data
-        global mydb, db_antrian
-        global dt_no_antrian, dt_no_pol, dt_no_uji, dt_nama, dt_jenis_kendaraan
-        global dt_brake_flag, dt_handbrake_l_value, dt_handbrake_r_value, dt_brake_user, dt_brake_post
-
-        self.ids.bt_save.disabled = True
-
-        mycursor = mydb.cursor()
-
-        sql = f"UPDATE {TB_DATA} SET brake_flag = %s, handbrake_l_value = %s, handbrake_r_value = %s, brake_user = %s, brake_post = %s WHERE noantrian = %s"
-        sql_brake_flag = (1 if dt_brake_flag == "Lulus" else 2)
-        dt_brake_post = str(time.strftime("%Y/%m/%d %H:%M:%S", time.localtime()))
-        print_datetime = str(time.strftime("%d %B %Y %H:%M:%S", time.localtime()))
-        sql_val = (sql_brake_flag, dt_handbrake_l_value, dt_handbrake_r_value, dt_brake_user, dt_brake_post, dt_no_antrian)
-        mycursor.execute(sql, sql_val)
-        mydb.commit()
-
-        self.open_screen_main()
-
-    def open_screen_main(self):
+    def open_screen_resume(self):
         global flag_play        
         global count_starting, count_get_data
-
-        screen_main = self.screen_manager.get_screen('screen_main')
 
         count_starting = COUNT_STARTING
         count_get_data = COUNT_ACQUISITION
         flag_play = False   
-        screen_main.exec_reload_table()
-        self.screen_manager.current = 'screen_main'
+        self.screen_manager.current = 'screen_resume'
 
-    def open_screen_load_meter(self):
-        global dt_test_number
-
-        try:
-
-            dt_test_number = dt_test_number + 1
-            self.exec_reload()
-            self.screen_manager.current = 'screen_load_meter'
-        except Exception as e:
-            toast("error open load meter")
-            print(e)         
-
-    def exec_logout(self):
-        global dt_user
-
-        dt_user = ""
-        self.screen_manager.current = 'screen_login'
 
 class RootScreen(ScreenManager):
     pass             
@@ -1016,7 +990,7 @@ class LoadBrakeMeterApp(MDApp):
         self.theme_cls.primary_palette = "Gray"
         self.theme_cls.accent_palette = "Blue"
         self.theme_cls.theme_style = "Light"
-        self.icon = 'assets/images/logo-app.png'
+        self.icon = 'assets/images/logo-load-app.png'
 
         LabelBase.register(
             name="Orbitron-Regular",
@@ -1067,9 +1041,4 @@ class LoadBrakeMeterApp(MDApp):
         return RootScreen()
 
 if __name__ == '__main__':
-    try:
-        if hasattr(sys, '_MEIPASS'):
-            resource_add_path(os.path.join(sys._MEIPASS))
-        LoadBrakeMeterApp().run()
-    except Exception as e:
-        print(e)
+    LoadBrakeMeterApp().run()

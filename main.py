@@ -295,10 +295,11 @@ class ScreenMain(MDScreen):
         try:
             screen_home = self.screen_manager.get_screen('screen_home')
             screen_login = self.screen_manager.get_screen('screen_login')
-            screen_resume = self.screen_manager.get_screen('screen_resume')
+            screen_menu = self.screen_manager.get_screen('screen_menu')
             screen_load_meter = self.screen_manager.get_screen('screen_load_meter')
             screen_brake_meter = self.screen_manager.get_screen('screen_brake_meter')
             screen_handbrake_meter = self.screen_manager.get_screen('screen_handbrake_meter')
+            screen_resume = self.screen_manager.get_screen('screen_resume')
             
             self.ids.lb_time.text = str(time.strftime("%H:%M:%S", time.localtime()))
             self.ids.lb_date.text = str(time.strftime("%d/%m/%Y", time.localtime()))
@@ -306,18 +307,26 @@ class ScreenMain(MDScreen):
             screen_home.ids.lb_date.text = str(time.strftime("%d/%m/%Y", time.localtime()))
             screen_login.ids.lb_time.text = str(time.strftime("%H:%M:%S", time.localtime()))
             screen_login.ids.lb_date.text = str(time.strftime("%d/%m/%Y", time.localtime()))
-            screen_resume.ids.lb_time.text = str(time.strftime("%H:%M:%S", time.localtime()))
-            screen_resume.ids.lb_date.text = str(time.strftime("%d/%m/%Y", time.localtime()))
+            screen_menu.ids.lb_time.text = str(time.strftime("%H:%M:%S", time.localtime()))
+            screen_menu.ids.lb_date.text = str(time.strftime("%d/%m/%Y", time.localtime()))
             screen_load_meter.ids.lb_time.text = str(time.strftime("%H:%M:%S", time.localtime()))
             screen_load_meter.ids.lb_date.text = str(time.strftime("%d/%m/%Y", time.localtime()))
             screen_brake_meter.ids.lb_time.text = str(time.strftime("%H:%M:%S", time.localtime()))
             screen_brake_meter.ids.lb_date.text = str(time.strftime("%d/%m/%Y", time.localtime()))
             screen_handbrake_meter.ids.lb_time.text = str(time.strftime("%H:%M:%S", time.localtime()))
             screen_handbrake_meter.ids.lb_date.text = str(time.strftime("%d/%m/%Y", time.localtime()))
+            screen_resume.ids.lb_time.text = str(time.strftime("%H:%M:%S", time.localtime()))
+            screen_resume.ids.lb_date.text = str(time.strftime("%d/%m/%Y", time.localtime()))
 
             self.ids.lb_dash_pendaftaran.text = str(dt_dash_pendaftaran)
             self.ids.lb_dash_belum_uji.text = str(dt_dash_belum_uji)
             self.ids.lb_dash_sudah_uji.text = str(dt_dash_sudah_uji)
+
+            screen_menu.ids.lb_no_antrian.text = str(dt_no_antrian)
+            screen_menu.ids.lb_no_pol.text = str(dt_no_pol)
+            screen_menu.ids.lb_no_uji.text = str(dt_no_uji)
+            screen_menu.ids.lb_nama.text = str(dt_nama)
+            screen_menu.ids.lb_jenis_kendaraan.text = str(dt_jenis_kendaraan)
 
             screen_resume.ids.lb_no_antrian.text = str(dt_no_antrian)
             screen_resume.ids.lb_no_pol.text = str(dt_no_pol)
@@ -471,18 +480,18 @@ class ScreenMain(MDScreen):
                 screen_handbrake_meter.ids.lb_test_result.text = ""
             
             for i in range(10):
-                screen_resume.ids[f'lb_load_total{i}'].text = str(db_load_total_value[i])
-                screen_resume.ids[f'lb_brake_total{i}'].text = str(db_brake_total_value[i])
+                screen_resume.ids[f'lb_load_total{i}'].text = str(db_load_total_value[i]) if db_load_total_value[i] > 0.0 else ''
+                screen_resume.ids[f'lb_brake_total{i}'].text = str(db_brake_total_value[i]) if db_brake_total_value[i] > 0.0 else ''
                 # screen_resume.ids[f'lb_brake_efficiency{i}'].text = str(db_brake_efficiency_value[dt_test_number])
                 # screen_resume.ids[f'lb_brake_difference{i}'].text = str(db_brake_difference_value[dt_test_number])
-                screen_resume.ids[f'lb_handbrake_total{i}'].text = str(db_handbrake_total_value[i])
+                screen_resume.ids[f'lb_handbrake_total{i}'].text = str(db_handbrake_total_value[i]) if db_handbrake_total_value[i] > 0.0 else ''
                 # screen_resume.ids[f'lb_handbrake_efficiency{i}'].text = str(db_handbrake_efficiency_value[dt_test_number])
                 # screen_resume.ids[f'lb_handbrake_difference{i}'].text = str(db_handbrake_difference_value[dt_test_number])
 
                 if(dt_test_number == i):
-                    screen_resume.ids[f'bt_S{i}'].md_bg_color = colors['Red']['A200']
+                    screen_menu.ids[f'bt_S{i}'].md_bg_color = colors['Red']['A200']
                 else:
-                    screen_resume.ids[f'bt_S{i}'].md_bg_color = colors['Green']['200']
+                    screen_menu.ids[f'bt_S{i}'].md_bg_color = colors['Green']['200']
 
             screen_resume.ids.lb_load_total_sum.text = str(dt_load_total_value)
             screen_resume.ids.lb_brake_total_sum.text = str(dt_brake_total_value)
@@ -543,9 +552,7 @@ class ScreenMain(MDScreen):
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
                 axle_load_registers = MODBUS_CLIENT.read_holding_registers(REGISTER_DATA_LOAD, count=2, slave=1) #V1200 - V1201
-                axle_load_registers = 0 if axle_load_registers >= 62000 else axle_load_registers = axle_load_registers
                 brake_registers = MODBUS_CLIENT.read_holding_registers(REGISTER_DATA_BRAKE, count=2, slave=1) #V1250 - V1201
-                brake_registers = 0 if brake_registers >= 62000 else brake_registers = brake_registers
                 MODBUS_CLIENT.close()
 
                 if self.screen_manager.current == 'screen_load_meter':
@@ -556,9 +563,9 @@ class ScreenMain(MDScreen):
                     db_load_total_value[dt_test_number] = db_load_left_value[dt_test_number] + db_load_right_value[dt_test_number]
                     dt_load_total_value = np.sum(db_load_total_value)
 
-                if self.screen_manager.current == 'screen_brake_meter':
-                    db_brake_left_value[dt_test_number] = np.round(brake_registers.registers[0] / 10 , 2) 
-                    db_brake_right_value[dt_test_number] = np.round(brake_registers.registers[1] / 10 , 2) 
+                if self.screen_manager.current == 'screen_brake_meter':               
+                    db_brake_left_value[dt_test_number] = np.round(brake_registers.registers[0] / 10 , 2) - db_load_left_value[dt_test_number]
+                    db_brake_right_value[dt_test_number] = np.round(brake_registers.registers[1] / 10 , 2) - db_load_right_value[dt_test_number]
                     db_brake_total_value[dt_test_number] = db_brake_left_value[dt_test_number] + db_brake_right_value[dt_test_number]
                     db_brake_efficiency_value[dt_test_number] = ((db_brake_total_value[dt_test_number] - db_load_total_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100
                     db_brake_difference_value[dt_test_number] = (np.abs(db_brake_total_value[dt_test_number] - db_brake_total_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100
@@ -566,9 +573,9 @@ class ScreenMain(MDScreen):
                     dt_brake_efficiency_value = np.sum(db_brake_efficiency_value)
                     dt_brake_difference_value = np.sum(db_brake_difference_value)
 
-                if self.screen_manager.current == 'screen_handbrake_meter':
-                    db_handbrake_left_value[dt_test_number] = np.round(brake_registers.registers[0] / 10 , 2) 
-                    db_handbrake_right_value[dt_test_number] = np.round(brake_registers.registers[1] / 10 , 2) 
+                if self.screen_manager.current == 'screen_handbrake_meter':                      
+                    db_handbrake_left_value[dt_test_number] = np.round(brake_registers.registers[0] / 10 , 2) - db_load_left_value[dt_test_number] 
+                    db_handbrake_right_value[dt_test_number] = np.round(brake_registers.registers[1] / 10 , 2) - db_load_right_value[dt_test_number] 
                     db_handbrake_total_value[dt_test_number] = db_handbrake_left_value[dt_test_number] + db_handbrake_right_value[dt_test_number]
                     db_handbrake_efficiency_value[dt_test_number] = ((db_handbrake_total_value[dt_test_number] - db_load_total_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100
                     db_handbrake_difference_value[dt_test_number] = (np.abs(db_handbrake_total_value[dt_test_number] - db_handbrake_total_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100
@@ -653,14 +660,14 @@ class ScreenMain(MDScreen):
         global flag_play
         if (dt_user != ''):
             if (dt_load_flag == 'Belum Tes'):
-                self.open_screen_resume()
+                self.open_screen_menu()
             else:
                 toast(f'No. Antrian {dt_no_antrian} Sudah Tes')
         else:
             toast(f'Silahkan Login Untuk Melakukan Pengujian')        
 
-    def open_screen_resume(self):
-        self.screen_manager.current = 'screen_resume'
+    def open_screen_menu(self):
+        self.screen_manager.current = 'screen_menu'
 
     def exec_logout(self):
         global dt_user
@@ -696,9 +703,9 @@ class ScreenMain(MDScreen):
             toast_msg = f'Error Navigate to Main Screen: {e}'
             toast(toast_msg)   
 
-class ScreenResume(MDScreen):        
+class ScreenMenu(MDScreen):        
     def __init__(self, **kwargs):
-        super(ScreenResume, self).__init__(**kwargs)
+        super(ScreenMenu, self).__init__(**kwargs)
         Clock.schedule_once(self.delayed_init, 2)        
 
     def delayed_init(self, dt):
@@ -768,27 +775,8 @@ class ScreenResume(MDScreen):
     def open_screen_handbrake_meter(self):
         self.screen_manager.current = 'screen_handbrake_meter'
 
-    def exec_save(self):
-        global flag_play
-        global count_starting, count_get_data
-        global mydb, db_antrian
-        global dt_no_antrian, dt_no_pol, dt_no_uji, dt_nama, dt_jenis_kendaraan
-        global dt_load_flag, db_load_left_value, db_load_right_value, dt_load_user, dt_load_post
-        global dt_test_number
-
-        self.ids.bt_save.disabled = True
-
-        mycursor = mydb.cursor()
-
-        sql = f"UPDATE {TB_DATA} SET load_flag = %s, load_l_value = %s, load_r_value = %s, load_total_value = %s, load_user = %s, load_post = %s WHERE noantrian = %s"
-        sql_load_flag = (1 if dt_load_flag == "Lulus" else 2)
-        dt_load_post = str(time.strftime("%Y/%m/%d %H:%M:%S", time.localtime()))
-        print_datetime = str(time.strftime("%d %B %Y %H:%M:%S", time.localtime()))
-        sql_val = (sql_load_flag, db_load_left_value[dt_test_number], db_load_right_value[dt_test_number], db_load_right_value[dt_test_number], dt_load_user, dt_load_post, dt_no_antrian)
-        mycursor.execute(sql, sql_val)
-        mydb.commit()
-
-        self.open_screen_resume()
+    def exec_navigate_resume(self):
+        self.screen_manager.current = 'screen_resume'
 
 class ScreenLoadMeter(MDScreen):        
     def __init__(self, **kwargs):
@@ -817,14 +805,14 @@ class ScreenLoadMeter(MDScreen):
             Clock.schedule_interval(screen_main.regular_get_data, GET_DATA_INTERVAL)
             flag_play = True
 
-    def open_screen_resume(self):
+    def exec_navigate_back(self):
         global flag_play        
         global count_starting, count_get_data
 
         count_starting = COUNT_STARTING
         count_get_data = COUNT_ACQUISITION
         flag_play = False   
-        self.screen_manager.current = 'screen_resume'
+        self.screen_manager.current = 'screen_menu'
 
 class ScreenBrakeMeter(MDScreen):        
     def __init__(self, **kwargs):
@@ -895,14 +883,14 @@ class ScreenBrakeMeter(MDScreen):
             Clock.schedule_interval(screen_main.regular_get_data, GET_DATA_INTERVAL)
             flag_play = True
 
-    def open_screen_resume(self):
+    def exec_navigate_back(self):
         global flag_play        
         global count_starting, count_get_data
 
         count_starting = COUNT_STARTING
         count_get_data = COUNT_ACQUISITION
         flag_play = False   
-        self.screen_manager.current = 'screen_resume'
+        self.screen_manager.current = 'screen_menu'
 
 class ScreenHandbrakeMeter(MDScreen):        
     def __init__(self, **kwargs):
@@ -973,15 +961,53 @@ class ScreenHandbrakeMeter(MDScreen):
             Clock.schedule_interval(screen_main.regular_get_data, GET_DATA_INTERVAL)
             flag_play = True
 
-    def open_screen_resume(self):
+    def exec_navigate_back(self):
         global flag_play        
         global count_starting, count_get_data
 
         count_starting = COUNT_STARTING
         count_get_data = COUNT_ACQUISITION
         flag_play = False   
-        self.screen_manager.current = 'screen_resume'
+        self.screen_manager.current = 'screen_menu'
 
+class ScreenResume(MDScreen):        
+    def __init__(self, **kwargs):
+        super(ScreenResume, self).__init__(**kwargs)
+        Clock.schedule_once(self.delayed_init, 2)        
+
+    def delayed_init(self, dt):
+        pass
+
+
+    def exec_navigate_back(self):
+        try:
+            self.screen_manager.current = 'screen_menu'
+
+        except Exception as e:
+            toast_msg = f'Error Navigate to Menu Screen: {e}'
+            toast(toast_msg)   
+
+    def exec_save(self):
+        global flag_play
+        global count_starting, count_get_data
+        global mydb, db_antrian
+        global dt_no_antrian, dt_no_pol, dt_no_uji, dt_nama, dt_jenis_kendaraan
+        global dt_load_flag, db_load_left_value, db_load_right_value, dt_load_user, dt_load_post
+        global dt_test_number
+
+        self.ids.bt_save.disabled = True
+
+        mycursor = mydb.cursor()
+
+        sql = f"UPDATE {TB_DATA} SET load_flag = %s, load_l_value = %s, load_r_value = %s, load_total_value = %s, load_user = %s, load_post = %s WHERE noantrian = %s"
+        sql_load_flag = (1 if dt_load_flag == "Lulus" else 2)
+        dt_load_post = str(time.strftime("%Y/%m/%d %H:%M:%S", time.localtime()))
+        print_datetime = str(time.strftime("%d %B %Y %H:%M:%S", time.localtime()))
+        sql_val = (sql_load_flag, db_load_left_value[dt_test_number], db_load_right_value[dt_test_number], db_load_right_value[dt_test_number], dt_load_user, dt_load_post, dt_no_antrian)
+        mycursor.execute(sql, sql_val)
+        mydb.commit()
+
+        self.open_screen_resume()
 
 class RootScreen(ScreenManager):
     pass             

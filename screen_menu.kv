@@ -1,6 +1,6 @@
 #:kivy 2.1.0
 
-<ScreenHandbrakeMeter>:
+<ScreenMenu>:
     MDBoxLayout:
         orientation: "vertical"
 
@@ -34,7 +34,7 @@
 
 				MDLabel:
 					id: subtitle            
-					text: "HAND BRAKE METER"
+					text: "AXLE LOAD & BRAKE METER"
 					halign: "left"
 					valign: "middle"
 					font_style: 'H5'
@@ -199,104 +199,174 @@
 					orientation: "vertical"
 					size_hint_x: 0.5
 
-					MDFloatLayout:
-						id: layout_display
-						AsyncImage:
-							source: 'assets/images/display-brake.png'
-							pos_hint: {'x':.0, 'y':.0}
-							fit_mode: 'contain' #scale-down, fill, contain, cover						
+					MDBoxLayout:
+						orientation: "horizontal"
+						size_hint_y: 0.1
 
 						MDLabel:
-							id: lb_test_subtitle
-							text: "MEMULAI PENGUKURAN"
+							text: "MENU PENGUJIAN"
 							halign: "center"
 							valign: "middle"
 							font_style: 'H6'
-							pos_hint: {'x':.0, 'y':.45}
 
-						MDLabel:
-							id:lb_handbrake_l_val
-							text: "..."
-							halign: "center"
-							valign: "middle"
-							font_style: 'Display'
-							font_size: '50dp'
-							pos_hint: {'x':-0.35, 'y':.0}
+					MDBoxLayout:
+						orientation: "horizontal"
+						size_hint_y: 0.8
 
-						MDLabel:
-							text: "kg"
-							halign: "center"
-							valign: "middle"
-							font_style: 'Display'
-							font_size: '30dp'
-							pos_hint: {'x':-0.35, 'y':-0.1}
+						MDBoxLayout:
+							orientation: "vertical"
+							size_hint_x: 0.2
+							spacing: 20
+							padding: 40, 0
 
-						MDLabel:
-							id:lb_handbrake_r_val
-							text: "..."
-							halign: "center"
-							valign: "middle"
-							font_style: 'Display'
-							font_size: '50dp'
-							pos_hint: {'x':0.35, 'y':.0}
+							MDRectangleFlatIconButton:
+								id: bt_S0
+								text: "S1"
+								icon: "arrow-right"
+								theme_text_color: "Custom"
+								text_color: "#EEEEEE"
+								md_bg_color: "4471C4"
+								size_hint: 1, 0.2
+								on_press: root.exec_select_axle(1)
 
-						MDLabel:
-							text: "kg"
-							halign: "center"
-							valign: "middle"
-							font_style: 'Display'
-							font_size: '30dp'
-							pos_hint: {'x':0.35, 'y':-0.1}
+							MDRectangleFlatIconButton:
+								id: bt_S1
+								text: "S2"
+								icon: "arrow-right"
+								theme_text_color: "Custom"
+								text_color: "#EEEEEE"
+								md_bg_color: "4471C4"
+								size_hint: 1, 0.21
+								on_press: root.exec_select_axle(2)
 
-						MDLabel:
-							id:lb_handbrake_total_val
-							text: "..."
-							halign: "center"
-							valign: "middle"
-							font_style: 'Display'
-							font_size: '50dp'
-							pos_hint: {'x':0.0, 'y':0.0}
+							MDRectangleFlatIconButton:
+								id: bt_S2
+								text: "S3"
+								icon: "arrow-right"
+								theme_text_color: "Custom"
+								text_color: "#EEEEEE"
+								md_bg_color: "4471C4"
+								size_hint: 1, 0.2
+								on_press: root.exec_select_axle(3)
 
-						MDLabel:
-							text: "kg"
-							halign: "center"
-							valign: "middle"
-							font_style: 'Display'
-							font_size: '30dp'
-							pos_hint: {'x':0.0, 'y':-0.1}
+							MDRectangleFlatIconButton:
+								id: bt_S3
+								text: "S4"
+								icon: "arrow-right"
+								theme_text_color: "Custom"
+								text_color: "#EEEEEE"
+								md_bg_color: "4471C4"
+								size_hint: 1, 0.2
+								on_press: root.exec_select_axle(4)
 
-						# MDRectangleFlatIconButton:
-						# 	id: bt_cylinder_up
-						# 	text: "CYLINDER"
-						# 	icon: "arrow-up"
-						# 	theme_text_color: "Custom"
-						# 	text_color: "#EEEEEE"
-						# 	md_bg_color: "#FF2A2A"
-						# 	pos_hint: {'x':0.425, 'y':0.25}
-						# 	on_press: root.exec_cylinder_up()
-						# 	on_release: root.exec_cylinder_stop()
+							MDRectangleFlatIconButton:
+								id: bt_S4
+								text: "S5"
+								icon: "arrow-right"
+								theme_text_color: "Custom"
+								text_color: "#EEEEEE"
+								md_bg_color: "4471C4"
+								size_hint: 1, 0.2
+								on_press: root.exec_select_axle(5)
 
-						# MDRectangleFlatIconButton:
-						# 	id: bt_cylinder_down
-						# 	text: "CYLINDER"
-						# 	icon: "arrow-down"
-						# 	theme_text_color: "Custom"
-						# 	text_color: "#EEEEEE"
-						# 	md_bg_color: "#2CA02C"
-						# 	pos_hint: {'x':0.425, 'y':0.15}
-						# 	on_press: root.exec_cylinder_down()
-						# 	on_release: root.exec_cylinder_stop()
+						MDBoxLayout:
+							orientation: "vertical"
+							size_hint_x: 0.6
+							spacing: 30
+							
+							MDRectangleFlatIconButton:
+								id: bt_load
+								text: "AXLE LOAD TEST"
+								icon: "arrow-right"
+								theme_text_color: "Custom"
+								text_color: "#EEEEEE"
+								md_bg_color: "4471C4"
+								size_hint_x: 1.0
+								size_hint_y: 0.3
+								on_press: root.exec_start_load()
 
-						MDRectangleFlatIconButton:
-							id: bt_reload
-							text: "ULANGI"
-							icon: "reload"
-							theme_text_color: "Custom"
-							text_color: "#EEEEEE"
-							md_bg_color: "#FF2A2A"
-							pos_hint: {'x':.325, 'y':.06}
-							disabled: True
-							on_press: root.exec_reload()
+							MDRectangleFlatIconButton:
+								id: bt_brake
+								text: "MAIN BRAKE TEST"
+								icon: "arrow-right"
+								theme_text_color: "Custom"
+								text_color: "#EEEEEE"
+								md_bg_color: "4471C4"
+								size_hint_x: 1.0
+								size_hint_y: 0.3
+								on_press: root.exec_start_brake()
+
+							MDRectangleFlatIconButton:
+								id: bt_handbrake
+								text: "HAND BRAKE TEST"
+								icon: "arrow-right"
+								theme_text_color: "Custom"
+								text_color: "#EEEEEE"
+								md_bg_color: "4471C4"
+								size_hint_x: 1.0
+								size_hint_y: 0.3
+								on_press: root.exec_start_handbrake()
+
+						MDBoxLayout:
+							orientation: "vertical"
+							size_hint_x: 0.2
+							spacing: 20
+							padding: 40, 0
+
+							MDRectangleFlatIconButton:
+								id: bt_S5
+								text: "S6"
+								icon: "arrow-right"
+								theme_text_color: "Custom"
+								text_color: "#EEEEEE"
+								md_bg_color: "4471C4"
+								size_hint: 1, 0.2
+								on_press: root.exec_select_axle(6)
+
+							MDRectangleFlatIconButton:
+								id: bt_S6
+								text: "S7"
+								icon: "arrow-right"
+								theme_text_color: "Custom"
+								text_color: "#EEEEEE"
+								md_bg_color: "4471C4"
+								size_hint: 1, 0.2
+								on_press: root.exec_select_axle(7)
+
+							MDRectangleFlatIconButton:
+								id: bt_S7
+								text: "S8"
+								icon: "arrow-right"
+								theme_text_color: "Custom"
+								text_color: "#EEEEEE"
+								md_bg_color: "4471C4"
+								size_hint: 1, 0.2
+								on_press: root.exec_select_axle(8)
+
+							MDRectangleFlatIconButton:
+								id: bt_S8
+								text: "S9"
+								icon: "arrow-right"
+								theme_text_color: "Custom"
+								text_color: "#EEEEEE"
+								md_bg_color: "4471C4"
+								size_hint: 1, 0.2
+								on_press: root.exec_select_axle(9)
+
+							MDRectangleFlatIconButton:
+								id: bt_S9
+								text: "S10"
+								icon: "arrow-right"
+								theme_text_color: "Custom"
+								text_color: "#EEEEEE"
+								md_bg_color: "4471C4"
+								size_hint: 1, 0.2
+								on_press: root.exec_select_axle(10)
+
+					MDBoxLayout:
+						orientation: "horizontal"
+						spacing: 20
+						size_hint_y: 0.1
 
 						MDRectangleFlatIconButton:
 							id: bt_back
@@ -305,8 +375,18 @@
 							theme_text_color: "Custom"
 							text_color: "#EEEEEE"
 							md_bg_color: "4471C4"
-							pos_hint: {'x':.475, 'y':.06}
-							on_press: root.exec_navigate_back()
+							size_hint_x: 0.5
+							on_press: root.exec_navigate_main()
+
+						MDRectangleFlatIconButton:
+							id: bt_resume
+							text: "RESUME"
+							icon: "file"
+							theme_text_color: "Custom"
+							text_color: "#EEEEEE"
+							md_bg_color: "#2CA02C"
+							size_hint_x: 0.5
+							on_press: root.exec_navigate_resume()
 
 		# footer layout
         MDBoxLayout:
@@ -376,7 +456,7 @@
 
 				MDLabel:
 					id: lb_info
-					text: ""
+					text: "Silahkan pilih nomor Sumbu yang akan di uji kemudian pilih menu jenis pengujian untuk masing masing Sumbu"
 					halign: "left"
 					valign: "middle"
 					font_style: 'H6'

@@ -98,102 +98,166 @@
 					padding:20
 					spacing:20
 
-					MDBoxLayout:
-						orientation: "vertical"
-						size_hint_y: 0.75
-						spacing:10
+					MDLabel:
+						text: "DETAIL PENGUJIAN"
+						halign: "center"
+						valign: "middle"
+						font_style: 'H6'
+						size_hint_y: 0.05
 
+					MDBoxLayout:
+						orientation: "horizontal"
+						size_hint_y: 0.05
 						MDLabel:
-							text: "IDENTITAS KENDARAAN"
-							halign: "center"
+							text: "Sumbu No."
+							halign: "left"
 							valign: "middle"
 							font_style: 'H6'
 
-						MDBoxLayout:
-							orientation: "horizontal"
-							MDLabel:
-								text: "No. Antrian"
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
+						MDLabel:
+							text: "Total Berat"
+							halign: "left"
+							valign: "middle"
+							font_style: 'H6'
+						
+						MDLabel:
+							text: "Gaya Rem Utama"
+							halign: "left"
+							valign: "middle"
+							font_style: 'H6'						
 
-							MDLabel:
-								id: lb_no_antrian
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
+						MDLabel:
+							text: "Gaya Rem Parkir"
+							halign: "left"
+							valign: "middle"
+							font_style: 'H6'
 
-						MDBoxLayout:
-							orientation: "horizontal"
-							MDLabel:
-								text: "No. Pol"
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
+					MDScrollView:
+						id: layout_scroll_load
+						size_hint_y: 0.3
+						md_bg_color: "#FFFFFF"
+						scroll_timeout:100
+						MDList:
+							id: layout_list_load
 
-							MDLabel:
-								id: lb_no_pol
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
+					MDBoxLayout:
+						orientation: "horizontal"
+						md_bg_color: "#FFFFFF"
+						size_hint_y: 0.05
+						MDLabel:
+							text: "Total"
+							halign: "left"
+							valign: "middle"
+							font_style: 'H6'
 
-						MDBoxLayout:
-							orientation: "horizontal"
-							MDLabel:
-								text: "No. Uji"
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
+						MDLabel:
+							id: lb_load_value_sum
+							text: "Total Berat"
+							halign: "left"
+							valign: "middle"
+							font_style: 'H6'
+						
+						MDLabel:
+							id: lb_brake_value_sum
+							text: "Gaya Rem Utama"
+							halign: "left"
+							valign: "middle"
+							font_style: 'H6'						
 
-							MDLabel:
-								id: lb_no_uji
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
+						MDLabel:
+							id: lb_handbrake_value_sum
+							text: "Gaya Rem Parkir"
+							halign: "left"
+							valign: "middle"
+							font_style: 'H6'
 
-						MDBoxLayout:
-							orientation: "horizontal"
-							MDLabel:
-								text: "Nama"
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
+					MDBoxLayout:
+						orientation: "horizontal"
+						size_hint_y: 0.05
+						MDLabel:
+							text: "Sumbu No."
+							halign: "left"
+							valign: "middle"
+							font_style: 'H6'
 
-							MDLabel:
-								id: lb_nama
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
+						MDLabel:
+							text: "Berat"
+							halign: "left"
+							valign: "middle"
+							font_style: 'H6'
+						
+						MDLabel:
+							text: "Rem Kiri"
+							halign: "left"
+							valign: "middle"
+							font_style: 'H6'						
 
-						MDBoxLayout:
-							orientation: "horizontal"
-							MDLabel:
-								text: "Jenis Kendaraan"
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
+						MDLabel:
+							text: "Rem Kanan"
+							halign: "left"
+							valign: "middle"
+							font_style: 'H6'
 
-							MDLabel:
-								id: lb_jenis_kendaraan
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
+						MDLabel:
+							text: "Selisih"
+							halign: "left"
+							valign: "middle"
+							font_style: 'H6'						
 
-						MDBoxLayout:
-							orientation: "horizontal"
-							MDLabel:
-								id: lb_status
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
+						MDLabel:
+							text: "Status"
+							halign: "left"
+							valign: "middle"
+							font_style: 'H6'
 
-					MDLabel:
-						id: lb_test_result
-						halign: "center"
-						valign: "middle"
-						theme_text_color: "Custom"
-						font_style: 'H3'
-						size_hint_y: 0.25
+					MDScrollView:
+						id: layout_scroll_brake
+						size_hint_y: 0.3
+						md_bg_color: "#FFFFFF"
+						scroll_timeout:100
+						MDList:
+							id: layout_list_brake
+
+					MDBoxLayout:
+						orientation: "horizontal"
+						size_hint_y: 0.05
+						MDLabel:
+							text: "Sumbu No."
+							halign: "left"
+							valign: "middle"
+							font_style: 'H6'
+
+						MDLabel:
+							text: "Berat"
+							halign: "left"
+							valign: "middle"
+							font_style: 'H6'
+						
+						MDLabel:
+							text: "Total Gaya Rem"
+							halign: "left"
+							valign: "middle"
+							font_style: 'H6'						
+
+						MDLabel:
+							text: "Selisih"
+							halign: "left"
+							valign: "middle"
+							font_style: 'H6'						
+
+						MDLabel:
+							text: "Status"
+							halign: "left"
+							valign: "middle"
+							font_style: 'H6'
+
+					MDScrollView:
+						id: layout_scroll_handbrake
+						md_bg_color: "#FFFFFF"
+						size_hint_y: 0.3
+						scroll_timeout:100
+						MDList:
+							id: layout_list_handbrake
 
 				MDBoxLayout:
 					orientation: "vertical"
@@ -209,382 +273,13 @@
 							valign: "middle"
 							font_style: 'H6'
 
-					MDBoxLayout:
-						orientation: "vertical"
-						size_hint_y: 0.8
-						
-						MDBoxLayout:
-							orientation: "horizontal"
-							MDLabel:
-								text: "Sumbu No."
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-
-							MDLabel:
-								text: "Total Berat"
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-							
-							MDLabel:
-								text: "Gaya Rem Utama"
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'						
-
-							MDLabel:
-								text: "Gaya Rem Parkir"
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-
-						MDBoxLayout:
-							orientation: "horizontal"
-							MDLabel:
-								id: lb_axle_number0
-								text: "Sumbu 1"
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-
-							MDLabel:
-								id: lb_load_total0
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-
-							MDLabel:
-								id: lb_brake_total0
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-
-							MDLabel:
-								id: lb_handbrake_total0
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-
-						MDBoxLayout:
-							orientation: "horizontal"
-							MDLabel:
-								id: lb_axle_number1
-								text: "Sumbu 2"
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-
-							MDLabel:
-								id: lb_load_total1
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-
-							MDLabel:
-								id: lb_brake_total1
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-
-							MDLabel:
-								id: lb_handbrake_total1
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-
-						MDBoxLayout:
-							orientation: "horizontal"
-							MDLabel:
-								id: lb_axle_number2
-								text: "Sumbu 3"
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-
-							MDLabel:
-								id: lb_load_total2
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-
-							MDLabel:
-								id: lb_brake_total2
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-
-							MDLabel:
-								id: lb_handbrake_total2
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-
-						MDBoxLayout:
-							orientation: "horizontal"
-							MDLabel:
-								id: lb_axle_number3
-								text: "Sumbu 4"
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-
-							MDLabel:
-								id: lb_load_total3
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-
-							MDLabel:
-								id: lb_brake_total3
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-
-							MDLabel:
-								id: lb_handbrake_total3
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-
-						MDBoxLayout:
-							orientation: "horizontal"
-							MDLabel:
-								id: lb_axle_number4
-								text: "Sumbu 5"
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-
-							MDLabel:
-								id: lb_load_total4
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-
-							MDLabel:
-								id: lb_brake_total4
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-
-							MDLabel:
-								id: lb_handbrake_total4
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-
-						MDBoxLayout:
-							orientation: "horizontal"
-							MDLabel:
-								id: lb_axle_number5
-								text: "Sumbu 6"
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-
-							MDLabel:
-								id: lb_load_total5
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-
-							MDLabel:
-								id: lb_brake_total5
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-
-							MDLabel:
-								id: lb_handbrake_total5
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-
-						MDBoxLayout:
-							orientation: "horizontal"
-							MDLabel:
-								id: lb_axle_number6
-								text: "Sumbu 7"
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-
-							MDLabel:
-								id: lb_load_total6
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-
-							MDLabel:
-								id: lb_brake_total6
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-
-							MDLabel:
-								id: lb_handbrake_total6
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-
-						MDBoxLayout:
-							orientation: "horizontal"
-							MDLabel:
-								id: lb_axle_number7
-								text: "Sumbu 8"
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-
-							MDLabel:
-								id: lb_load_total7
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-
-							MDLabel:
-								id: lb_brake_total7
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-
-							MDLabel:
-								id: lb_handbrake_total7
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-						MDBoxLayout:
-							orientation: "horizontal"
-							MDLabel:
-								id: lb_axle_number8
-								text: "Sumbu 9"
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-
-							MDLabel:
-								id: lb_load_total8
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-
-							MDLabel:
-								id: lb_brake_total8
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-
-							MDLabel:
-								id: lb_handbrake_total8
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-
-						MDBoxLayout:
-							orientation: "horizontal"
-							MDLabel:
-								id: lb_axle_number9
-								text: "Sumbu 10"
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-
-							MDLabel:
-								id: lb_load_total9
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-
-							MDLabel:
-								id: lb_brake_total9
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-
-							MDLabel:
-								id: lb_handbrake_total9
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-
-						MDBoxLayout:
-							orientation: "horizontal"
-							MDLabel:
-								text: "Total"
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-
-							MDLabel:
-								id: lb_load_total_sum
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-
-							MDLabel:
-								id: lb_brake_total_sum
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-
-							MDLabel:
-								id: lb_handbrake_total_sum
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-
-						MDBoxLayout:
-							orientation: "horizontal"
-							MDLabel:
-								text: "Efisiensi Rem"
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-
-							MDLabel:
-								id: lb_brake_efficiency_sum
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-
-							MDLabel:
-								text: "Selisih Rem"
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-
-							MDLabel:
-								id: lb_brake_difference_sum
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-
-						MDBoxLayout:
-							orientation: "horizontal"
-							MDLabel:
-								text: "Efisiensi Rem Tangan"
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-
-							MDLabel:
-								id: lb_handbrake_efficiency_sum
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-
-							MDLabel:
-								text: "Selisih Rem Tangan"
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-
-							MDLabel:
-								id: lb_handbrake_difference_sum
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
+					MDLabel:
+						id: lb_test_result
+						halign: "center"
+						valign: "middle"
+						theme_text_color: "Custom"
+						font_style: 'H3'
+						size_hint_y: 0.25
 
 					MDBoxLayout:
 						orientation: "horizontal"

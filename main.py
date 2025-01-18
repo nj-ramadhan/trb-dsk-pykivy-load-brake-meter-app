@@ -8,6 +8,8 @@ from kivymd.font_definitions import theme_font_styles
 from kivymd.uix.screen import MDScreen
 from kivymd.uix.label import MDLabel
 from kivymd.uix.card import MDCard
+from kivymd.uix.boxlayout import MDBoxLayout
+from kivymd.uix.textfield import MDTextField
 from kivymd.toast import toast
 from kivymd.app import MDApp
 import os, sys, time, numpy as np
@@ -67,6 +69,8 @@ REGISTER_DATA_BRAKE = int(config['setting']['REGISTER_DATA_BRAKE'])
 # system standard
 STANDARD_MAX_AXLE_LOAD = float(config['standard']['STANDARD_MAX_AXLE_LOAD']) # in kg
 STANDARD_MAX_BRAKE = float(config['standard']['STANDARD_MAX_BRAKE']) # %
+STANDARD_MAX_DIFFERENCE_BRAKE = float(config['standard']['STANDARD_MAX_DIFFERENCE_BRAKE']) # %
+STANDARD_MIN_EFFICIENCY_HANDBRAKE = float(config['standard']['STANDARD_MIN_EFFICIENCY_HANDBRAKE']) # %
 
 db_load_left_value = np.zeros(10, dtype=float)
 db_load_right_value = np.zeros(10, dtype=float)
@@ -328,12 +332,6 @@ class ScreenMain(MDScreen):
             screen_menu.ids.lb_nama.text = str(dt_nama)
             screen_menu.ids.lb_jenis_kendaraan.text = str(dt_jenis_kendaraan)
 
-            screen_resume.ids.lb_no_antrian.text = str(dt_no_antrian)
-            screen_resume.ids.lb_no_pol.text = str(dt_no_pol)
-            screen_resume.ids.lb_no_uji.text = str(dt_no_uji)
-            screen_resume.ids.lb_nama.text = str(dt_nama)
-            screen_resume.ids.lb_jenis_kendaraan.text = str(dt_jenis_kendaraan)
-
             screen_load_meter.ids.lb_no_antrian.text = str(dt_no_antrian)
             screen_load_meter.ids.lb_no_pol.text = str(dt_no_pol)
             screen_load_meter.ids.lb_no_uji.text = str(dt_no_uji)
@@ -370,8 +368,7 @@ class ScreenMain(MDScreen):
                 screen_brake_meter.ids.bt_reload.md_bg_color = colors['Red']['A200']
                 screen_brake_meter.ids.bt_reload.disabled = False
                 screen_handbrake_meter.ids.bt_reload.md_bg_color = colors['Red']['A200']
-                screen_handbrake_meter.ids.bt_reload.disabled = False
-                    
+                screen_handbrake_meter.ids.bt_reload.disabled = False   
             else:
                 screen_resume.ids.bt_save.disabled = True
                 screen_load_meter.ids.bt_reload.disabled = True
@@ -480,12 +477,13 @@ class ScreenMain(MDScreen):
                 screen_handbrake_meter.ids.lb_test_result.text = ""
             
             for i in range(10):
-                screen_resume.ids[f'lb_axle_number{i}'].text = '' if (db_load_total_value[i] + db_brake_total_value[i] + db_handbrake_total_value[i] == 0) else f'Sumbu {i+1}'
-                screen_resume.ids[f'lb_load_total{i}'].text = str(db_load_total_value[i]) if db_load_total_value[i] > 0.0 else ''
-                screen_resume.ids[f'lb_brake_total{i}'].text = str(db_brake_total_value[i]) if db_brake_total_value[i] > 0.0 else ''
+                # screen_resume.ids[f'lb_axle_load_number{i}'].text = '' if (db_load_total_value[i] + db_brake_total_value[i] + db_handbrake_total_value[i] == 0) else f'Sumbu {i+1}'
+                # screen_resume.ids[f'lb_axle_load_number{i}'].size_hint_y = None if (db_load_total_value[i] + db_brake_total_value[i] + db_handbrake_total_value[i] == 0) else 0.1
+                # screen_resume.ids[f'lb_load_value{i}'].text = str(db_load_total_value[i]) if db_load_total_value[i] > 0.0 else ''
+                # screen_resume.ids[f'lb_brake_value{i}'].text = str(db_brake_total_value[i]) if db_brake_total_value[i] > 0.0 else ''
                 # screen_resume.ids[f'lb_brake_efficiency{i}'].text = str(db_brake_efficiency_value[dt_test_number])
                 # screen_resume.ids[f'lb_brake_difference{i}'].text = str(db_brake_difference_value[dt_test_number])
-                screen_resume.ids[f'lb_handbrake_total{i}'].text = str(db_handbrake_total_value[i]) if db_handbrake_total_value[i] > 0.0 else ''
+                # screen_resume.ids[f'lb_handbrake_value{i}'].text = str(db_handbrake_total_value[i]) if db_handbrake_total_value[i] > 0.0 else ''
                 # screen_resume.ids[f'lb_handbrake_efficiency{i}'].text = str(db_handbrake_efficiency_value[dt_test_number])
                 # screen_resume.ids[f'lb_handbrake_difference{i}'].text = str(db_handbrake_difference_value[dt_test_number])
 
@@ -494,13 +492,13 @@ class ScreenMain(MDScreen):
                 else:
                     screen_menu.ids[f'bt_S{i}'].md_bg_color = colors['Green']['200']
 
-            screen_resume.ids.lb_load_total_sum.text = str(dt_load_total_value)
-            screen_resume.ids.lb_brake_total_sum.text = str(dt_brake_total_value)
-            screen_resume.ids.lb_brake_efficiency_sum.text = str(dt_brake_efficiency_value)
-            screen_resume.ids.lb_brake_difference_sum.text = str(dt_brake_difference_value)
-            screen_resume.ids.lb_handbrake_total_sum.text = str(dt_handbrake_total_value)
-            screen_resume.ids.lb_handbrake_efficiency_sum.text = str(dt_handbrake_efficiency_value)
-            screen_resume.ids.lb_handbrake_difference_sum.text = str(dt_handbrake_difference_value)
+            screen_resume.ids.lb_load_value_sum.text = str(dt_load_total_value)
+            screen_resume.ids.lb_brake_value_sum.text = str(dt_brake_total_value)
+            # screen_resume.ids.lb_brake_efficiency_sum.text = str(dt_brake_efficiency_value)
+            # screen_resume.ids.lb_brake_difference_sum.text = str(dt_brake_difference_value)
+            screen_resume.ids.lb_handbrake_value_sum.text = str(dt_handbrake_total_value)
+            # screen_resume.ids.lb_handbrake_efficiency_sum.text = str(dt_handbrake_efficiency_value)
+            # screen_resume.ids.lb_handbrake_difference_sum.text = str(dt_handbrake_difference_value)
 
             self.ids.bt_logout.disabled = False if dt_user != '' else True
             
@@ -616,10 +614,13 @@ class ScreenMain(MDScreen):
             result_tb_merk = tb_merk.fetchall()
             mydb.commit()
             db_merk = np.array(result_tb_merk)
+        except Exception as e:
+            toast_msg = f'Error Fetch Database: {e}'
+            print(toast_msg)
 
+        try:            
             layout_list = self.ids.layout_list
             layout_list.clear_widgets(children=None)
-
         except Exception as e:
             toast_msg = f'Error Remove Widget: {e}'
             print(toast_msg)
@@ -651,7 +652,6 @@ class ScreenMain(MDScreen):
                         height="60dp",
                         )
                     )
-
         except Exception as e:
             toast_msg = f'Error Reload Table: {e}'
             print(toast_msg)
@@ -979,6 +979,85 @@ class ScreenResume(MDScreen):
     def delayed_init(self, dt):
         pass
 
+    def on_enter(self):
+        global dt_user, dt_no_antrian, dt_no_pol, dt_no_uji, dt_nama, dt_jenis_kendaraan
+        global dt_load_flag, db_load_left_value, db_load_right_value, db_load_total_value, dt_load_user, dt_load_post
+        global dt_brake_flag, db_brake_left_value, db_brake_right_value, db_brake_total_value, db_brake_efficiency_value, db_brake_difference_value, dt_brake_user, dt_brake_post
+        global dt_handbrake_flag, db_handbrake_left_value, db_handbrake_right_value, db_handbrake_total_value, db_handbrake_efficiency_value, db_handbrake_difference_value, dt_handbrake_user, dt_handbrake_post
+        global dt_load_total_value, dt_brake_total_value, dt_brake_efficiency_value, dt_brake_difference_value, dt_handbrake_total_value, dt_handbrake_efficiency_value, dt_handbrake_difference_value
+        global dt_test_number
+
+        try:            
+            layout_list_load = self.ids.layout_list_load
+            layout_list_load.clear_widgets(children=None)
+            layout_list_brake = self.ids.layout_list_brake
+            layout_list_brake.clear_widgets(children=None)
+            layout_list_handbrake = self.ids.layout_list_handbrake
+            layout_list_handbrake.clear_widgets(children=None)
+        except Exception as e:
+            toast_msg = f'Error Remove Widget: {e}'
+            print(toast_msg)
+
+        try:           
+            layout_list_load = self.ids.layout_list_load
+            for i in range(db_load_total_value.size):
+                if (db_load_total_value[i] + db_brake_total_value[i] + db_handbrake_total_value[i] > 0):
+                    layout_list_load.add_widget(
+                        MDBoxLayout(
+                            MDLabel(text=f"Sumbu {i}", size_hint_x= 0.05),
+                            MDLabel(text=f"{db_load_total_value[i]}", size_hint_x= 0.08),
+                            MDLabel(text=f"{db_brake_total_value[i]}", size_hint_x= 0.08),
+                            MDLabel(text=f"{db_handbrake_total_value[i]}", size_hint_x= 0.08),
+                            padding = 20,
+                            size_hint_y=None,
+                            height="60dp",
+                            )
+                        )
+        except Exception as e:
+            toast_msg = f'Error Reload Load Table: {e}'
+            print(toast_msg)        
+
+        try:           
+            layout_list_brake = self.ids.layout_list_brake
+            for i in range(db_load_total_value.size):
+                if (db_load_total_value[i] + db_brake_total_value[i] + db_handbrake_total_value[i] > 0):
+                    layout_list_load.add_widget(
+                        MDBoxLayout(
+                            MDLabel(text=f"Sumbu {i}", size_hint_x= 0.05),
+                            MDLabel(text=f"{db_load_total_value[i]}", size_hint_x= 0.08),
+                            MDLabel(text=f"{db_brake_left_value[i]}", size_hint_x= 0.08),
+                            MDLabel(text=f"{db_brake_right_value[i]}", size_hint_x= 0.08),
+                            MDLabel(text=f"{db_brake_difference_value[i]}", size_hint_x= 0.08),
+                            MDLabel(text="Lulus" if db_brake_difference_value[i] <= STANDARD_MAX_DIFFERENCE_BRAKE else "Tidak Lulus" , size_hint_x= 0.1),
+                            padding = 20,
+                            size_hint_y=None,
+                            height="60dp",
+                            )
+                        )
+        except Exception as e:
+            toast_msg = f'Error Reload Brake Table: {e}'
+            print(toast_msg)  
+
+        try:           
+            layout_list_handbrake = self.ids.layout_list_handbrake
+            for i in range(db_load_total_value.size):
+                if (db_load_total_value[i] + db_brake_total_value[i] + db_handbrake_total_value[i] > 0):
+                    layout_list_handbrake.add_widget(
+                        MDBoxLayout(
+                            MDLabel(text=f"Sumbu {i}", size_hint_x= 0.05),
+                            MDLabel(text=f"{db_load_total_value[i]}", size_hint_x= 0.08),
+                            MDLabel(text=f"{db_handbrake_total_value[i]}", size_hint_x= 0.08),
+                            MDLabel(text=f"{db_handbrake_difference_value[i]}", size_hint_x= 0.08),
+                            MDLabel(text="Lulus" if db_brake_difference_value[i] <= STANDARD_MAX_DIFFERENCE_BRAKE else "Tidak Lulus" , size_hint_x= 0.1),
+                            MDTextField(size_hint_x= 0.1),
+                            padding = 20,
+                            size_hint_y=None,
+                            height="60dp",
+                            )
+                        )
+        except Exception as e:
+            toast_msg = f'Error Reload Brake Table: {e}'
+            print(toast_msg)
 
     def exec_navigate_back(self):
         try:

@@ -563,36 +563,33 @@ class ScreenMain(MDScreen):
                 brake_registers = MODBUS_CLIENT.read_holding_registers(REGISTER_DATA_BRAKE, count=2, slave=1) #V1250 - V1201
                 MODBUS_CLIENT.close()
 
-                if self.screen_manager.current == 'screen_load_meter':
-                    db_load_left_value[dt_test_number] = np.round(self.unsigned_to_signed(axle_load_registers.registers[0]) / 10 , 2)
-                    db_load_right_value[dt_test_number] = np.round(self.unsigned_to_signed(axle_load_registers.registers[1]) / 10 , 2)
+                db_load_left_value[dt_test_number] = np.round(self.unsigned_to_signed(axle_load_registers.registers[0]) / 10 , 2)
+                db_load_right_value[dt_test_number] = np.round(self.unsigned_to_signed(axle_load_registers.registers[1]) / 10 , 2)
 
-                    if(dt_test_number == 0 and db_load_right_value[dt_test_number] >= 60):
-                        db_load_right_value[dt_test_number] = db_load_right_value[dt_test_number] - 60
-                    db_load_total_value[dt_test_number] = db_load_left_value[dt_test_number] + db_load_right_value[dt_test_number]
-                    dt_load_total_value = np.round(np.sum(db_load_total_value) ,2)
+                if(dt_test_number == 0 and db_load_right_value[dt_test_number] >= 60):
+                    db_load_right_value[dt_test_number] = db_load_right_value[dt_test_number] - 60
+                db_load_total_value[dt_test_number] = db_load_left_value[dt_test_number] + db_load_right_value[dt_test_number]
+                dt_load_total_value = np.round(np.sum(db_load_total_value) ,2)
+        
+                db_brake_left_value[dt_test_number] = np.round(self.unsigned_to_signed(brake_registers.registers[0]) / 10 , 2) - db_load_left_value[dt_test_number]
+                db_brake_right_value[dt_test_number] = np.round(self.unsigned_to_signed(brake_registers.registers[1]) / 10 , 2) - db_load_right_value[dt_test_number]
 
-                if self.screen_manager.current == 'screen_brake_meter':               
-                    db_brake_left_value[dt_test_number] = np.round(self.unsigned_to_signed(brake_registers.registers[0]) / 10 , 2) - db_load_left_value[dt_test_number]
-                    db_brake_right_value[dt_test_number] = np.round(self.unsigned_to_signed(brake_registers.registers[1]) / 10 , 2) - db_load_right_value[dt_test_number]
+                db_brake_total_value[dt_test_number] = db_brake_left_value[dt_test_number] + db_brake_right_value[dt_test_number]
+                db_brake_efficiency_value[dt_test_number] = ((db_brake_total_value[dt_test_number] - db_load_total_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100
+                db_brake_difference_value[dt_test_number] = (np.abs(db_brake_total_value[dt_test_number] - db_brake_total_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100
+                dt_brake_total_value = np.round(np.sum(db_brake_total_value), 2)
+                dt_brake_efficiency_value = np.round((dt_brake_total_value / dt_load_total_value) * 100, 2)
+                dt_brake_difference_value = np.round(np.sum(db_brake_difference_value), 2)
+                
+                db_handbrake_left_value[dt_test_number] = np.round(self.unsigned_to_signed(brake_registers.registers[0]) / 10 , 2) - db_load_left_value[dt_test_number] 
+                db_handbrake_right_value[dt_test_number] = np.round(self.unsigned_to_signed(brake_registers.registers[1]) / 10 , 2) - db_load_right_value[dt_test_number] 
 
-                    db_brake_total_value[dt_test_number] = db_brake_left_value[dt_test_number] + db_brake_right_value[dt_test_number]
-                    db_brake_efficiency_value[dt_test_number] = ((db_brake_total_value[dt_test_number] - db_load_total_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100
-                    db_brake_difference_value[dt_test_number] = (np.abs(db_brake_total_value[dt_test_number] - db_brake_total_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100
-                    dt_brake_total_value = np.round(np.sum(db_brake_total_value), 2)
-                    dt_brake_efficiency_value = np.round((dt_brake_total_value / dt_load_total_value) * 100, 2)
-                    dt_brake_difference_value = np.round(np.sum(db_brake_difference_value), 2)
-
-                if self.screen_manager.current == 'screen_handbrake_meter':                      
-                    db_handbrake_left_value[dt_test_number] = np.round(self.unsigned_to_signed(brake_registers.registers[0]) / 10 , 2) - db_load_left_value[dt_test_number] 
-                    db_handbrake_right_value[dt_test_number] = np.round(self.unsigned_to_signed(brake_registers.registers[1]) / 10 , 2) - db_load_right_value[dt_test_number] 
-
-                    db_handbrake_total_value[dt_test_number] = db_handbrake_left_value[dt_test_number] + db_handbrake_right_value[dt_test_number]
-                    db_handbrake_efficiency_value[dt_test_number] = ((db_handbrake_total_value[dt_test_number] - db_load_total_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100
-                    db_handbrake_difference_value[dt_test_number] = (np.abs(db_handbrake_total_value[dt_test_number] - db_handbrake_total_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100
-                    dt_handbrake_total_value = np.round(np.sum(db_handbrake_total_value), 2)
-                    dt_handbrake_efficiency_value = np.round((dt_handbrake_total_value / dt_load_total_value) * 100, 2)
-                    dt_handbrake_difference_value = np.round(np.sum(db_handbrake_difference_value), 2)
+                db_handbrake_total_value[dt_test_number] = db_handbrake_left_value[dt_test_number] + db_handbrake_right_value[dt_test_number]
+                db_handbrake_efficiency_value[dt_test_number] = ((db_handbrake_total_value[dt_test_number] - db_load_total_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100
+                db_handbrake_difference_value[dt_test_number] = (np.abs(db_handbrake_total_value[dt_test_number] - db_handbrake_total_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100
+                dt_handbrake_total_value = np.round(np.sum(db_handbrake_total_value), 2)
+                dt_handbrake_efficiency_value = np.round((dt_handbrake_total_value / dt_load_total_value) * 100, 2)
+                dt_handbrake_difference_value = np.round(np.sum(db_handbrake_difference_value), 2)
 
         except Exception as e:
             toast_msg = f'Error Get Data: {e}'
@@ -1016,7 +1013,7 @@ class ScreenResume(MDScreen):
         try: 
             layout_list_load = self.ids.layout_list_load
             for i in range(10):
-                if (db_load_total_value[i] + db_brake_total_value[i] + db_handbrake_total_value[i] > 0.0):
+                if (db_load_total_value[i] > 0.0):
                     layout_list_load.add_widget(
                         MDCard(
                             MDLabel(text=f"Sumbu {i+1}", size_hint_x= 0.25),
@@ -1037,7 +1034,7 @@ class ScreenResume(MDScreen):
         try:           
             layout_list_brake = self.ids.layout_list_brake
             for i in range(10):
-                if (db_brake_total_value[i] > 0):
+                if (db_brake_total_value[i] > 0.0):
                     layout_list_brake.add_widget(
                         MDCard(
                             MDLabel(text=f"Sumbu {i+1}", size_hint_x= 0.15),
@@ -1059,7 +1056,7 @@ class ScreenResume(MDScreen):
         try:           
             layout_list_handbrake = self.ids.layout_list_handbrake
             for i in range(10):
-                if (db_handbrake_total_value[i] > 0):
+                if (db_handbrake_total_value[i] > 0.0):
                     layout_list_handbrake.add_widget(
                         MDCard(
                             MDLabel(text=f"Sumbu {i+1}", size_hint_x= 0.15),

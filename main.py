@@ -560,7 +560,10 @@ class ScreenMain(MDScreen):
 
                 if self.screen_manager.current == 'screen_load_meter':
                     db_load_left_value[dt_test_number] = np.round(axle_load_registers.registers[0] / 10 , 2)
+                    db_load_left_value[dt_test_number] = 0 if db_load_left_value[dt_test_number] > 32768 else db_load_left_value[dt_test_number]
                     db_load_right_value[dt_test_number] = np.round(axle_load_registers.registers[1] / 10 , 2) 
+                    db_load_right_value[dt_test_number] = 0 if db_load_right_value[dt_test_number] > 32768 else db_load_right_value[dt_test_number]
+
                     if(dt_test_number == 0 and db_load_right_value[dt_test_number] >= 60):
                         db_load_right_value[dt_test_number] = db_load_right_value[dt_test_number] - 60
                     db_load_total_value[dt_test_number] = db_load_left_value[dt_test_number] + db_load_right_value[dt_test_number]
@@ -568,7 +571,10 @@ class ScreenMain(MDScreen):
 
                 if self.screen_manager.current == 'screen_brake_meter':               
                     db_brake_left_value[dt_test_number] = np.round(brake_registers.registers[0] / 10 , 2) - db_load_left_value[dt_test_number]
+                    db_brake_left_value[dt_test_number] = 0 if db_brake_left_value[dt_test_number] > 32768 else db_brake_left_value[dt_test_number]
                     db_brake_right_value[dt_test_number] = np.round(brake_registers.registers[1] / 10 , 2) - db_load_right_value[dt_test_number]
+                    db_brake_right_value[dt_test_number] = 0 if db_brake_right_value[dt_test_number] > 32768 else db_brake_right_value[dt_test_number]
+
                     db_brake_total_value[dt_test_number] = db_brake_left_value[dt_test_number] + db_brake_right_value[dt_test_number]
                     db_brake_efficiency_value[dt_test_number] = ((db_brake_total_value[dt_test_number] - db_load_total_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100
                     db_brake_difference_value[dt_test_number] = (np.abs(db_brake_total_value[dt_test_number] - db_brake_total_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100
@@ -578,7 +584,10 @@ class ScreenMain(MDScreen):
 
                 if self.screen_manager.current == 'screen_handbrake_meter':                      
                     db_handbrake_left_value[dt_test_number] = np.round(brake_registers.registers[0] / 10 , 2) - db_load_left_value[dt_test_number] 
+                    db_handbrake_left_value[dt_test_number] = 0 if db_handbrake_left_value[dt_test_number] > 32768 else db_handbrake_left_value[dt_test_number]
                     db_handbrake_right_value[dt_test_number] = np.round(brake_registers.registers[1] / 10 , 2) - db_load_right_value[dt_test_number] 
+                    db_handbrake_right_value[dt_test_number] = 0 if db_handbrake_right_value[dt_test_number] > 32768 else db_handbrake_right_value[dt_test_number]
+
                     db_handbrake_total_value[dt_test_number] = db_handbrake_left_value[dt_test_number] + db_handbrake_right_value[dt_test_number]
                     db_handbrake_efficiency_value[dt_test_number] = ((db_handbrake_total_value[dt_test_number] - db_load_total_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100
                     db_handbrake_difference_value[dt_test_number] = (np.abs(db_handbrake_total_value[dt_test_number] - db_handbrake_total_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100
@@ -1011,7 +1020,7 @@ class ScreenResume(MDScreen):
             for i in range(db_load_total_value.size):
                 if (db_load_total_value[i] + db_brake_total_value[i] + db_handbrake_total_value[i] > 0.0):
                     layout_list_load.add_widget(
-                        MDBoxLayout(
+                        MDCard(
                             MDLabel(text=f"Sumbu {i}", size_hint_x= 0.2),
                             MDLabel(text=f"{db_load_total_value[i]}", size_hint_x= 0.3),
                             MDLabel(text=f"{db_brake_total_value[i]}", size_hint_x= 0.3),
@@ -1059,7 +1068,7 @@ class ScreenResume(MDScreen):
                             MDLabel(text=f"{db_load_total_value[i]}", size_hint_x= 0.08),
                             MDLabel(text=f"{db_handbrake_total_value[i]}", size_hint_x= 0.08),
                             MDLabel(text=f"{db_handbrake_difference_value[i]}", size_hint_x= 0.08),
-                            MDLabel(text="Lulus" if db_brake_difference_value[i] <= STANDARD_MAX_DIFFERENCE_BRAKE else "Tidak Lulus" , size_hint_x= 0.1),
+                            MDLabel(text="Lulus" if db_handbrake_difference_value[i] <= STANDARD_MIN_EFFICIENCY_HANDBRAKE else "Tidak Lulus" , size_hint_x= 0.1),
                             MDTextField(size_hint_x= 0.1),
                             padding = 20,
                             size_hint_y=None,

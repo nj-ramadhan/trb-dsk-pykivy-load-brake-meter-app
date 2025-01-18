@@ -496,11 +496,11 @@ class ScreenMain(MDScreen):
 
             screen_resume.ids.lb_load_total_sum.text = str(dt_load_total_value)
             screen_resume.ids.lb_brake_total_sum.text = str(dt_brake_total_value)
-            # screen_resume.ids.lb_brake_efficiency_sum.text = str(db_brake_efficiency_value)
-            # screen_resume.ids.lb_brake_difference_sum.text = str(db_brake_difference_value)
-            screen_resume.ids.lb_handbrake_total_sum.text = str(dt_handbrake_difference_value)
-            # screen_resume.ids.lb_handbrake_efficiency_sum.text = str(dt_load_total_value)
-            # screen_resume.ids.lb_handbrake_difference_sum.text = str(dt_load_total_value)
+            screen_resume.ids.lb_brake_efficiency_sum.text = str(dt_brake_efficiency_value)
+            screen_resume.ids.lb_brake_difference_sum.text = str(dt_brake_difference_value)
+            screen_resume.ids.lb_handbrake_total_sum.text = str(dt_handbrake_total_value)
+            screen_resume.ids.lb_handbrake_efficiency_sum.text = str(dt_handbrake_efficiency_value)
+            screen_resume.ids.lb_handbrake_difference_sum.text = str(dt_handbrake_difference_value)
 
             self.ids.bt_logout.disabled = False if dt_user != '' else True
             

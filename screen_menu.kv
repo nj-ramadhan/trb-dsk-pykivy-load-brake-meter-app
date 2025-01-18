@@ -212,6 +212,7 @@
 					MDBoxLayout:
 						orientation: "horizontal"
 						size_hint_y: 0.8
+						padding: 0, 40
 
 						MDBoxLayout:
 							orientation: "vertical"
@@ -274,38 +275,53 @@
 							size_hint_x: 0.6
 							spacing: 30
 							
-							MDRectangleFlatIconButton:
-								id: bt_load
-								text: "AXLE LOAD TEST"
-								icon: "arrow-right"
-								theme_text_color: "Custom"
-								text_color: "#EEEEEE"
-								md_bg_color: "4471C4"
-								size_hint_x: 1.0
-								size_hint_y: 0.3
+							MDCard:
+								size_hint: 1, 0.3
+								ripple_behavior: True
 								on_press: root.exec_start_load()
+								md_bg_color: "#4471C4"
+								padding: 10
+								Image:
+									source:'assets/images/display-load.png'
+									size_hint_x: 0.3
+									allow_stretch: True 
+								MDLabel:
+									text: "AXLE LOAD TEST"
+									theme_text_color: "Custom"
+									text_color: "#EEEEEE"
+									halign: "center"
 
-							MDRectangleFlatIconButton:
-								id: bt_brake
-								text: "MAIN BRAKE TEST"
-								icon: "arrow-right"
-								theme_text_color: "Custom"
-								text_color: "#EEEEEE"
-								md_bg_color: "4471C4"
-								size_hint_x: 1.0
-								size_hint_y: 0.3
+							MDCard:
+								size_hint: 1, 0.3
+								ripple_behavior: True
 								on_press: root.exec_start_brake()
+								md_bg_color: "#555555"
+								padding: 10
+								Image:
+									source:'assets/images/display-brake.png'
+									size_hint_x: 0.3
+									allow_stretch: True 
+								MDLabel:
+									text: "MAIN BRAKE TEST"
+									theme_text_color: "Custom"
+									text_color: "#EEEEEE"
+									halign: "center"
 
-							MDRectangleFlatIconButton:
-								id: bt_handbrake
-								text: "HAND BRAKE TEST"
-								icon: "arrow-right"
-								theme_text_color: "Custom"
-								text_color: "#EEEEEE"
-								md_bg_color: "4471C4"
-								size_hint_x: 1.0
-								size_hint_y: 0.3
+							MDCard:
+								size_hint: 1, 0.3
+								ripple_behavior: True
 								on_press: root.exec_start_handbrake()
+								md_bg_color: "#FFC000"
+								padding: 10
+								Image:
+									source:'assets/images/display-handbrake.png'
+									size_hint_x: 0.3
+									allow_stretch: True 
+								MDLabel:
+									text: "HAND BRAKE TEST"
+									theme_text_color: "Custom"
+									text_color: "#111111"
+									halign: "center"
 
 						MDBoxLayout:
 							orientation: "vertical"

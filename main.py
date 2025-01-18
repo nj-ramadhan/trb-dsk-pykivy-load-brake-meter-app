@@ -480,6 +480,7 @@ class ScreenMain(MDScreen):
                 screen_handbrake_meter.ids.lb_test_result.text = ""
             
             for i in range(10):
+                screen_resume.ids[f'lb_axle_number{i}'].text = '' if (db_load_total_value[i] + db_brake_total_value[i] + db_handbrake_total_value[i] == 0) else f'Sumbu {i+1}'
                 screen_resume.ids[f'lb_load_total{i}'].text = str(db_load_total_value[i]) if db_load_total_value[i] > 0.0 else ''
                 screen_resume.ids[f'lb_brake_total{i}'].text = str(db_brake_total_value[i]) if db_brake_total_value[i] > 0.0 else ''
                 # screen_resume.ids[f'lb_brake_efficiency{i}'].text = str(db_brake_efficiency_value[dt_test_number])

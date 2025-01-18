@@ -1020,10 +1020,10 @@ class ScreenResume(MDScreen):
                 if (db_load_total_value[i] + db_brake_total_value[i] + db_handbrake_total_value[i] > 0.0):
                     layout_list_load.add_widget(
                         MDCard(
-                            MDLabel(text=f"Sumbu {i}", size_hint_x= 0.2),
-                            MDLabel(text=f"{db_load_total_value[i]}", size_hint_x= 0.3),
-                            MDLabel(text=f"{db_brake_total_value[i]}", size_hint_x= 0.3),
-                            MDLabel(text=f"{db_handbrake_total_value[i]}", size_hint_x= 0.2),
+                            MDLabel(text=f"Sumbu {i}", size_hint_x= 0.25),
+                            MDLabel(text=f"{db_load_total_value[i]}", size_hint_x= 0.25),
+                            MDLabel(text=f"{db_brake_total_value[i]}", size_hint_x= 0.25),
+                            MDLabel(text=f"{db_handbrake_total_value[i]}", size_hint_x= 0.25),
                             padding = 20,
                             size_hint_y=None,
                             height="60dp",
@@ -1041,12 +1041,12 @@ class ScreenResume(MDScreen):
                 if (db_load_total_value[i] + db_brake_total_value[i] + db_handbrake_total_value[i] > 0):
                     layout_list_brake.add_widget(
                         MDCard(
-                            MDLabel(text=f"Sumbu {i}", size_hint_x= 0.05),
-                            MDLabel(text=f"{db_load_total_value[i]}", size_hint_x= 0.08),
-                            MDLabel(text=f"{db_brake_left_value[i]}", size_hint_x= 0.08),
-                            MDLabel(text=f"{db_brake_right_value[i]}", size_hint_x= 0.08),
-                            MDLabel(text=f"{db_brake_difference_value[i]}", size_hint_x= 0.08),
-                            MDLabel(text="Lulus" if db_brake_difference_value[i] <= STANDARD_MAX_DIFFERENCE_BRAKE else "Tidak Lulus" , size_hint_x= 0.1),
+                            MDLabel(text=f"Sumbu {i}", size_hint_x= 0.15),
+                            MDLabel(text=f"{db_load_total_value[i]}", size_hint_x= 0.15),
+                            MDLabel(text=f"{db_brake_left_value[i]}", size_hint_x= 0.15),
+                            MDLabel(text=f"{db_brake_right_value[i]}", size_hint_x= 0.15),
+                            MDLabel(text=f"{db_brake_difference_value[i]}", size_hint_x= 0.15),
+                            MDLabel(text="Lulus" if db_brake_difference_value[i] <= STANDARD_MAX_DIFFERENCE_BRAKE else "Tidak Lulus" , size_hint_x= 0.25),
                             padding = 20,
                             size_hint_y=None,
                             height="60dp",
@@ -1063,12 +1063,12 @@ class ScreenResume(MDScreen):
                 if (db_load_total_value[i] + db_brake_total_value[i] + db_handbrake_total_value[i] > 0):
                     layout_list_handbrake.add_widget(
                         MDCard(
-                            MDLabel(text=f"Sumbu {i}", size_hint_x= 0.05),
-                            MDLabel(text=f"{db_load_total_value[i]}", size_hint_x= 0.08),
-                            MDLabel(text=f"{db_handbrake_total_value[i]}", size_hint_x= 0.08),
-                            MDLabel(text=f"{db_handbrake_difference_value[i]}", size_hint_x= 0.08),
-                            MDLabel(text="Lulus" if db_handbrake_difference_value[i] <= STANDARD_MIN_EFFICIENCY_HANDBRAKE else "Tidak Lulus" , size_hint_x= 0.1),
-                            MDTextField(size_hint_x= 0.1),
+                            MDLabel(text=f"Sumbu {i}", size_hint_x= 0.15),
+                            MDLabel(text=f"{db_load_total_value[i]}", size_hint_x= 0.1),
+                            MDLabel(text=f"{db_handbrake_total_value[i]}", size_hint_x= 0.1),
+                            MDLabel(text=f"{db_handbrake_difference_value[i]}", size_hint_x= 0.1),
+                            MDLabel(text="Lulus" if db_handbrake_difference_value[i] <= STANDARD_MIN_EFFICIENCY_HANDBRAKE else "Tidak Lulus" , size_hint_x= 0.25),
+                            MDTextField(size_hint_x= 0.3),
                             padding = 20,
                             size_hint_y=None,
                             height="60dp",

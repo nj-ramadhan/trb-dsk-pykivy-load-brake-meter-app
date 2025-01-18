@@ -1005,23 +1005,23 @@ class ScreenResume(MDScreen):
             sql = f"UPDATE {TB_DATA} SET load_flag = %s, load_l_value = %s, load_r_value = %s, load_total_value = %s, load_user = %s, load_post = %s WHERE noantrian = %s"
             sql_load_flag = (1 if dt_load_flag == "Lulus" else 2)
             dt_load_post = str(time.strftime("%Y/%m/%d %H:%M:%S", time.localtime()))
-            sql_val = (sql_load_flag, np.average(db_load_left_value), np.average(db_load_right_value), dt_load_total_value, dt_load_user, dt_load_post, dt_no_antrian)
+            sql_val = (sql_load_flag, float(np.average(db_load_left_value)), float(np.average(db_load_right_value)), dt_load_total_value, dt_load_user, dt_load_post, dt_no_antrian)
             mycursor.execute(sql, sql_val)
             mydb.commit()
 
             mycursor = mydb.cursor()
             sql = f"UPDATE {TB_DATA} SET brake_flag = %s, brake_l_value = %s, brake_r_value = %s, brake_total_value = %s, brake_efficiency_value = %s, brake_difference_value = %s, load_user = %s, load_post = %s WHERE noantrian = %s"
-            sql_load_flag = (1 if dt_load_flag == "Lulus" else 2)
-            dt_load_post = str(time.strftime("%Y/%m/%d %H:%M:%S", time.localtime()))
-            sql_val = (sql_load_flag, np.average(db_load_left_value), np.average(db_load_right_value), dt_load_total_value, dt_load_user, dt_load_post, dt_no_antrian)
+            sql_brake_flag = (1 if dt_brake_flag == "Lulus" else 2)
+            dt_brake_post = str(time.strftime("%Y/%m/%d %H:%M:%S", time.localtime()))
+            sql_val = (sql_brake_flag, float(np.average(db_brake_left_value)), float(np.average(db_brake_right_value)), dt_brake_total_value, dt_brake_efficiency_value, dt_brake_difference_value, dt_load_user, dt_brake_post, dt_no_antrian)
             mycursor.execute(sql, sql_val)
             mydb.commit()
 
             mycursor = mydb.cursor()
             sql = f"UPDATE {TB_DATA} SET handbrake_flag = %s, handbrake_l_value = %s, handbrake_r_value = %s, handbrake_total_value = %s, handbrake_efficiency_value = %s, handbrake_difference_value = %s, load_user = %s, load_post = %s WHERE noantrian = %s"
-            sql_load_flag = (1 if dt_load_flag == "Lulus" else 2)
-            dt_load_post = str(time.strftime("%Y/%m/%d %H:%M:%S", time.localtime()))
-            sql_val = (sql_load_flag, np.average(db_load_left_value), np.average(db_load_right_value), dt_load_total_value, dt_load_user, dt_load_post, dt_no_antrian)
+            sql_handbrake_flag = (1 if dt_handbrake_flag == "Lulus" else 2)
+            dt_handbrake_post = str(time.strftime("%Y/%m/%d %H:%M:%S", time.localtime()))
+            sql_val = (sql_handbrake_flag, float(np.average(db_handbrake_left_value)), float(np.average(db_handbrake_right_value)), dt_handbrake_total_value, dt_handbrake_efficiency_value, dt_handbrake_difference_value, dt_load_user, dt_handbrake_post, dt_no_antrian)
             mycursor.execute(sql, sql_val)
             mydb.commit()
 

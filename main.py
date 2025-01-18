@@ -259,6 +259,10 @@ class ScreenMain(MDScreen):
         self.exec_reload_database()
         self.exec_reload_table()
 
+    def on_enter(self):
+        self.exec_reload_database()
+        self.exec_reload_table()
+
     def on_antrian_row_press(self, instance):
         global dt_no_antrian, dt_no_pol, dt_no_uji, dt_nama, dt_load_flag, dt_brake_flag, dt_handbrake_flag
         global dt_merk, dt_type, dt_jenis_kendaraan, dt_jbb, dt_bahan_bakar, dt_warna
@@ -980,6 +984,9 @@ class ScreenResume(MDScreen):
         pass
 
     def on_enter(self):
+        self.exec_reload_table_detail()
+
+    def exec_reload_table_detail(self):
         global dt_user, dt_no_antrian, dt_no_pol, dt_no_uji, dt_nama, dt_jenis_kendaraan
         global dt_load_flag, db_load_left_value, db_load_right_value, db_load_total_value, dt_load_user, dt_load_post
         global dt_brake_flag, db_brake_left_value, db_brake_right_value, db_brake_total_value, db_brake_efficiency_value, db_brake_difference_value, dt_brake_user, dt_brake_post
@@ -999,20 +1006,23 @@ class ScreenResume(MDScreen):
             print(toast_msg)
 
         try:           
+            print(db_load_total_value.size)
             layout_list_load = self.ids.layout_list_load
             for i in range(db_load_total_value.size):
-                if (db_load_total_value[i] + db_brake_total_value[i] + db_handbrake_total_value[i] > 0):
+                if (db_load_total_value[i] + db_brake_total_value[i] + db_handbrake_total_value[i] > 0.0):
                     layout_list_load.add_widget(
                         MDBoxLayout(
-                            MDLabel(text=f"Sumbu {i}", size_hint_x= 0.05),
-                            MDLabel(text=f"{db_load_total_value[i]}", size_hint_x= 0.08),
-                            MDLabel(text=f"{db_brake_total_value[i]}", size_hint_x= 0.08),
-                            MDLabel(text=f"{db_handbrake_total_value[i]}", size_hint_x= 0.08),
+                            MDLabel(text=f"Sumbu {i}", size_hint_x= 0.2),
+                            MDLabel(text=f"{db_load_total_value[i]}", size_hint_x= 0.3),
+                            MDLabel(text=f"{db_brake_total_value[i]}", size_hint_x= 0.3),
+                            MDLabel(text=f"{db_handbrake_total_value[i]}", size_hint_x= 0.2),
                             padding = 20,
                             size_hint_y=None,
                             height="60dp",
+                            orientation='horizontal'
                             )
                         )
+                    
         except Exception as e:
             toast_msg = f'Error Reload Load Table: {e}'
             print(toast_msg)        
@@ -1021,8 +1031,8 @@ class ScreenResume(MDScreen):
             layout_list_brake = self.ids.layout_list_brake
             for i in range(db_load_total_value.size):
                 if (db_load_total_value[i] + db_brake_total_value[i] + db_handbrake_total_value[i] > 0):
-                    layout_list_load.add_widget(
-                        MDBoxLayout(
+                    layout_list_brake.add_widget(
+                        MDCard(
                             MDLabel(text=f"Sumbu {i}", size_hint_x= 0.05),
                             MDLabel(text=f"{db_load_total_value[i]}", size_hint_x= 0.08),
                             MDLabel(text=f"{db_brake_left_value[i]}", size_hint_x= 0.08),
@@ -1032,6 +1042,7 @@ class ScreenResume(MDScreen):
                             padding = 20,
                             size_hint_y=None,
                             height="60dp",
+                            orientation='horizontal'
                             )
                         )
         except Exception as e:
@@ -1043,7 +1054,7 @@ class ScreenResume(MDScreen):
             for i in range(db_load_total_value.size):
                 if (db_load_total_value[i] + db_brake_total_value[i] + db_handbrake_total_value[i] > 0):
                     layout_list_handbrake.add_widget(
-                        MDBoxLayout(
+                        MDCard(
                             MDLabel(text=f"Sumbu {i}", size_hint_x= 0.05),
                             MDLabel(text=f"{db_load_total_value[i]}", size_hint_x= 0.08),
                             MDLabel(text=f"{db_handbrake_total_value[i]}", size_hint_x= 0.08),
@@ -1053,6 +1064,7 @@ class ScreenResume(MDScreen):
                             padding = 20,
                             size_hint_y=None,
                             height="60dp",
+                            orientation='horizontal'
                             )
                         )
         except Exception as e:

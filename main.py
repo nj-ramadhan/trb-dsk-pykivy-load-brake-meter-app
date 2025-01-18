@@ -1013,14 +1013,13 @@ class ScreenResume(MDScreen):
             toast_msg = f'Error Remove Widget: {e}'
             print(toast_msg)
 
-        try:           
-            print(db_load_total_value.size)
+        try: 
             layout_list_load = self.ids.layout_list_load
-            for i in range(db_load_total_value.size):
+            for i in range(10):
                 if (db_load_total_value[i] + db_brake_total_value[i] + db_handbrake_total_value[i] > 0.0):
                     layout_list_load.add_widget(
                         MDCard(
-                            MDLabel(text=f"Sumbu {i}", size_hint_x= 0.25),
+                            MDLabel(text=f"Sumbu {i+1}", size_hint_x= 0.25),
                             MDLabel(text=f"{db_load_total_value[i]}", size_hint_x= 0.25),
                             MDLabel(text=f"{db_brake_total_value[i]}", size_hint_x= 0.25),
                             MDLabel(text=f"{db_handbrake_total_value[i]}", size_hint_x= 0.25),
@@ -1037,11 +1036,11 @@ class ScreenResume(MDScreen):
 
         try:           
             layout_list_brake = self.ids.layout_list_brake
-            for i in range(db_load_total_value.size):
-                if (db_load_total_value[i] + db_brake_total_value[i] + db_handbrake_total_value[i] > 0):
+            for i in range(10):
+                if (db_brake_total_value[i] > 0):
                     layout_list_brake.add_widget(
                         MDCard(
-                            MDLabel(text=f"Sumbu {i}", size_hint_x= 0.15),
+                            MDLabel(text=f"Sumbu {i+1}", size_hint_x= 0.15),
                             MDLabel(text=f"{db_load_total_value[i]}", size_hint_x= 0.15),
                             MDLabel(text=f"{db_brake_left_value[i]}", size_hint_x= 0.15),
                             MDLabel(text=f"{db_brake_right_value[i]}", size_hint_x= 0.15),
@@ -1059,11 +1058,11 @@ class ScreenResume(MDScreen):
 
         try:           
             layout_list_handbrake = self.ids.layout_list_handbrake
-            for i in range(db_load_total_value.size):
-                if (db_load_total_value[i] + db_brake_total_value[i] + db_handbrake_total_value[i] > 0):
+            for i in range(10):
+                if (db_handbrake_total_value[i] > 0):
                     layout_list_handbrake.add_widget(
                         MDCard(
-                            MDLabel(text=f"Sumbu {i}", size_hint_x= 0.15),
+                            MDLabel(text=f"Sumbu {i+1}", size_hint_x= 0.15),
                             MDLabel(text=f"{db_load_total_value[i]}", size_hint_x= 0.1),
                             MDLabel(text=f"{db_handbrake_total_value[i]}", size_hint_x= 0.1),
                             MDLabel(text=f"{db_handbrake_difference_value[i]}", size_hint_x= 0.1),

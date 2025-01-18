@@ -562,7 +562,7 @@ class ScreenMain(MDScreen):
                     if(dt_test_number == 0 and db_load_right_value[dt_test_number] >= 60):
                         db_load_right_value[dt_test_number] = db_load_right_value[dt_test_number] - 60
                     db_load_total_value[dt_test_number] = db_load_left_value[dt_test_number] + db_load_right_value[dt_test_number]
-                    dt_load_total_value = np.sum(db_load_total_value)
+                    dt_load_total_value = np.round(np.sum(db_load_total_value) ,2)
 
                 if self.screen_manager.current == 'screen_brake_meter':               
                     db_brake_left_value[dt_test_number] = np.round(brake_registers.registers[0] / 10 , 2) - db_load_left_value[dt_test_number]
@@ -570,9 +570,9 @@ class ScreenMain(MDScreen):
                     db_brake_total_value[dt_test_number] = db_brake_left_value[dt_test_number] + db_brake_right_value[dt_test_number]
                     db_brake_efficiency_value[dt_test_number] = ((db_brake_total_value[dt_test_number] - db_load_total_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100
                     db_brake_difference_value[dt_test_number] = (np.abs(db_brake_total_value[dt_test_number] - db_brake_total_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100
-                    dt_brake_total_value = np.sum(db_brake_total_value)
-                    dt_brake_efficiency_value = np.sum(db_brake_efficiency_value)
-                    dt_brake_difference_value = np.sum(db_brake_difference_value)
+                    dt_brake_total_value = np.round(np.sum(db_brake_total_value), 2)
+                    dt_brake_efficiency_value = np.round(np.sum(db_brake_efficiency_value), 2)
+                    dt_brake_difference_value = np.round(np.sum(db_brake_difference_value), 2)
 
                 if self.screen_manager.current == 'screen_handbrake_meter':                      
                     db_handbrake_left_value[dt_test_number] = np.round(brake_registers.registers[0] / 10 , 2) - db_load_left_value[dt_test_number] 
@@ -580,9 +580,9 @@ class ScreenMain(MDScreen):
                     db_handbrake_total_value[dt_test_number] = db_handbrake_left_value[dt_test_number] + db_handbrake_right_value[dt_test_number]
                     db_handbrake_efficiency_value[dt_test_number] = ((db_handbrake_total_value[dt_test_number] - db_load_total_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100
                     db_handbrake_difference_value[dt_test_number] = (np.abs(db_handbrake_total_value[dt_test_number] - db_handbrake_total_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100
-                    dt_handbrake_total_value = np.sum(db_handbrake_total_value)
-                    dt_handbrake_efficiency_value = np.sum(db_handbrake_efficiency_value)
-                    dt_handbrake_difference_value = np.sum(db_handbrake_difference_value)
+                    dt_handbrake_total_value = np.round(np.sum(db_handbrake_total_value), 2)
+                    dt_handbrake_efficiency_value = np.round(np.sum(db_handbrake_efficiency_value), 2)
+                    dt_handbrake_difference_value = np.round(np.sum(db_handbrake_difference_value), 2)
 
         except Exception as e:
             toast_msg = f'Error Get Data: {e}'

@@ -571,7 +571,7 @@ class ScreenMain(MDScreen):
                     db_brake_efficiency_value[dt_test_number] = ((db_brake_total_value[dt_test_number] - db_load_total_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100
                     db_brake_difference_value[dt_test_number] = (np.abs(db_brake_total_value[dt_test_number] - db_brake_total_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100
                     dt_brake_total_value = np.round(np.sum(db_brake_total_value), 2)
-                    dt_brake_efficiency_value = np.round(np.sum(db_brake_efficiency_value), 2)
+                    dt_brake_efficiency_value = np.round((dt_brake_total_value / dt_load_total_value) * 100, 2)
                     dt_brake_difference_value = np.round(np.sum(db_brake_difference_value), 2)
 
                 if self.screen_manager.current == 'screen_handbrake_meter':                      
@@ -581,7 +581,7 @@ class ScreenMain(MDScreen):
                     db_handbrake_efficiency_value[dt_test_number] = ((db_handbrake_total_value[dt_test_number] - db_load_total_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100
                     db_handbrake_difference_value[dt_test_number] = (np.abs(db_handbrake_total_value[dt_test_number] - db_handbrake_total_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100
                     dt_handbrake_total_value = np.round(np.sum(db_handbrake_total_value), 2)
-                    dt_handbrake_efficiency_value = np.round(np.sum(db_handbrake_efficiency_value), 2)
+                    dt_handbrake_efficiency_value = np.round((dt_handbrake_total_value / dt_load_total_value) * 100, 2)
                     dt_handbrake_difference_value = np.round(np.sum(db_handbrake_difference_value), 2)
 
         except Exception as e:
@@ -657,10 +657,10 @@ class ScreenMain(MDScreen):
             print(toast_msg)
 
     def exec_start(self):
-        global dt_load_flag, dt_brake_flag, dt_no_antrian, dt_user
+        global dt_load_flag, dt_brake_flag, dt_handbrake_flag, dt_no_antrian, dt_user
         global flag_play
         if (dt_user != ''):
-            if (dt_load_flag == 'Belum Tes'):
+            if (dt_load_flag == 'Belum Tes' or dt_brake_flag == 'Belum Tes' or dt_handbrake_flag == 'Belum Tes'):
                 self.open_screen_menu()
             else:
                 toast(f'No. Antrian {dt_no_antrian} Sudah Tes')
@@ -992,23 +992,52 @@ class ScreenResume(MDScreen):
         global flag_play
         global count_starting, count_get_data
         global mydb, db_antrian
-        global dt_no_antrian, dt_no_pol, dt_no_uji, dt_nama, dt_jenis_kendaraan
-        global dt_load_flag, db_load_left_value, db_load_right_value, dt_load_user, dt_load_post
+        global db_load_left_value, db_load_right_value, db_load_total_value
+        global db_brake_left_value, db_brake_right_value, db_brake_total_value, db_brake_efficiency_value, db_brake_difference_value
+        global db_handbrake_left_value, db_handbrake_right_value, db_handbrake_total_value, db_handbrake_efficiency_value, db_handbrake_difference_value
+        global dt_load_total_value, dt_brake_total_value, dt_brake_efficiency_value, dt_brake_difference_value, dt_handbrake_total_value, dt_handbrake_efficiency_value, dt_handbrake_difference_value
         global dt_test_number
 
-        self.ids.bt_save.disabled = True
+        try:
+            self.ids.bt_save.disabled = True
 
-        mycursor = mydb.cursor()
+            mycursor = mydb.cursor()
+            sql = f"UPDATE {TB_DATA} SET load_flag = %s, load_l_value = %s, load_r_value = %s, load_total_value = %s, load_user = %s, load_post = %s WHERE noantrian = %s"
+            sql_load_flag = (1 if dt_load_flag == "Lulus" else 2)
+            dt_load_post = str(time.strftime("%Y/%m/%d %H:%M:%S", time.localtime()))
+            sql_val = (sql_load_flag, np.average(db_load_left_value), np.average(db_load_right_value), dt_load_total_value, dt_load_user, dt_load_post, dt_no_antrian)
+            mycursor.execute(sql, sql_val)
+            mydb.commit()
 
-        sql = f"UPDATE {TB_DATA} SET load_flag = %s, load_l_value = %s, load_r_value = %s, load_total_value = %s, load_user = %s, load_post = %s WHERE noantrian = %s"
-        sql_load_flag = (1 if dt_load_flag == "Lulus" else 2)
-        dt_load_post = str(time.strftime("%Y/%m/%d %H:%M:%S", time.localtime()))
-        print_datetime = str(time.strftime("%d %B %Y %H:%M:%S", time.localtime()))
-        sql_val = (sql_load_flag, db_load_left_value[dt_test_number], db_load_right_value[dt_test_number], db_load_right_value[dt_test_number], dt_load_user, dt_load_post, dt_no_antrian)
-        mycursor.execute(sql, sql_val)
-        mydb.commit()
+            mycursor = mydb.cursor()
+            sql = f"UPDATE {TB_DATA} SET brake_flag = %s, brake_l_value = %s, brake_r_value = %s, brake_total_value = %s, brake_efficiency_value = %s, brake_difference_value = %s, load_user = %s, load_post = %s WHERE noantrian = %s"
+            sql_load_flag = (1 if dt_load_flag == "Lulus" else 2)
+            dt_load_post = str(time.strftime("%Y/%m/%d %H:%M:%S", time.localtime()))
+            sql_val = (sql_load_flag, np.average(db_load_left_value), np.average(db_load_right_value), dt_load_total_value, dt_load_user, dt_load_post, dt_no_antrian)
+            mycursor.execute(sql, sql_val)
+            mydb.commit()
 
-        self.open_screen_resume()
+            mycursor = mydb.cursor()
+            sql = f"UPDATE {TB_DATA} SET handbrake_flag = %s, handbrake_l_value = %s, handbrake_r_value = %s, handbrake_total_value = %s, handbrake_efficiency_value = %s, handbrake_difference_value = %s, load_user = %s, load_post = %s WHERE noantrian = %s"
+            sql_load_flag = (1 if dt_load_flag == "Lulus" else 2)
+            dt_load_post = str(time.strftime("%Y/%m/%d %H:%M:%S", time.localtime()))
+            sql_val = (sql_load_flag, np.average(db_load_left_value), np.average(db_load_right_value), dt_load_total_value, dt_load_user, dt_load_post, dt_no_antrian)
+            mycursor.execute(sql, sql_val)
+            mydb.commit()
+
+            self.exec_navigate_main()
+        
+        except Exception as e:
+            toast_msg = f'Error Save Data: {e}'
+            toast(toast_msg)
+
+    def exec_navigate_main(self):
+        try:
+            self.screen_manager.current = 'screen_main'
+
+        except Exception as e:
+            toast_msg = f'Error Navigate to Main Screen: {e}'
+            toast(toast_msg)  
 
 class RootScreen(ScreenManager):
     pass             

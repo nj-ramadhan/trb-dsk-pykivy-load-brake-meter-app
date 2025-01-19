@@ -4,6 +4,8 @@
 #:include screen_home.kv
 #:include screen_login.kv
 #:include screen_main.kv
+#:include screen_menu.kv
+#:include screen_resume.kv
 #:include screen_load_meter.kv
 #:include screen_brake_meter.kv
 #:include screen_handbrake_meter.kv
@@ -28,6 +30,11 @@
         name: 'screen_main'
         screen_manager: screen_manager
 
+    ScreenMenu:
+        id: screen_menu
+        name: 'screen_menu'
+        screen_manager: screen_manager
+
     ScreenLoadMeter:
         id: screen_load_meter
         name: 'screen_load_meter'
@@ -43,3 +50,7 @@
         name: 'screen_handbrake_meter'
         screen_manager: screen_manager   
 
+    ScreenResume:
+        id: screen_resume
+        name: 'screen_resume'
+        screen_manager: screen_manager

@@ -388,12 +388,16 @@ class ScreenMain(MDScreen):
                 screen_home.ids.lb_comm.text = 'PLC Tidak Terhubung'
                 screen_login.ids.lb_comm.color = colors['Red']['A200']
                 screen_login.ids.lb_comm.text = 'PLC Tidak Terhubung'
+                screen_menu.ids.lb_comm.color = colors['Red']['A200']
+                screen_menu.ids.lb_comm.text = 'PLC Tidak Terhubung'
                 screen_load_meter.ids.lb_comm.color = colors['Red']['A200']
                 screen_load_meter.ids.lb_comm.text = 'PLC Tidak Terhubung'
                 screen_brake_meter.ids.lb_comm.color = colors['Red']['A200']
                 screen_brake_meter.ids.lb_comm.text = 'PLC Tidak Terhubung'
                 screen_handbrake_meter.ids.lb_comm.color = colors['Red']['A200']
                 screen_handbrake_meter.ids.lb_comm.text = 'PLC Tidak Terhubung'
+                screen_resume.ids.lb_comm.color = colors['Red']['A200']
+                screen_resume.ids.lb_comm.text = 'PLC Tidak Terhubung'
 
             else:
                 self.ids.lb_comm.color = colors['Blue']['200']
@@ -402,12 +406,16 @@ class ScreenMain(MDScreen):
                 screen_home.ids.lb_comm.text = 'PLC Terhubung'
                 screen_login.ids.lb_comm.color = colors['Blue']['200']
                 screen_login.ids.lb_comm.text = 'PLC Terhubung'
+                screen_menu.ids.lb_comm.color = colors['Blue']['200']
+                screen_menu.ids.lb_comm.text = 'PLC Terhubung'
                 screen_load_meter.ids.lb_comm.color = colors['Blue']['200']
                 screen_load_meter.ids.lb_comm.text = 'PLC Terhubung'
                 screen_brake_meter.ids.lb_comm.color = colors['Blue']['200']
                 screen_brake_meter.ids.lb_comm.text = 'PLC Terhubung'
                 screen_handbrake_meter.ids.lb_comm.color = colors['Blue']['200']
                 screen_handbrake_meter.ids.lb_comm.text = 'PLC Terhubung'
+                screen_resume.ids.lb_comm.color = colors['Blue']['200']
+                screen_resume.ids.lb_comm.text = 'PLC Terhubung'
 
             if(count_starting <= 0):
                 screen_load_meter.ids.lb_test_subtitle.text = "HASIL PENGUKURAN"
@@ -511,9 +519,11 @@ class ScreenMain(MDScreen):
             self.ids.lb_operator.text = f'Login Sebagai: {dt_user}' if dt_user != '' else 'Silahkan Login'
             screen_home.ids.lb_operator.text = f'Login Sebagai: {dt_user}' if dt_user != '' else 'Silahkan Login'
             screen_login.ids.lb_operator.text = f'Login Sebagai: {dt_user}' if dt_user != '' else 'Silahkan Login'
+            screen_menu.ids.lb_operator.text = f'Login Sebagai: {dt_user}' if dt_user != '' else 'Silahkan Login'
             screen_load_meter.ids.lb_operator.text = f'Login Sebagai: {dt_user}' if dt_user != '' else 'Silahkan Login'
             screen_brake_meter.ids.lb_operator.text = f'Login Sebagai: {dt_user}' if dt_user != '' else 'Silahkan Login'
             screen_handbrake_meter.ids.lb_operator.text = f'Login Sebagai: {dt_user}' if dt_user != '' else 'Silahkan Login'
+            screen_resume.ids.lb_operator.text = f'Login Sebagai: {dt_user}' if dt_user != '' else 'Silahkan Login'
 
         except Exception as e:
             toast_msg = f'Error Update Display: {e}'
@@ -1065,11 +1075,11 @@ class ScreenResume(MDScreen):
                     layout_list_handbrake.add_widget(
                         MDCard(
                             MDLabel(text=f"Sumbu {i+1}", size_hint_x= 0.15),
-                            MDLabel(text=f"{db_load_total_value[i]}", size_hint_x= 0.1),
-                            MDLabel(text=f"{db_handbrake_total_value[i]}", size_hint_x= 0.1),
-                            MDLabel(text=f"{db_handbrake_difference_value[i]}", size_hint_x= 0.1),
-                            MDLabel(text="Lulus" if db_handbrake_difference_value[i] <= STANDARD_MIN_EFFICIENCY_HANDBRAKE else "Tidak Lulus" , size_hint_x= 0.25),
-                            MDTextField(size_hint_x= 0.3),
+                            MDLabel(text=f"{db_load_total_value[i]}", size_hint_x= 0.15),
+                            MDLabel(text=f"{db_handbrake_total_value[i]}", size_hint_x= 0.15),
+                            MDLabel(text=f"{db_handbrake_difference_value[i]}", size_hint_x= 0.15),
+                            MDLabel(text="Lulus" if db_handbrake_difference_value[i] <= STANDARD_MIN_EFFICIENCY_HANDBRAKE else "Tidak Lulus" , size_hint_x= 0.2),
+                            MDTextField(size_hint_x= 0.2),
                             padding = 20,
                             size_hint_y=None,
                             height="60dp",

@@ -182,48 +182,6 @@
 						MDBoxLayout:
 							orientation: "horizontal"
 							MDLabel:
-								text: "Total Main Brake "
-								halign: "left"
-								valign: "middle"
-								font_style: 'H4'
-
-							MDLabel:
-								id: lb_brake_total
-								halign: "left"
-								valign: "middle"
-								font_style: 'H4'
-
-						MDBoxLayout:
-							orientation: "horizontal"
-							MDLabel:
-								text: "Efisiensi Main Brake"
-								halign: "left"
-								valign: "middle"
-								font_style: 'H4'
-
-							MDLabel:
-								id: lb_brake_efficiency
-								halign: "left"
-								valign: "middle"
-								font_style: 'H4'
-
-						MDBoxLayout:
-							orientation: "horizontal"
-							MDLabel:
-								text: "Simpangan Main Brake"
-								halign: "left"
-								valign: "middle"
-								font_style: 'H4'
-
-							MDLabel:
-								id: lb_brake_difference
-								halign: "left"
-								valign: "middle"
-								font_style: 'H4'
-
-						MDBoxLayout:
-							orientation: "horizontal"
-							MDLabel:
 								id: lb_status
 								halign: "left"
 								valign: "middle"
@@ -307,27 +265,27 @@
 							font_size: '30dp'
 							pos_hint: {'x':0.0, 'y':-0.1}
 
-						MDRectangleFlatIconButton:
-							id: bt_cylinder_up
-							text: "CYLINDER"
-							icon: "arrow-up"
-							theme_text_color: "Custom"
-							text_color: "#EEEEEE"
-							md_bg_color: "#FF2A2A"
-							pos_hint: {'x':0.425, 'y':0.25}
-							on_press: root.exec_cylinder_up()
-							on_release: root.exec_cylinder_stop()
+						# MDRectangleFlatIconButton:
+						# 	id: bt_cylinder_up
+						# 	text: "CYLINDER"
+						# 	icon: "arrow-up"
+						# 	theme_text_color: "Custom"
+						# 	text_color: "#EEEEEE"
+						# 	md_bg_color: "#FF2A2A"
+						# 	pos_hint: {'x':0.425, 'y':0.25}
+						# 	on_press: root.exec_cylinder_up()
+						# 	on_release: root.exec_cylinder_stop()
 
-						MDRectangleFlatIconButton:
-							id: bt_cylinder_down
-							text: "CYLINDER"
-							icon: "arrow-down"
-							theme_text_color: "Custom"
-							text_color: "#EEEEEE"
-							md_bg_color: "#2CA02C"
-							pos_hint: {'x':0.425, 'y':0.15}
-							on_press: root.exec_cylinder_down()
-							on_release: root.exec_cylinder_stop()
+						# MDRectangleFlatIconButton:
+						# 	id: bt_cylinder_down
+						# 	text: "CYLINDER"
+						# 	icon: "arrow-down"
+						# 	theme_text_color: "Custom"
+						# 	text_color: "#EEEEEE"
+						# 	md_bg_color: "#2CA02C"
+						# 	pos_hint: {'x':0.425, 'y':0.15}
+						# 	on_press: root.exec_cylinder_down()
+						# 	on_release: root.exec_cylinder_stop()
 
 						MDRectangleFlatIconButton:
 							id: bt_reload
@@ -336,20 +294,9 @@
 							theme_text_color: "Custom"
 							text_color: "#EEEEEE"
 							md_bg_color: "#FF2A2A"
-							pos_hint: {'x':.175, 'y':.06}
-							disabled: True
-							on_press: root.exec_reload()
-
-						MDRectangleFlatIconButton:
-							id: bt_save
-							text: "SIMPAN"
-							icon: "printer"
-							theme_text_color: "Custom"
-							text_color: "#EEEEEE"
-							md_bg_color: "#2CA02C"
 							pos_hint: {'x':.325, 'y':.06}
 							disabled: True
-							on_press: root.exec_save()
+							on_press: root.exec_reload()
 
 						MDRectangleFlatIconButton:
 							id: bt_back
@@ -359,17 +306,8 @@
 							text_color: "#EEEEEE"
 							md_bg_color: "4471C4"
 							pos_hint: {'x':.475, 'y':.06}
-							on_press: root.open_screen_main()
+							on_press: root.exec_navigate_back()
 
-						MDRectangleFlatIconButton:
-							id: bt_handbrake
-							text: "HAND BRAKE TEST"
-							icon: "arrow-right"
-							theme_text_color: "Custom"
-							text_color: "#EEEEEE"
-							md_bg_color: "4471C4"
-							pos_hint: {'x':.650, 'y':.06}
-							on_press: root.open_screen_handbrake_meter()
 		# footer layout
         MDBoxLayout:
             orientation: "horizontal"

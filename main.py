@@ -1,3 +1,5 @@
+from kivy.config import Config
+Config.set('kivy', 'keyboard_mode', 'systemanddock')
 from kivy.clock import Clock
 from kivy.lang import Builder
 from kivy.core.window import Window
@@ -273,9 +275,9 @@ class ScreenMain(MDScreen):
             dt_no_antrian           = f"{db_antrian[0, row]}"
             dt_no_pol               = f"{db_antrian[1, row]}"
             dt_no_uji               = f"{db_antrian[2, row]}"
-            dt_load_flag            = 'Belum Tes' if (int(db_antrian[3, row]) == 0) else 'Sudah Tes'
-            dt_brake_flag           = 'Belum Tes' if (int(db_antrian[4, row]) == 0) else 'Sudah Tes'
-            dt_handbrake_flag       = 'Belum Tes' if (int(db_antrian[5, row]) == 0) else 'Sudah Tes'
+            dt_load_flag            = 'Lulus' if (int(db_antrian[3, row]) == 2) else 'Tidak Lulus' if (int(db_antrian[3, row]) == 1) else 'Belum Tes'
+            dt_brake_flag           = 'Lulus' if (int(db_antrian[4, row]) == 2) else 'Tidak Lulus' if (int(db_antrian[4, row]) == 1) else 'Belum Tes'
+            dt_handbrake_flag       = 'Lulus' if (int(db_antrian[5, row]) == 2) else 'Tidak Lulus' if (int(db_antrian[5, row]) == 1) else 'Belum Tes'
             dt_nama                 = f"{db_antrian[6, row]}"
             dt_merk                 = f"{db_merk[np.where(db_merk == db_antrian[7, row])[0][0],1]}"
             dt_type                 = f"{db_antrian[8, row]}"
@@ -566,30 +568,33 @@ class ScreenMain(MDScreen):
                 db_load_left_value[dt_test_number] = np.round(self.unsigned_to_signed(axle_load_registers.registers[0]) / 10 , 2)
                 db_load_right_value[dt_test_number] = np.round(self.unsigned_to_signed(axle_load_registers.registers[1]) / 10 , 2)
 
-                if(dt_test_number == 0 and db_load_right_value[dt_test_number] >= 60):
-                    db_load_right_value[dt_test_number] = db_load_right_value[dt_test_number] - 60
-                db_load_total_value[dt_test_number] = db_load_left_value[dt_test_number] + db_load_right_value[dt_test_number]
-                dt_load_total_value = np.round(np.sum(db_load_total_value) ,2)
-        
-                db_brake_left_value[dt_test_number] = np.round(self.unsigned_to_signed(brake_registers.registers[0]) / 10 , 2) - db_load_left_value[dt_test_number]
-                db_brake_right_value[dt_test_number] = np.round(self.unsigned_to_signed(brake_registers.registers[1]) / 10 , 2) - db_load_right_value[dt_test_number]
+                if self.screen_manager.current == 'screen_load_meter':
+                    if(dt_test_number == 0 and db_load_right_value[dt_test_number] >= 60):
+                        db_load_right_value[dt_test_number] = db_load_right_value[dt_test_number] - 60
+                    db_load_total_value[dt_test_number] = np.round(db_load_left_value[dt_test_number] + db_load_right_value[dt_test_number], 2)
+                    dt_load_total_value = np.round(np.sum(db_load_total_value) ,2)
 
-                db_brake_total_value[dt_test_number] = db_brake_left_value[dt_test_number] + db_brake_right_value[dt_test_number]
-                db_brake_efficiency_value[dt_test_number] = ((db_brake_total_value[dt_test_number] - db_load_total_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100
-                db_brake_difference_value[dt_test_number] = (np.abs(db_brake_total_value[dt_test_number] - db_brake_total_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100
-                dt_brake_total_value = np.round(np.sum(db_brake_total_value), 2)
-                dt_brake_efficiency_value = np.round((dt_brake_total_value / dt_load_total_value) * 100, 2)
-                dt_brake_difference_value = np.round(np.sum(db_brake_difference_value), 2)
-                
-                db_handbrake_left_value[dt_test_number] = np.round(self.unsigned_to_signed(brake_registers.registers[0]) / 10 , 2) - db_load_left_value[dt_test_number] 
-                db_handbrake_right_value[dt_test_number] = np.round(self.unsigned_to_signed(brake_registers.registers[1]) / 10 , 2) - db_load_right_value[dt_test_number] 
+                if self.screen_manager.current == 'screen_brake_meter':               
+                    db_brake_left_value[dt_test_number] = np.round(self.unsigned_to_signed(brake_registers.registers[0]) / 10 , 2) - db_load_left_value[dt_test_number]
+                    db_brake_right_value[dt_test_number] = np.round(self.unsigned_to_signed(brake_registers.registers[1]) / 10 , 2) - db_load_right_value[dt_test_number]
 
-                db_handbrake_total_value[dt_test_number] = db_handbrake_left_value[dt_test_number] + db_handbrake_right_value[dt_test_number]
-                db_handbrake_efficiency_value[dt_test_number] = ((db_handbrake_total_value[dt_test_number] - db_load_total_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100
-                db_handbrake_difference_value[dt_test_number] = (np.abs(db_handbrake_total_value[dt_test_number] - db_handbrake_total_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100
-                dt_handbrake_total_value = np.round(np.sum(db_handbrake_total_value), 2)
-                dt_handbrake_efficiency_value = np.round((dt_handbrake_total_value / dt_load_total_value) * 100, 2)
-                dt_handbrake_difference_value = np.round(np.sum(db_handbrake_difference_value), 2)
+                    db_brake_total_value[dt_test_number] = np.round(db_brake_left_value[dt_test_number] + db_brake_right_value[dt_test_number], 2)
+                    db_brake_efficiency_value[dt_test_number] = np.round(((db_brake_total_value[dt_test_number] - db_load_total_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100, 2)
+                    db_brake_difference_value[dt_test_number] = np.round((np.abs(db_brake_total_value[dt_test_number] - db_brake_total_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100, 2)
+                    dt_brake_total_value = np.round(np.sum(db_brake_total_value), 2)
+                    dt_brake_efficiency_value = np.round((dt_brake_total_value / dt_load_total_value) * 100, 2)
+                    dt_brake_difference_value = np.round(np.sum(db_brake_difference_value), 2)
+
+                if self.screen_manager.current == 'screen_handbrake_meter':                      
+                    db_handbrake_left_value[dt_test_number] = np.round(self.unsigned_to_signed(brake_registers.registers[0]) / 10 , 2) - db_load_left_value[dt_test_number] 
+                    db_handbrake_right_value[dt_test_number] = np.round(self.unsigned_to_signed(brake_registers.registers[1]) / 10 , 2) - db_load_right_value[dt_test_number] 
+
+                    db_handbrake_total_value[dt_test_number] = np.round(db_handbrake_left_value[dt_test_number] + db_handbrake_right_value[dt_test_number])
+                    db_handbrake_efficiency_value[dt_test_number] = np.round(((db_handbrake_total_value[dt_test_number] - db_load_total_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100, 2)
+                    db_handbrake_difference_value[dt_test_number] = np.round((np.abs(db_handbrake_total_value[dt_test_number] - db_handbrake_total_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100, 2)
+                    dt_handbrake_total_value = np.round(np.sum(db_handbrake_total_value), 2)
+                    dt_handbrake_efficiency_value = np.round((dt_handbrake_total_value / dt_load_total_value) * 100, 2)
+                    dt_handbrake_difference_value = np.round(np.sum(db_handbrake_difference_value), 2)
 
         except Exception as e:
             toast_msg = f'Error Get Data: {e}'
@@ -642,9 +647,9 @@ class ScreenMain(MDScreen):
                         MDLabel(text=f"{db_antrian[0, i]}", size_hint_x= 0.05),
                         MDLabel(text=f"{db_antrian[1, i]}", size_hint_x= 0.08),
                         MDLabel(text=f"{db_antrian[2, i]}", size_hint_x= 0.08),
-                        MDLabel(text='Belum Tes' if (int(db_antrian[3, i]) == 0) else 'Sudah Tes', size_hint_x= 0.07),
-                        MDLabel(text='Belum Tes' if (int(db_antrian[4, i]) == 0) else 'Sudah Tes', size_hint_x= 0.07),
-                        MDLabel(text='Belum Tes' if (int(db_antrian[5, i]) == 0) else 'Sudah Tes', size_hint_x= 0.07),
+                        MDLabel(text='Lulus' if (int(db_antrian[3, i]) == 2) else 'Tidak Lulus' if (int(db_antrian[3, i]) == 1) else 'Belum Tes', size_hint_x= 0.07),
+                        MDLabel(text='Lulus' if (int(db_antrian[4, i]) == 2) else 'Tidak Lulus' if (int(db_antrian[4, i]) == 1) else 'Belum Tes', size_hint_x= 0.07),
+                        MDLabel(text='Lulus' if (int(db_antrian[5, i]) == 2) else 'Tidak Lulus' if (int(db_antrian[5, i]) == 1) else 'Belum Tes', size_hint_x= 0.07),
                         MDLabel(text=f"{db_antrian[6, i]}", size_hint_x= 0.08),
                         MDLabel(text=f"{db_merk[np.where(db_merk == db_antrian[7, i])[0][0],1]}", size_hint_x= 0.08),
                         MDLabel(text=f"{db_antrian[8, i]}", size_hint_x= 0.05),
@@ -1193,6 +1198,7 @@ class LoadBrakeMeterApp(MDApp):
             "Recharge", 8, False, 0.15]              
         
         Window.fullscreen = 'auto'
+        # Window.size = (1920, 1080)
         Builder.load_file('main.kv')
         return RootScreen()
 

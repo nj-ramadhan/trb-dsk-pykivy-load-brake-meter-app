@@ -381,42 +381,6 @@ class ScreenMain(MDScreen):
                 screen_brake_meter.ids.bt_reload.disabled = True
                 screen_handbrake_meter.ids.bt_reload.disabled = True
 
-            if(not flag_conn_stat):
-                self.ids.lb_comm.color = colors['Red']['A200']
-                self.ids.lb_comm.text = 'PLC Tidak Terhubung'
-                screen_home.ids.lb_comm.color = colors['Red']['A200']
-                screen_home.ids.lb_comm.text = 'PLC Tidak Terhubung'
-                screen_login.ids.lb_comm.color = colors['Red']['A200']
-                screen_login.ids.lb_comm.text = 'PLC Tidak Terhubung'
-                screen_menu.ids.lb_comm.color = colors['Red']['A200']
-                screen_menu.ids.lb_comm.text = 'PLC Tidak Terhubung'
-                screen_load_meter.ids.lb_comm.color = colors['Red']['A200']
-                screen_load_meter.ids.lb_comm.text = 'PLC Tidak Terhubung'
-                screen_brake_meter.ids.lb_comm.color = colors['Red']['A200']
-                screen_brake_meter.ids.lb_comm.text = 'PLC Tidak Terhubung'
-                screen_handbrake_meter.ids.lb_comm.color = colors['Red']['A200']
-                screen_handbrake_meter.ids.lb_comm.text = 'PLC Tidak Terhubung'
-                screen_resume.ids.lb_comm.color = colors['Red']['A200']
-                screen_resume.ids.lb_comm.text = 'PLC Tidak Terhubung'
-
-            else:
-                self.ids.lb_comm.color = colors['Blue']['200']
-                self.ids.lb_comm.text = 'PLC Terhubung'
-                screen_home.ids.lb_comm.color = colors['Blue']['200']
-                screen_home.ids.lb_comm.text = 'PLC Terhubung'
-                screen_login.ids.lb_comm.color = colors['Blue']['200']
-                screen_login.ids.lb_comm.text = 'PLC Terhubung'
-                screen_menu.ids.lb_comm.color = colors['Blue']['200']
-                screen_menu.ids.lb_comm.text = 'PLC Terhubung'
-                screen_load_meter.ids.lb_comm.color = colors['Blue']['200']
-                screen_load_meter.ids.lb_comm.text = 'PLC Terhubung'
-                screen_brake_meter.ids.lb_comm.color = colors['Blue']['200']
-                screen_brake_meter.ids.lb_comm.text = 'PLC Terhubung'
-                screen_handbrake_meter.ids.lb_comm.color = colors['Blue']['200']
-                screen_handbrake_meter.ids.lb_comm.text = 'PLC Terhubung'
-                screen_resume.ids.lb_comm.color = colors['Blue']['200']
-                screen_resume.ids.lb_comm.text = 'PLC Terhubung'
-
             if(count_starting <= 0):
                 screen_load_meter.ids.lb_test_subtitle.text = "HASIL PENGUKURAN"
                 screen_load_meter.ids.lb_load_l_val.text = str(db_load_left_value[dt_test_number])
@@ -509,6 +473,14 @@ class ScreenMain(MDScreen):
                 screen_login.ids.lb_comm.text = 'PLC Tidak Terhubung'
                 screen_menu.ids.lb_comm.color = colors['Red']['A200']
                 screen_menu.ids.lb_comm.text = 'PLC Tidak Terhubung'
+                screen_load_meter.ids.lb_comm.color = colors['Red']['A200']
+                screen_load_meter.ids.lb_comm.text = 'PLC Tidak Terhubung'
+                screen_brake_meter.ids.lb_comm.color = colors['Red']['A200']
+                screen_brake_meter.ids.lb_comm.text = 'PLC Tidak Terhubung'
+                screen_handbrake_meter.ids.lb_comm.color = colors['Red']['A200']
+                screen_handbrake_meter.ids.lb_comm.text = 'PLC Tidak Terhubung'
+                screen_resume.ids.lb_comm.color = colors['Red']['A200']
+                screen_resume.ids.lb_comm.text = 'PLC Tidak Terhubung'
 
             else:
                 self.ids.lb_comm.color = colors['Blue']['200']
@@ -519,6 +491,14 @@ class ScreenMain(MDScreen):
                 screen_login.ids.lb_comm.text = 'PLC Terhubung'
                 screen_menu.ids.lb_comm.color = colors['Blue']['200']
                 screen_menu.ids.lb_comm.text = 'PLC Terhubung'
+                screen_load_meter.ids.lb_comm.color = colors['Blue']['200']
+                screen_load_meter.ids.lb_comm.text = 'PLC Terhubung'
+                screen_brake_meter.ids.lb_comm.color = colors['Blue']['200']
+                screen_brake_meter.ids.lb_comm.text = 'PLC Terhubung'
+                screen_handbrake_meter.ids.lb_comm.color = colors['Blue']['200']
+                screen_handbrake_meter.ids.lb_comm.text = 'PLC Terhubung'
+                screen_resume.ids.lb_comm.color = colors['Blue']['200']
+                screen_resume.ids.lb_comm.text = 'PLC Terhubung'
 
             self.ids.bt_logout.disabled = False if dt_user != '' else True
 
@@ -526,14 +506,14 @@ class ScreenMain(MDScreen):
             screen_home.ids.lb_operator.text = f'Login Sebagai: {dt_user}' if dt_user != '' else 'Silahkan Login'
             screen_login.ids.lb_operator.text = f'Login Sebagai: {dt_user}' if dt_user != '' else 'Silahkan Login'
 
-            # if dt_user != '':
-            #     self.ids.img_user.source = f'https://{FTP_HOST}/simpkb909012/foto_user/{dt_foto_user}'
-            #     screen_home.ids.img_user.source = f'https://{FTP_HOST}/simpkb909012/foto_user/{dt_foto_user}'
-            #     screen_login.ids.img_user.source = f'https://{FTP_HOST}/simpkb909012/foto_user/{dt_foto_user}'
-            # else:
-            #     self.ids.img_user.source = 'assets/images/icon-login.png'
-            #     screen_home.ids.img_user.source = 'assets/images/icon-login.png'
-            #     screen_login.ids.img_user.source = 'assets/images/icon-login.png'           
+            if dt_user != '':
+                self.ids.img_user.source = f'https://{FTP_HOST}/simpkb909012/foto_user/{dt_foto_user}'
+                screen_home.ids.img_user.source = f'https://{FTP_HOST}/simpkb909012/foto_user/{dt_foto_user}'
+                screen_login.ids.img_user.source = f'https://{FTP_HOST}/simpkb909012/foto_user/{dt_foto_user}'
+            else:
+                self.ids.img_user.source = 'assets/images/icon-login.png'
+                screen_home.ids.img_user.source = 'assets/images/icon-login.png'
+                screen_login.ids.img_user.source = 'assets/images/icon-login.png'
 
         except Exception as e:
             toast_msg = f'Gagal Memperbaharui Tampilan'
@@ -773,7 +753,12 @@ class ScreenMenu(MDScreen):
         Clock.schedule_once(self.delayed_init, 2)        
 
     def delayed_init(self, dt):
-        pass
+        self.ids.img_pemkab.source = f'assets/images/{IMG_LOGO_PEMKAB}'
+        self.ids.img_dishub.source = f'assets/images/{IMG_LOGO_DISHUB}'
+        self.ids.lb_pemkab.text = LB_PEMKAB
+        self.ids.lb_dishub.text = LB_DISHUB
+        self.ids.lb_unit.text = LB_UNIT
+        self.ids.lb_unit_address.text = LB_UNIT_ADDRESS
 
     def exec_select_axle(self, number):
         global dt_test_number
@@ -848,7 +833,12 @@ class ScreenLoadMeter(MDScreen):
         Clock.schedule_once(self.delayed_init, 2)        
 
     def delayed_init(self, dt):
-        pass
+        self.ids.img_pemkab.source = f'assets/images/{IMG_LOGO_PEMKAB}'
+        self.ids.img_dishub.source = f'assets/images/{IMG_LOGO_DISHUB}'
+        self.ids.lb_pemkab.text = LB_PEMKAB
+        self.ids.lb_dishub.text = LB_DISHUB
+        self.ids.lb_unit.text = LB_UNIT
+        self.ids.lb_unit_address.text = LB_UNIT_ADDRESS
 
     def exec_reload(self):
         global flag_play
@@ -884,7 +874,12 @@ class ScreenBrakeMeter(MDScreen):
         Clock.schedule_once(self.delayed_init, 2)
         
     def delayed_init(self, dt):
-        pass
+        self.ids.img_pemkab.source = f'assets/images/{IMG_LOGO_PEMKAB}'
+        self.ids.img_dishub.source = f'assets/images/{IMG_LOGO_DISHUB}'
+        self.ids.lb_pemkab.text = LB_PEMKAB
+        self.ids.lb_dishub.text = LB_DISHUB
+        self.ids.lb_unit.text = LB_UNIT
+        self.ids.lb_unit_address.text = LB_UNIT_ADDRESS
 
     def exec_cylinder_up(self):
         global flag_conn_stat
@@ -962,7 +957,12 @@ class ScreenHandbrakeMeter(MDScreen):
         Clock.schedule_once(self.delayed_init, 2)
         
     def delayed_init(self, dt):
-        pass
+        self.ids.img_pemkab.source = f'assets/images/{IMG_LOGO_PEMKAB}'
+        self.ids.img_dishub.source = f'assets/images/{IMG_LOGO_DISHUB}'
+        self.ids.lb_pemkab.text = LB_PEMKAB
+        self.ids.lb_dishub.text = LB_DISHUB
+        self.ids.lb_unit.text = LB_UNIT
+        self.ids.lb_unit_address.text = LB_UNIT_ADDRESS
 
     def exec_cylinder_up(self):
         global flag_conn_stat
@@ -1018,8 +1018,8 @@ class ScreenHandbrakeMeter(MDScreen):
         db_handbrake_left_value[dt_test_number] = 0
         db_handbrake_right_value[dt_test_number] = 0
         self.ids.bt_reload.disabled = True
-        self.ids.lb_brake_l_val.text = "..."
-        self.ids.lb_brake_r_val.text = " "
+        self.ids.lb_handbrake_l_val.text = "..."
+        self.ids.lb_handbrake_r_val.text = " "
 
         if(not flag_play):
             Clock.schedule_interval(screen_main.regular_get_data, GET_DATA_INTERVAL)
@@ -1040,7 +1040,12 @@ class ScreenResume(MDScreen):
         Clock.schedule_once(self.delayed_init, 2)        
 
     def delayed_init(self, dt):
-        pass
+        self.ids.img_pemkab.source = f'assets/images/{IMG_LOGO_PEMKAB}'
+        self.ids.img_dishub.source = f'assets/images/{IMG_LOGO_DISHUB}'
+        self.ids.lb_pemkab.text = LB_PEMKAB
+        self.ids.lb_dishub.text = LB_DISHUB
+        self.ids.lb_unit.text = LB_UNIT
+        self.ids.lb_unit_address.text = LB_UNIT_ADDRESS
 
     def on_enter(self):
         self.exec_reload_table_detail()
@@ -1075,8 +1080,8 @@ class ScreenResume(MDScreen):
                             MDLabel(text=f"{db_brake_total_value[i]}", size_hint_x= 0.25),
                             MDLabel(text=f"{db_handbrake_total_value[i]}", size_hint_x= 0.25),
                             padding = 20,
-                            size_hint_y=None,
-                            height="60dp",
+                            size_hint_y=0.1,
+                            min_height="40dp",
                             orientation='horizontal'
                             )
                         )
@@ -1098,8 +1103,8 @@ class ScreenResume(MDScreen):
                             MDLabel(text=f"{db_brake_difference_value[i]}", size_hint_x= 0.15),
                             MDLabel(text="Lulus" if db_brake_difference_value[i] <= STANDARD_MAX_DIFFERENCE_BRAKE else "Tidak Lulus" , size_hint_x= 0.25),
                             padding = 20,
-                            size_hint_y=None,
-                            height="60dp",
+                            size_hint_y=0.1,
+                            min_height="40dp",
                             orientation='horizontal'
                             )
                         )
@@ -1120,8 +1125,8 @@ class ScreenResume(MDScreen):
                             MDLabel(text="Lulus" if db_handbrake_difference_value[i] <= STANDARD_MIN_EFFICIENCY_HANDBRAKE else "Tidak Lulus" , size_hint_x= 0.2),
                             MDTextField(size_hint_x= 0.2),
                             padding = 20,
-                            size_hint_y=None,
-                            height="60dp",
+                            size_hint_y=0.1,
+                            min_height="40dp",
                             orientation='horizontal'
                             )
                         )
@@ -1194,6 +1199,7 @@ class RootScreen(ScreenManager):
 class LoadBrakeMeterApp(MDApp):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        Window.bind(on_resize=self.on_window_resize)
 
     def build(self):
         self.theme_cls.colors = colors
@@ -1201,6 +1207,7 @@ class LoadBrakeMeterApp(MDApp):
         self.theme_cls.accent_palette = "Blue"
         self.theme_cls.theme_style = "Light"
         self.icon = 'assets/images/logo-load-app.png'
+        self.set_dynamic_fonts(Window.size)
 
         LabelBase.register(
             name="Orbitron-Regular",
@@ -1214,10 +1221,14 @@ class LoadBrakeMeterApp(MDApp):
             name="Recharge",
             fn_regular="assets/fonts/Recharge.otf") 
         
-        theme_font_styles.append('Display')
-        self.theme_cls.font_styles["Display"] = [
-            "Orbitron-Regular", 72, False, 0.15]       
+        theme_font_styles.append('H1')
+        self.theme_cls.font_styles["H1"] = [
+            "Orbitron-Regular", 64, False, 0.15]       
 
+        theme_font_styles.append('H2')
+        self.theme_cls.font_styles["H2"] = [
+            "Orbitron-Regular", 32, False, 0.15] 
+        
         theme_font_styles.append('H4')
         self.theme_cls.font_styles["H4"] = [
             "Recharge", 30, False, 0.15] 
@@ -1232,24 +1243,78 @@ class LoadBrakeMeterApp(MDApp):
 
         theme_font_styles.append('Subtitle1')
         self.theme_cls.font_styles["Subtitle1"] = [
-            "Recharge", 12, False, 0.15] 
+            "Recharge", 11, False, 0.15] 
 
         theme_font_styles.append('Body1')
         self.theme_cls.font_styles["Body1"] = [
-            "Recharge", 12, False, 0.15] 
+            "Recharge", 10, False, 0.15] 
         
         theme_font_styles.append('Button')
         self.theme_cls.font_styles["Button"] = [
-            "Recharge", 10, False, 0.15] 
+            "Recharge", 9, False, 0.15] 
 
         theme_font_styles.append('Caption')
         self.theme_cls.font_styles["Caption"] = [
-            "Recharge", 8, False, 0.15]              
+            "Recharge", 8, False, 0.15]       
         
         Window.fullscreen = 'auto'
-        # Window.size = (1920, 1080)
         Builder.load_file('main.kv')
         return RootScreen()
+
+    def on_window_resize(self, window, width, height):
+        print(f"Window resized: {width}x{height}")
+        self.set_dynamic_fonts((width, height))
+        self.refresh_all_fonts()
+
+    def refresh_all_fonts(self):
+        # Refresh fonts for all screens in the ScreenManager
+        if hasattr(self, 'root') and hasattr(self.root, 'screens'):
+            for screen in self.root.screens:
+                self.refresh_fonts(screen)
+
+    def refresh_fonts(self, widget):
+        from kivymd.uix.label import MDLabel
+        if isinstance(widget, MDLabel):
+            original_style = widget.font_style
+            temp_style = "Body1" if original_style != "Body1" else "H6"
+            widget.font_style = temp_style
+            widget.font_style = original_style
+        if hasattr(widget, 'children'):
+            for child in widget.children:
+                self.refresh_fonts(child)
+
+    def set_dynamic_fonts(self, size):
+        try:
+            screen_size_x = Window.system_size[0]
+            screen_size_y = Window.system_size[1]
+        except AttributeError:
+            screen_size_x = Window._get_system_size()[0]
+            screen_size_y = Window._get_system_size()[1]
+        font_size_l = np.array([64, 32, 30, 20, 16, 11, 10, 9, 8])
+        scale = min(screen_size_x / 1920, screen_size_y / 1080)
+        font_size = np.round(font_size_l * scale, 0)
+        print(f"Font resized: {font_size_l} to {font_size}")
+        self.theme_cls.font_styles["H1"] = [
+            "Orbitron-Regular", font_size[0], False, 0.15]
+        self.theme_cls.font_styles["H2"] = [
+            "Orbitron-Regular", font_size[1], False, 0.15]
+        self.theme_cls.font_styles["H4"] = [
+            "Recharge", font_size[2], False, 0.15]
+        self.theme_cls.font_styles["H5"] = [
+            "Recharge", font_size[3], False, 0.15]
+        self.theme_cls.font_styles["H6"] = [
+            "Recharge", font_size[4], False, 0.15]
+        self.theme_cls.font_styles["Subtitle1"] = [
+            "Recharge", font_size[5], False, 0.15]
+        self.theme_cls.font_styles["Body1"] = [
+            "Recharge", font_size[6], False, 0.15]
+        self.theme_cls.font_styles["Button"] = [
+            "Recharge", font_size[7], False, 0.15]
+        self.theme_cls.font_styles["Caption"] = [
+            "Recharge", font_size[8], False, 0.15]       
+
+        if hasattr(self, 'root'):
+            self.refresh_fonts(self.root)
 
 if __name__ == '__main__':
     LoadBrakeMeterApp().run()

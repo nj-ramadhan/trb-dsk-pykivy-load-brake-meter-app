@@ -1,7 +1,9 @@
+import glob
 from kivy.config import Config
 Config.set('kivy', 'keyboard_mode', 'systemanddock')
 from kivy.clock import Clock
 from kivy.lang import Builder
+from kivy.logger import Logger
 from kivy.core.window import Window
 from kivy.core.text import LabelBase
 from kivy.resources import resource_add_path
@@ -46,6 +48,14 @@ config_full_path = os.path.join(application_path, config_name)
 config = configparser.ConfigParser()
 config.read(config_full_path)
 
+## App Setting
+IMG_LOGO_PEMKAB = config['app']['IMG_LOGO_PEMKAB']
+IMG_LOGO_DISHUB = config['app']['IMG_LOGO_DISHUB']
+LB_PEMKAB = config['app']['LB_PEMKAB']
+LB_DISHUB = config['app']['LB_DISHUB']
+LB_UNIT = config['app']['LB_UNIT']
+LB_UNIT_ADDRESS = config['app']['LB_UNIT_ADDRESS']
+
 # SQL setting
 DB_HOST = config['mysql']['DB_HOST']
 DB_USER = config['mysql']['DB_USER']
@@ -63,6 +73,10 @@ UPDATE_CAROUSEL_INTERVAL = float(config['setting']['UPDATE_CAROUSEL_INTERVAL'])
 UPDATE_CONNECTION_INTERVAL = float(config['setting']['UPDATE_CONNECTION_INTERVAL'])
 GET_DATA_INTERVAL = float(config['setting']['GET_DATA_INTERVAL'])
 
+FTP_HOST = config['setting']['FTP_HOST']
+FTP_USER = config['setting']['FTP_USER']
+FTP_PASS = config['setting']['FTP_PASS']
+
 MODBUS_IP_PLC = config['setting']['MODBUS_IP_PLC']
 MODBUS_CLIENT = ModbusTcpClient(MODBUS_IP_PLC)
 REGISTER_DATA_LOAD = int(config['setting']['REGISTER_DATA_LOAD'])
@@ -74,67 +88,33 @@ STANDARD_MAX_BRAKE = float(config['standard']['STANDARD_MAX_BRAKE']) # %
 STANDARD_MAX_DIFFERENCE_BRAKE = float(config['standard']['STANDARD_MAX_DIFFERENCE_BRAKE']) # %
 STANDARD_MIN_EFFICIENCY_HANDBRAKE = float(config['standard']['STANDARD_MIN_EFFICIENCY_HANDBRAKE']) # %
 
-db_load_left_value = np.zeros(10, dtype=float)
-db_load_right_value = np.zeros(10, dtype=float)
-db_load_total_value = np.zeros(10, dtype=float)
-dt_load_total_value = 0
-dt_load_flag = 0
-dt_load_user = 1
-dt_load_post = str(time.strftime("%Y/%m/%d %H:%M:%S", time.localtime()))
-
-db_brake_left_value = np.zeros(10, dtype=float)
-db_brake_right_value = np.zeros(10, dtype=float)
-db_brake_total_value = np.zeros(10, dtype=float)
-db_brake_efficiency_value = np.zeros(10, dtype=float)
-db_brake_difference_value = np.zeros(10, dtype=float)
-dt_brake_total_value = 0
-dt_brake_efficiency_value = 0
-dt_brake_difference_value = 0
-dt_brake_flag = 0
-dt_brake_user = 1
-dt_brake_post = str(time.strftime("%Y/%m/%d %H:%M:%S", time.localtime()))
-
-db_handbrake_left_value = np.zeros(10, dtype=float)
-db_handbrake_right_value = np.zeros(10, dtype=float)
-db_handbrake_total_value = np.zeros(10, dtype=float)
-db_handbrake_efficiency_value = np.zeros(10, dtype=float)
-db_handbrake_difference_value = np.zeros(10, dtype=float)
-dt_handbrake_total_value = 0
-dt_handbrake_efficiency_value = 0
-dt_handbrake_difference_value = 0
-dt_handbrake_flag = 0
-dt_handbrake_user = 1
-dt_handbrake_post = str(time.strftime("%Y/%m/%d %H:%M:%S", time.localtime()))
-
-dt_user = ""
-dt_no_antrian = ""
-dt_no_pol = ""
-dt_no_uji = ""
-dt_nama = ""
-dt_jenis_kendaraan = ""
-
-dt_test_number = 0
-dt_dash_pendaftaran = 0
-dt_dash_belum_uji = 0
-dt_dash_sudah_uji = 0
-
-flag_cylinder = False
-
 class ScreenHome(MDScreen):
     def __init__(self, **kwargs):
         super(ScreenHome, self).__init__(**kwargs)
         Clock.schedule_once(self.delayed_init, 1)
-
+    
     def delayed_init(self, dt):
-        Clock.schedule_interval(self.regular_update_carousel, UPDATE_CAROUSEL_INTERVAL)
+        self.ids.img_pemkab.source = f'assets/images/{IMG_LOGO_PEMKAB}'
+        self.ids.img_dishub.source = f'assets/images/{IMG_LOGO_DISHUB}'
+        self.ids.lb_pemkab.text = LB_PEMKAB
+        self.ids.lb_dishub.text = LB_DISHUB
+        self.ids.lb_unit.text = LB_UNIT
+        self.ids.lb_unit_address.text = LB_UNIT_ADDRESS
+
+    def on_enter(self):
+        Clock.schedule_interval(self.regular_update_carousel, 3)
+
+    def on_leave(self):
+        Clock.unschedule(self.regular_update_carousel)
 
     def regular_update_carousel(self, dt):
         try:
             self.ids.carousel.index += 1
             
         except Exception as e:
-            toast_msg = f'Error Update Display: {e}'
+            toast_msg = f'Gagal Memperbaharui Tampilan Carousel'
             toast(toast_msg)                
+            Logger.error(toast_msg, e)  
 
     def exec_navigate_home(self):
         try:
@@ -142,7 +122,8 @@ class ScreenHome(MDScreen):
 
         except Exception as e:
             toast_msg = f'Error Navigate to Home Screen: {e}'
-            toast(toast_msg)        
+            toast(toast_msg)
+            Logger.error(toast_msg, e)
 
     def exec_navigate_login(self):
         global dt_user
@@ -154,7 +135,8 @@ class ScreenHome(MDScreen):
 
         except Exception as e:
             toast_msg = f'Error Navigate to Login Screen: {e}'
-            toast(toast_msg)     
+            toast(toast_msg)
+            Logger.error(toast_msg, e)
 
     def exec_navigate_main(self):
         try:
@@ -162,11 +144,21 @@ class ScreenHome(MDScreen):
 
         except Exception as e:
             toast_msg = f'Error Navigate to Main Screen: {e}'
-            toast(toast_msg)    
+            toast(toast_msg)
+            Logger.error(toast_msg, e)
 
 class ScreenLogin(MDScreen):
     def __init__(self, **kwargs):
         super(ScreenLogin, self).__init__(**kwargs)
+        Clock.schedule_once(self.delayed_init, 1)
+    
+    def delayed_init(self, dt):
+        self.ids.img_pemkab.source = f'assets/images/{IMG_LOGO_PEMKAB}'
+        self.ids.img_dishub.source = f'assets/images/{IMG_LOGO_DISHUB}'
+        self.ids.lb_pemkab.text = LB_PEMKAB
+        self.ids.lb_dishub.text = LB_DISHUB
+        self.ids.lb_unit.text = LB_UNIT
+        self.ids.lb_unit_address.text = LB_UNIT_ADDRESS
 
     def exec_cancel(self):
         try:
@@ -178,7 +170,7 @@ class ScreenLogin(MDScreen):
 
     def exec_login(self):
         global mydb, db_users
-        global dt_check_user, dt_user
+        global dt_id_user, dt_user, dt_foto_user
 
         screen_main = self.screen_manager.get_screen('screen_main')
 
@@ -192,34 +184,35 @@ class ScreenLogin(MDScreen):
             hashed_password = hashlib.md5(dataBase_password.encode())
 
             mycursor = mydb.cursor()
-            mycursor.execute(f"SELECT id_user, nama, username, password, nama FROM {TB_USER} WHERE username = '{input_username}' and password = '{hashed_password.hexdigest()}'")
+            mycursor.execute(f"SELECT id_user, nama, username, password, image FROM {TB_USER} WHERE username = '{input_username}' and password = '{hashed_password.hexdigest()}'")
             myresult = mycursor.fetchone()
             db_users = np.array(myresult).T
-            #if invalid
-            if myresult == 0:
+            
+            if myresult is None:
                 toast('Gagal Masuk, Nama Pengguna atau Password Salah')
-            #else, if valid
             else:
                 toast_msg = f'Berhasil Masuk, Selamat Datang {myresult[1]}'
                 toast(toast_msg)
-                dt_check_user = myresult[0]
+                dt_id_user = myresult[0]
                 dt_user = myresult[1]
+                dt_foto_user = myresult[4]
                 self.ids.tx_username.text = ""
                 self.ids.tx_password.text = "" 
                 self.screen_manager.current = 'screen_main'
 
         except Exception as e:
-            toast_msg = f'error Login: {e}'
-            toast(toast_msg)        
-            toast('Gagal Masuk, Nama Pengguna atau Password Salah')
+            toast_msg = f'Gagal masuk, silahkan isi nama user dan password yang sesuai'
+            toast(toast_msg)  
+            print(toast_msg, e)  
 
     def exec_navigate_home(self):
         try:
             self.screen_manager.current = 'screen_home'
 
         except Exception as e:
-            toast_msg = f'Error Navigate to Home Screen: {e}'
-            toast(toast_msg)        
+            toast_msg = f'Gagal Berpindah ke Halaman Awal'
+            toast(toast_msg)
+            print(toast_msg, e)
 
     def exec_navigate_login(self):
         global dt_user
@@ -230,67 +223,73 @@ class ScreenLogin(MDScreen):
                 toast(f"Anda sudah login sebagai {dt_user}")
 
         except Exception as e:
-            toast_msg = f'Error Navigate to Login Screen: {e}'
-            toast(toast_msg)     
+            toast_msg = f'Gagal Berpindah ke Halaman Login'
+            toast(toast_msg)
+            print(toast_msg, e)
 
     def exec_navigate_main(self):
         try:
             self.screen_manager.current = 'screen_main'
 
         except Exception as e:
-            toast_msg = f'Error Navigate to Main Screen: {e}'
-            toast(toast_msg)   
+            toast_msg = f'Gagal Berpindah ke Halaman Utama'
+            toast(toast_msg)
+            print(toast_msg, e)
 
 class ScreenMain(MDScreen):   
     def __init__(self, **kwargs):
         super(ScreenMain, self).__init__(**kwargs)
-        Clock.schedule_once(self.delayed_init, 1)                 
-
-    def delayed_init(self, dt):
         global flag_conn_stat, flag_play
         global count_starting, count_get_data
+        global db_load_left_value, db_load_right_value, db_load_total_value
+        global dt_load_total_value, dt_load_flag, dt_load_user, dt_load_post
+        global db_brake_left_value, db_brake_right_value, db_brake_total_value, db_brake_efficiency_value, db_brake_difference_value
+        global dt_brake_total_value, dt_brake_efficiency_value, dt_brake_difference_value, dt_brake_flag, dt_brake_user, dt_brake_post
+        global db_handbrake_left_value, db_handbrake_right_value, db_handbrake_total_value, db_handbrake_efficiency_value, db_handbrake_difference_value
+        global dt_handbrake_total_value, dt_handbrake_efficiency_value, dt_handbrake_difference_value, dt_handbrake_flag, dt_handbrake_user, dt_handbrake_post
+        global dt_user, dt_no_antrian, dt_no_pol, dt_no_uji, dt_nama, dt_jenis_kendaraan
+        global dt_test_number, dt_dash_pendaftaran, dt_dash_belum_uji, dt_dash_sudah_uji
+        global flag_cylinder
 
-        flag_conn_stat = False
-        flag_play = False
+        flag_conn_stat = flag_play = False
 
         count_starting = COUNT_STARTING
         count_get_data = COUNT_ACQUISITION
+
+        db_load_left_value = db_load_right_value = db_load_total_value = np.zeros(10, dtype=float)
+        dt_load_total_value = dt_load_flag = 0
+
+        db_brake_left_value = db_brake_right_value = db_brake_total_value = db_brake_efficiency_value = db_brake_difference_value = np.zeros(10, dtype=float)
+        dt_brake_total_value = dt_brake_efficiency_value = dt_brake_difference_value = dt_brake_flag = 0
+
+        db_handbrake_left_value = db_handbrake_right_value = db_handbrake_total_value = db_handbrake_efficiency_value = db_handbrake_difference_value = np.zeros(10, dtype=float)
+        dt_handbrake_total_value = dt_handbrake_efficiency_value = dt_handbrake_difference_value = dt_handbrake_flag = 0
+
+        dt_load_user = dt_brake_user = dt_handbrake_user = 1
+        dt_load_post = dt_brake_post = dt_handbrake_post = str(time.strftime("%Y/%m/%d %H:%M:%S", time.localtime()))
+
+        dt_user = dt_no_antrian = dt_no_pol = dt_no_uji = dt_nama = dt_jenis_kendaraan = ""
+
+        dt_test_number = dt_dash_pendaftaran = dt_dash_belum_uji = dt_dash_sudah_uji = 0
+
+        flag_cylinder = False
+
+        Clock.schedule_once(self.delayed_init, 1)
+    
+    def delayed_init(self, dt):
+        self.ids.img_pemkab.source = f'assets/images/{IMG_LOGO_PEMKAB}'
+        self.ids.img_dishub.source = f'assets/images/{IMG_LOGO_DISHUB}'
+        self.ids.lb_pemkab.text = LB_PEMKAB
+        self.ids.lb_dishub.text = LB_DISHUB
+        self.ids.lb_unit.text = LB_UNIT
+        self.ids.lb_unit_address.text = LB_UNIT_ADDRESS
         
         Clock.schedule_interval(self.regular_update_display, 1)
         Clock.schedule_interval(self.regular_update_connection, UPDATE_CONNECTION_INTERVAL)
-        self.exec_reload_database()
-        self.exec_reload_table()
 
     def on_enter(self):
         self.exec_reload_database()
         self.exec_reload_table()
-
-    def on_antrian_row_press(self, instance):
-        global dt_no_antrian, dt_no_pol, dt_no_uji, dt_nama, dt_load_flag, dt_brake_flag, dt_handbrake_flag
-        global dt_merk, dt_type, dt_jenis_kendaraan, dt_jbb, dt_bahan_bakar, dt_warna
-        global db_antrian, db_merk
-
-        try:
-            row = int(str(instance.id).replace("card_antrian",""))
-            dt_no_antrian           = f"{db_antrian[0, row]}"
-            dt_no_pol               = f"{db_antrian[1, row]}"
-            dt_no_uji               = f"{db_antrian[2, row]}"
-            dt_load_flag            = 'Lulus' if (int(db_antrian[3, row]) == 2) else 'Tidak Lulus' if (int(db_antrian[3, row]) == 1) else 'Belum Tes'
-            dt_brake_flag           = 'Lulus' if (int(db_antrian[4, row]) == 2) else 'Tidak Lulus' if (int(db_antrian[4, row]) == 1) else 'Belum Tes'
-            dt_handbrake_flag       = 'Lulus' if (int(db_antrian[5, row]) == 2) else 'Tidak Lulus' if (int(db_antrian[5, row]) == 1) else 'Belum Tes'
-            dt_nama                 = f"{db_antrian[6, row]}"
-            dt_merk                 = f"{db_merk[np.where(db_merk == db_antrian[7, row])[0][0],1]}"
-            dt_type                 = f"{db_antrian[8, row]}"
-            dt_jenis_kendaraan      = f"{db_antrian[9, row]}"
-            dt_jbb                  = f"{db_antrian[10, row]}"
-            dt_bahan_bakar          = f"{db_antrian[11, row]}"
-            dt_warna                = f"{db_antrian[12, row]}"
-                        
-            self.exec_start()
-
-        except Exception as e:
-            toast_msg = f'Error Execute Command from Table Row: {e}'
-            toast(toast_msg)   
 
     def regular_update_display(self, dt):
         global flag_conn_stat
@@ -306,6 +305,7 @@ class ScreenMain(MDScreen):
             screen_home = self.screen_manager.get_screen('screen_home')
             screen_login = self.screen_manager.get_screen('screen_login')
             screen_menu = self.screen_manager.get_screen('screen_menu')
+
             screen_load_meter = self.screen_manager.get_screen('screen_load_meter')
             screen_brake_meter = self.screen_manager.get_screen('screen_brake_meter')
             screen_handbrake_meter = self.screen_manager.get_screen('screen_handbrake_meter')
@@ -491,16 +491,6 @@ class ScreenMain(MDScreen):
                 screen_handbrake_meter.ids.lb_test_result.text = ""
             
             for i in range(10):
-                # screen_resume.ids[f'lb_axle_load_number{i}'].text = '' if (db_load_total_value[i] + db_brake_total_value[i] + db_handbrake_total_value[i] == 0) else f'Sumbu {i+1}'
-                # screen_resume.ids[f'lb_axle_load_number{i}'].size_hint_y = None if (db_load_total_value[i] + db_brake_total_value[i] + db_handbrake_total_value[i] == 0) else 0.1
-                # screen_resume.ids[f'lb_load_value{i}'].text = str(db_load_total_value[i]) if db_load_total_value[i] > 0.0 else ''
-                # screen_resume.ids[f'lb_brake_value{i}'].text = str(db_brake_total_value[i]) if db_brake_total_value[i] > 0.0 else ''
-                # screen_resume.ids[f'lb_brake_efficiency{i}'].text = str(db_brake_efficiency_value[dt_test_number])
-                # screen_resume.ids[f'lb_brake_difference{i}'].text = str(db_brake_difference_value[dt_test_number])
-                # screen_resume.ids[f'lb_handbrake_value{i}'].text = str(db_handbrake_total_value[i]) if db_handbrake_total_value[i] > 0.0 else ''
-                # screen_resume.ids[f'lb_handbrake_efficiency{i}'].text = str(db_handbrake_efficiency_value[dt_test_number])
-                # screen_resume.ids[f'lb_handbrake_difference{i}'].text = str(db_handbrake_difference_value[dt_test_number])
-
                 if(dt_test_number == i):
                     screen_menu.ids[f'bt_S{i}'].md_bg_color = colors['Red']['A200']
                 else:
@@ -508,26 +498,47 @@ class ScreenMain(MDScreen):
 
             screen_resume.ids.lb_load_value_sum.text = str(dt_load_total_value)
             screen_resume.ids.lb_brake_value_sum.text = str(dt_brake_total_value)
-            # screen_resume.ids.lb_brake_efficiency_sum.text = str(dt_brake_efficiency_value)
-            # screen_resume.ids.lb_brake_difference_sum.text = str(dt_brake_difference_value)
             screen_resume.ids.lb_handbrake_value_sum.text = str(dt_handbrake_total_value)
-            # screen_resume.ids.lb_handbrake_efficiency_sum.text = str(dt_handbrake_efficiency_value)
-            # screen_resume.ids.lb_handbrake_difference_sum.text = str(dt_handbrake_difference_value)
+
+            if(not flag_conn_stat):
+                self.ids.lb_comm.color = colors['Red']['A200']
+                self.ids.lb_comm.text = 'PLC Tidak Terhubung'
+                screen_home.ids.lb_comm.color = colors['Red']['A200']
+                screen_home.ids.lb_comm.text = 'PLC Tidak Terhubung'
+                screen_login.ids.lb_comm.color = colors['Red']['A200']
+                screen_login.ids.lb_comm.text = 'PLC Tidak Terhubung'
+                screen_menu.ids.lb_comm.color = colors['Red']['A200']
+                screen_menu.ids.lb_comm.text = 'PLC Tidak Terhubung'
+
+            else:
+                self.ids.lb_comm.color = colors['Blue']['200']
+                self.ids.lb_comm.text = 'PLC Terhubung'
+                screen_home.ids.lb_comm.color = colors['Blue']['200']
+                screen_home.ids.lb_comm.text = 'PLC Terhubung'
+                screen_login.ids.lb_comm.color = colors['Blue']['200']
+                screen_login.ids.lb_comm.text = 'PLC Terhubung'
+                screen_menu.ids.lb_comm.color = colors['Blue']['200']
+                screen_menu.ids.lb_comm.text = 'PLC Terhubung'
 
             self.ids.bt_logout.disabled = False if dt_user != '' else True
-            
+
             self.ids.lb_operator.text = f'Login Sebagai: {dt_user}' if dt_user != '' else 'Silahkan Login'
             screen_home.ids.lb_operator.text = f'Login Sebagai: {dt_user}' if dt_user != '' else 'Silahkan Login'
             screen_login.ids.lb_operator.text = f'Login Sebagai: {dt_user}' if dt_user != '' else 'Silahkan Login'
-            screen_menu.ids.lb_operator.text = f'Login Sebagai: {dt_user}' if dt_user != '' else 'Silahkan Login'
-            screen_load_meter.ids.lb_operator.text = f'Login Sebagai: {dt_user}' if dt_user != '' else 'Silahkan Login'
-            screen_brake_meter.ids.lb_operator.text = f'Login Sebagai: {dt_user}' if dt_user != '' else 'Silahkan Login'
-            screen_handbrake_meter.ids.lb_operator.text = f'Login Sebagai: {dt_user}' if dt_user != '' else 'Silahkan Login'
-            screen_resume.ids.lb_operator.text = f'Login Sebagai: {dt_user}' if dt_user != '' else 'Silahkan Login'
+
+            # if dt_user != '':
+            #     self.ids.img_user.source = f'https://{FTP_HOST}/simpkb909012/foto_user/{dt_foto_user}'
+            #     screen_home.ids.img_user.source = f'https://{FTP_HOST}/simpkb909012/foto_user/{dt_foto_user}'
+            #     screen_login.ids.img_user.source = f'https://{FTP_HOST}/simpkb909012/foto_user/{dt_foto_user}'
+            # else:
+            #     self.ids.img_user.source = 'assets/images/icon-login.png'
+            #     screen_home.ids.img_user.source = 'assets/images/icon-login.png'
+            #     screen_login.ids.img_user.source = 'assets/images/icon-login.png'           
 
         except Exception as e:
-            toast_msg = f'Error Update Display: {e}'
-            toast(toast_msg)       
+            toast_msg = f'Gagal Memperbaharui Tampilan'
+            toast(toast_msg)
+            print(toast_msg, e)
 
     def regular_update_connection(self, dt):
         global flag_conn_stat
@@ -680,6 +691,34 @@ class ScreenMain(MDScreen):
             toast_msg = f'Error Reload Table: {e}'
             print(toast_msg)
 
+
+    def on_antrian_row_press(self, instance):
+        global dt_no_antrian, dt_no_pol, dt_no_uji, dt_nama, dt_load_flag, dt_brake_flag, dt_handbrake_flag
+        global dt_merk, dt_type, dt_jenis_kendaraan, dt_jbb, dt_bahan_bakar, dt_warna
+        global db_antrian, db_merk
+
+        try:
+            row = int(str(instance.id).replace("card_antrian",""))
+            dt_no_antrian           = f"{db_antrian[0, row]}"
+            dt_no_pol               = f"{db_antrian[1, row]}"
+            dt_no_uji               = f"{db_antrian[2, row]}"
+            dt_load_flag            = 'Lulus' if (int(db_antrian[3, row]) == 2) else 'Tidak Lulus' if (int(db_antrian[3, row]) == 1) else 'Belum Tes'
+            dt_brake_flag           = 'Lulus' if (int(db_antrian[4, row]) == 2) else 'Tidak Lulus' if (int(db_antrian[4, row]) == 1) else 'Belum Tes'
+            dt_handbrake_flag       = 'Lulus' if (int(db_antrian[5, row]) == 2) else 'Tidak Lulus' if (int(db_antrian[5, row]) == 1) else 'Belum Tes'
+            dt_nama                 = f"{db_antrian[6, row]}"
+            dt_merk                 = f"{db_merk[np.where(db_merk == db_antrian[7, row])[0][0],1]}"
+            dt_type                 = f"{db_antrian[8, row]}"
+            dt_jenis_kendaraan      = f"{db_antrian[9, row]}"
+            dt_jbb                  = f"{db_antrian[10, row]}"
+            dt_bahan_bakar          = f"{db_antrian[11, row]}"
+            dt_warna                = f"{db_antrian[12, row]}"
+                        
+            self.exec_start()
+
+        except Exception as e:
+            toast_msg = f'Error Execute Command from Table Row: {e}'
+            toast(toast_msg)   
+            
     def exec_start(self):
         global dt_load_flag, dt_brake_flag, dt_handbrake_flag, dt_no_antrian, dt_user
         global flag_play

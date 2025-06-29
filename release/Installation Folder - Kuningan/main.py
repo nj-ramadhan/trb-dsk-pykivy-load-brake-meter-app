@@ -14,7 +14,7 @@ else:
 
 logger_name = f'app.log'
 logger_dir = os.path.join(application_path, "logs")
-os.makedirs(logger_dir, exist_ok=True)
+# os.makedirs(logger_dir, exist_ok=True)
 
 for folder in [logger_dir, application_path]:
     for fname in os.listdir(folder):
@@ -77,13 +77,22 @@ LB_UNIT = config['app']['LB_UNIT']
 LB_UNIT_ADDRESS = config['app']['LB_UNIT_ADDRESS']
 
 # SQL setting
-DB_HOST = "127.0.0.1"
-DB_USER = "kuningan2025"
-DB_PASSWORD = "@kuningan2025"
+# DB_HOST = "127.0.0.1"
+# DB_USER = "kuningan2025"
+# DB_PASSWORD = "@kuningan2025"
+
+DB_HOST = "156.67.217.60"
+DB_USER = "pkbsorong2024!"
+DB_PASSWORD = "@Sorongpkb2024"
 DB_NAME = "dishub"
+
 TB_DATA = "tb_cekident"
 TB_USER = "users"
 TB_MERK = "merk"
+
+FTP_HOST = "194.31.53.37"
+FTP_USER = "root"
+FTP_PASS = "@D15HUBp2022!"
 
 # system setting
 TIME_OUT = int(config['setting']['TIME_OUT'])
@@ -95,10 +104,8 @@ GET_DATA_INTERVAL = float(config['setting']['GET_DATA_INTERVAL'])
 
 MODBUS_IP_PLC = config['setting']['MODBUS_IP_PLC']
 MODBUS_CLIENT = ModbusTcpClient(MODBUS_IP_PLC)
-REGISTER_DATA_LOAD_R = int(config['setting']['REGISTER_DATA_LOAD_R']) # V1200
-REGISTER_DATA_LOAD_L = int(config['setting']['REGISTER_DATA_LOAD_R']) # V1201
-REGISTER_DATA_BRAKE_R = int(config['setting']['REGISTER_DATA_BRAKE_R']) # V1202
-REGISTER_DATA_BRAKE_L = int(config['setting']['REGISTER_DATA_BRAKE_R']) # V1203
+REGISTER_DATA_LOAD = int(config['setting']['REGISTER_DATA_LOAD']) # V1200
+REGISTER_DATA_BRAKE = int(config['setting']['REGISTER_DATA_BRAKE']) # V1250
 
 # system standard
 STANDARD_MAX_AXLE_LOAD = float(config['standard']['STANDARD_MAX_AXLE_LOAD']) # in kg
@@ -596,12 +603,15 @@ class ScreenMain(MDScreen):
 
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
-                axle_load_registers = MODBUS_CLIENT.read_holding_registers(REGISTER_DATA_LOAD_R, count=2, slave=1) #V1200 - V1201
-                brake_registers = MODBUS_CLIENT.read_holding_registers(REGISTER_DATA_BRAKE_R, count=2, slave=1) #V1250 - V1251
+                axle_load_registers = MODBUS_CLIENT.read_holding_registers(REGISTER_DATA_LOAD, count=2, slave=1) #V1200 - V1201
+                brake_registers = MODBUS_CLIENT.read_holding_registers(REGISTER_DATA_BRAKE, count=2, slave=1) #V1250 - V1251
                 MODBUS_CLIENT.close()
+                Logger.info(f"DATA: Axle Load = {axle_load_registers.registers}, Brake = {brake_registers.registers}")
 
                 db_load_left_value[dt_test_number] = np.round(self.unsigned_to_signed(axle_load_registers.registers[0]) / 10 , 2)
                 db_load_right_value[dt_test_number] = np.round(self.unsigned_to_signed(axle_load_registers.registers[1]) / 10 , 2)
+                db_brake_left_value[dt_test_number] = np.round(self.unsigned_to_signed(brake_registers.registers[0]) / 10 , 2)
+                db_brake_right_value[dt_test_number] = np.round(self.unsigned_to_signed(brake_registers.registers[1]) / 10 , 2)
 
                 if self.screen_manager.current == 'screen_load_meter':
                     if(dt_test_number == 0 and db_load_right_value[dt_test_number] >= 60):
@@ -821,6 +831,308 @@ class ScreenCalibration(MDScreen):
 
     def on_leave(self):
         pass
+
+    def exec_calibrate_load_l_start(self):
+        global flag_conn_stat
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_register(1722, 1, slave=1) #V1210
+                MODBUS_CLIENT.write_coil(3093, 1, slave=1) #M21
+                time.sleep(0.1)
+                MODBUS_CLIENT.write_coil(3093, 0, slave=1) #M21
+                MODBUS_CLIENT.close()
+        except Exception as e:
+            toast_msg = f"error send exec_calibrate_load_l_start data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
+
+    def exec_calibrate_load_l_zero(self):
+        global flag_conn_stat
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_register(1724, 0, slave=1) #V1212
+                MODBUS_CLIENT.write_coil(3094, 1, slave=1) #M22
+                time.sleep(0.1)
+                MODBUS_CLIENT.write_coil(3094, 0, slave=1) #M22
+                MODBUS_CLIENT.close()
+        except Exception as e:
+            toast_msg = f"error send exec_calibrate_load_l_zero data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
+
+    def exec_calibrate_load_l_value1(self):
+        global flag_conn_stat
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_register(1726, int(self.ids.tx_calibrate_load_l_value1.text), slave=1) #V1214
+                MODBUS_CLIENT.write_coil(3095, 1, slave=1) #M23
+                time.sleep(0.1)
+                MODBUS_CLIENT.write_coil(3095, 0, slave=1) #M23
+                MODBUS_CLIENT.close()
+        except Exception as e:
+            toast_msg = f"error send exec_calibrate_load_l_value1 data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
+
+    def exec_calibrate_load_l_value2(self):
+        global flag_conn_stat
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_register(1728, int(self.ids.tx_calibrate_load_l_value2.text), slave=1) #V1216
+                MODBUS_CLIENT.write_coil(3096, 1, slave=1) #M24
+                time.sleep(0.1)
+                MODBUS_CLIENT.write_coil(3096, 0, slave=1) #M24
+                MODBUS_CLIENT.close()
+        except Exception as e:
+            toast_msg = f"error send exec_calibrate_load_l_value2 data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
+
+    def exec_calibrate_load_l_stop(self):
+        global flag_conn_stat
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_register(1730, 2, slave=1) #V1218
+                MODBUS_CLIENT.write_coil(3097, 1, slave=1) #M25
+                time.sleep(0.1)
+                MODBUS_CLIENT.write_coil(3097, 0, slave=1) #M25
+                MODBUS_CLIENT.close()
+        except Exception as e:
+            toast_msg = f"error send exec_calibrate_load_l_stop data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}") 
+
+    def exec_calibrate_load_r_start(self):
+        global flag_conn_stat
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_register(1752, 1, slave=1) #V1240
+                MODBUS_CLIENT.write_coil(3193, 1, slave=1) #M121
+                time.sleep(0.1)
+                MODBUS_CLIENT.write_coil(3193, 0, slave=1) #M121
+                MODBUS_CLIENT.close()
+        except Exception as e:
+            toast_msg = f"error send exec_calibrate_load_r_start data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
+
+    def exec_calibrate_load_r_zero(self):
+        global flag_conn_stat
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_register(1754, 0, slave=1) #V1242
+                MODBUS_CLIENT.write_coil(3194, 1, slave=1) #M122
+                time.sleep(0.1)
+                MODBUS_CLIENT.write_coil(3194, 0, slave=1) #M122
+                MODBUS_CLIENT.close()
+        except Exception as e:
+            toast_msg = f"error send exec_calibrate_load_r_zero data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
+
+    def exec_calibrate_load_r_value1(self):
+        global flag_conn_stat
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_register(1756, int(self.ids.tx_calibrate_load_r_value1.text), slave=1) #V1244
+                MODBUS_CLIENT.write_coil(3195, 1, slave=1) #M123
+                time.sleep(0.1)
+                MODBUS_CLIENT.write_coil(3195, 0, slave=1) #M123
+                MODBUS_CLIENT.close()
+        except Exception as e:
+            toast_msg = f"error send exec_calibrate_load_r_value1 data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
+
+    def exec_calibrate_load_r_value2(self):
+        global flag_conn_stat
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_register(1758, int(self.ids.tx_calibrate_load_r_value2.text), slave=1) #V1246
+                MODBUS_CLIENT.write_coil(3196, 1, slave=1) #M124
+                time.sleep(0.1)
+                MODBUS_CLIENT.write_coil(3196, 0, slave=1) #M124
+                MODBUS_CLIENT.close()
+        except Exception as e:
+            toast_msg = f"error send exec_calibrate_load_r_value2 data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
+
+    def exec_calibrate_load_r_stop(self):
+        global flag_conn_stat
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_register(1760, 2, slave=1) #V1248
+                MODBUS_CLIENT.write_coil(3197, 1, slave=1) #M125
+                time.sleep(0.1)
+                MODBUS_CLIENT.write_coil(3197, 0, slave=1) #M125
+                MODBUS_CLIENT.close()
+        except Exception as e:
+            toast_msg = f"error send exec_calibrate_load_r_stop data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}") 
+
+
+    def exec_calibrate_brake_l_start(self):
+        global flag_conn_stat
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_register(1782, 1, slave=1) #V1270
+                MODBUS_CLIENT.write_coil(3293, 1, slave=1) #M221
+                time.sleep(0.1)
+                MODBUS_CLIENT.write_coil(3293, 0, slave=1) #M221
+                MODBUS_CLIENT.close()
+        except Exception as e:
+            toast_msg = f"error send exec_calibrate_brake_l_start data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
+
+    def exec_calibrate_brake_l_zero(self):
+        global flag_conn_stat
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_register(1784, 0, slave=1) #V1272
+                MODBUS_CLIENT.write_coil(3294, 1, slave=1) #M222
+                time.sleep(0.1)
+                MODBUS_CLIENT.write_coil(3294, 0, slave=1) #M222
+                MODBUS_CLIENT.close()
+        except Exception as e:
+            toast_msg = f"error send exec_calibrate_brake_l_zero data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
+
+    def exec_calibrate_brake_l_value1(self):
+        global flag_conn_stat
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_register(1786, int(self.ids.tx_calibrate_brake_l_value1.text), slave=1) #V1274
+                MODBUS_CLIENT.write_coil(3295, 1, slave=1) #M223
+                time.sleep(0.1)
+                MODBUS_CLIENT.write_coil(3295, 0, slave=1) #M223
+                MODBUS_CLIENT.close()
+        except Exception as e:
+            toast_msg = f"error send exec_calibrate_brake_l_value1 data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
+
+    def exec_calibrate_brake_l_value2(self):
+        global flag_conn_stat
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_register(1788, int(self.ids.tx_calibrate_brake_l_value2.text), slave=1) #V1276
+                MODBUS_CLIENT.write_coil(3296, 1, slave=1) #M224
+                time.sleep(0.1)
+                MODBUS_CLIENT.write_coil(3296, 0, slave=1) #M224
+                MODBUS_CLIENT.close()
+        except Exception as e:
+            toast_msg = f"error send exec_calibrate_brake_l_value2 data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
+
+    def exec_calibrate_brake_l_stop(self):
+        global flag_conn_stat
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_register(1790, 2, slave=1) #V1278
+                MODBUS_CLIENT.write_coil(3297, 1, slave=1) #2M25
+                time.sleep(0.1)
+                MODBUS_CLIENT.write_coil(3297, 0, slave=1) #M225
+                MODBUS_CLIENT.close()
+        except Exception as e:
+            toast_msg = f"error send exec_calibrate_brake_l_stop data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}") 
+
+    def exec_calibrate_brake_r_start(self):
+        global flag_conn_stat
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_register(1812, 1, slave=1) #V1300
+                MODBUS_CLIENT.write_coil(3393, 1, slave=1) #M321
+                time.sleep(0.1)
+                MODBUS_CLIENT.write_coil(3393, 0, slave=1) #M321
+                MODBUS_CLIENT.close()
+        except Exception as e:
+            toast_msg = f"error send exec_calibrate_brake_r_start data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
+
+    def exec_calibrate_brake_r_zero(self):
+        global flag_conn_stat
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_register(1814, 0, slave=1) #V1302
+                MODBUS_CLIENT.write_coil(3394, 1, slave=1) #M322
+                time.sleep(0.1)
+                MODBUS_CLIENT.write_coil(3394, 0, slave=1) #M322
+                MODBUS_CLIENT.close()
+        except Exception as e:
+            toast_msg = f"error send exec_calibrate_brake_r_zero data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
+
+    def exec_calibrate_brake_r_value1(self):
+        global flag_conn_stat
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_register(1816, int(self.ids.tx_calibrate_brake_r_value1.text), slave=1) #V1304
+                MODBUS_CLIENT.write_coil(3395, 1, slave=1) #M123
+                time.sleep(0.1)
+                MODBUS_CLIENT.write_coil(3395, 0, slave=1) #M123
+                MODBUS_CLIENT.close()
+        except Exception as e:
+            toast_msg = f"error send exec_calibrate_brake_r_value1 data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
+
+    def exec_calibrate_brake_r_value2(self):
+        global flag_conn_stat
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_register(1818, int(self.ids.tx_calibrate_brake_r_value2.text), slave=1) #V1306
+                MODBUS_CLIENT.write_coil(3396, 1, slave=1) #M324
+                time.sleep(0.1)
+                MODBUS_CLIENT.write_coil(3396, 0, slave=1) #M324
+                MODBUS_CLIENT.close()
+        except Exception as e:
+            toast_msg = f"error send exec_calibrate_brake_r_value2 data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
+
+    def exec_calibrate_brake_r_stop(self):
+        global flag_conn_stat
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_register(1820, 2, slave=1) #V1308
+                MODBUS_CLIENT.write_coil(3397, 1, slave=1) #M325
+                time.sleep(0.1)
+                MODBUS_CLIENT.write_coil(3397, 0, slave=1) #M325
+                MODBUS_CLIENT.close()
+        except Exception as e:
+            toast_msg = f"error send exec_calibrate_brake_r_stop data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}") 
+
 
     def exec_navigate_menu(self):
         try:

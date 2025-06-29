@@ -77,22 +77,22 @@ LB_UNIT = config['app']['LB_UNIT']
 LB_UNIT_ADDRESS = config['app']['LB_UNIT_ADDRESS']
 
 # SQL setting
-# DB_HOST = "127.0.0.1"
-# DB_USER = "kuningan2025"
-# DB_PASSWORD = "@kuningan2025"
+DB_HOST = "127.0.0.1"
+DB_USER = "kuningan2025"
+DB_PASSWORD = "@kuningan2025"
 
-DB_HOST = "156.67.217.60"
-DB_USER = "pkbsorong2024!"
-DB_PASSWORD = "@Sorongpkb2024"
+# DB_HOST = "156.67.217.60"
+# DB_USER = "pkbsorong2024!"
+# DB_PASSWORD = "@Sorongpkb2024"
 DB_NAME = "dishub"
 
 TB_DATA = "tb_cekident"
 TB_USER = "users"
 TB_MERK = "merk"
 
-FTP_HOST = "194.31.53.37"
-FTP_USER = "root"
-FTP_PASS = "@D15HUBp2022!"
+FTP_HOST = "127.0.0.1"
+FTP_USER = "kuningan2025"
+FTP_PASS = "@kuningan2025"
 
 # system setting
 TIME_OUT = int(config['setting']['TIME_OUT'])
@@ -547,9 +547,9 @@ class ScreenMain(MDScreen):
             screen_login.ids.lb_operator.text = f'Login Sebagai: {dt_user}' if dt_user != '' else 'Silahkan Login'
 
             if dt_user != '':
-                self.ids.img_user.source = f'https://{FTP_HOST}/simpkb909012/foto_user/{dt_foto_user}'
-                screen_home.ids.img_user.source = f'https://{FTP_HOST}/simpkb909012/foto_user/{dt_foto_user}'
-                screen_login.ids.img_user.source = f'https://{FTP_HOST}/simpkb909012/foto_user/{dt_foto_user}'
+                self.ids.img_user.source = f'https://{FTP_HOST}/sim_pkb/foto_user/{dt_foto_user}'
+                screen_home.ids.img_user.source = f'https://{FTP_HOST}/sim_pkb/foto_user/{dt_foto_user}'
+                screen_login.ids.img_user.source = f'https://{FTP_HOST}/sim_pkb/foto_user/{dt_foto_user}'
             else:
                 self.ids.img_user.source = 'assets/images/icon-login.png'
                 screen_home.ids.img_user.source = 'assets/images/icon-login.png'

@@ -1,22 +1,52 @@
-import glob
+import os, sys, time
+
+if getattr(sys, 'frozen', False):
+    application_path = os.path.dirname(sys.executable)
+    running_mode = 'Frozen/executable'
+else:
+    try:
+        app_full_path = os.path.realpath(__file__)
+        application_path = os.path.dirname(app_full_path)
+        running_mode = "Non-interactive"
+    except NameError:
+        application_path = os.getcwd()
+        running_mode = 'Interactive'
+
+logger_name = f'app.log'
+logger_dir = os.path.join(application_path, "logs")
+os.makedirs(logger_dir, exist_ok=True)
+
+for folder in [logger_dir, application_path]:
+    for fname in os.listdir(folder):
+        if fname.startswith("app") and (fname.endswith(".log") or fname.endswith(".txt")):
+            try:
+                os.remove(os.path.join(folder, fname))
+            except Exception as e:
+                print(f'Error removing old log file: {e}', fname)
+
 from kivy.config import Config
 Config.set('kivy', 'keyboard_mode', 'systemanddock')
+# Config.set('kivy', 'log_level', 'info')
+# Config.set('kivy', 'log_enable', 0)
+# Config.set('kivy', 'log_dir', logger_dir)
+# Config.set('kivy', 'log_name', logger_name)
+# Config.set('kivy', 'log_maxfiles', 100)
+# Config.write()
+
+from kivy.logger import Logger
 from kivy.clock import Clock
 from kivy.lang import Builder
-from kivy.logger import Logger
 from kivy.core.window import Window
 from kivy.core.text import LabelBase
-from kivy.resources import resource_add_path
 from kivy.uix.screenmanager import ScreenManager
 from kivymd.font_definitions import theme_font_styles
 from kivymd.uix.screen import MDScreen
 from kivymd.uix.label import MDLabel
 from kivymd.uix.card import MDCard
-from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.textfield import MDTextField
 from kivymd.toast import toast
 from kivymd.app import MDApp
-import os, sys, time, numpy as np
+import numpy as np
 import configparser, hashlib, mysql.connector
 from pymodbus.client import ModbusTcpClient
 
@@ -32,23 +62,13 @@ colors = {
 }
 
 config_name = 'config.ini'
-if getattr(sys, 'frozen', False):
-    application_path = os.path.dirname(sys.executable)
-    running_mode = 'Frozen/executable'
-else:
-    try:
-        app_full_path = os.path.realpath(__file__)
-        application_path = os.path.dirname(app_full_path)
-        running_mode = "Non-interactive (e.g. 'python myapp.py')"
-    except NameError:
-        application_path = os.getcwd()
-        running_mode = 'Interactive'
-
 config_full_path = os.path.join(application_path, config_name)
 config = configparser.ConfigParser()
 config.read(config_full_path)
 
 ## App Setting
+APP_TITLE = config['app']['APP_TITLE']
+APP_SUBTITLE = config['app']['APP_SUBTITLE']
 IMG_LOGO_PEMKAB = config['app']['IMG_LOGO_PEMKAB']
 IMG_LOGO_DISHUB = config['app']['IMG_LOGO_DISHUB']
 LB_PEMKAB = config['app']['LB_PEMKAB']
@@ -57,13 +77,13 @@ LB_UNIT = config['app']['LB_UNIT']
 LB_UNIT_ADDRESS = config['app']['LB_UNIT_ADDRESS']
 
 # SQL setting
-DB_HOST = config['mysql']['DB_HOST']
-DB_USER = config['mysql']['DB_USER']
-DB_PASSWORD = config['mysql']['DB_PASSWORD']
-DB_NAME = config['mysql']['DB_NAME']
-TB_DATA = config['mysql']['TB_DATA']
-TB_USER = config['mysql']['TB_USER']
-TB_MERK = config['mysql']['TB_MERK']
+DB_HOST = "127.0.0.1"
+DB_USER = "kuningan2025"
+DB_PASSWORD = "@kuningan2025"
+DB_NAME = "dishub"
+TB_DATA = "tb_cekident"
+TB_USER = "users"
+TB_MERK = "merk"
 
 # system setting
 TIME_OUT = int(config['setting']['TIME_OUT'])
@@ -73,14 +93,12 @@ UPDATE_CAROUSEL_INTERVAL = float(config['setting']['UPDATE_CAROUSEL_INTERVAL'])
 UPDATE_CONNECTION_INTERVAL = float(config['setting']['UPDATE_CONNECTION_INTERVAL'])
 GET_DATA_INTERVAL = float(config['setting']['GET_DATA_INTERVAL'])
 
-FTP_HOST = config['setting']['FTP_HOST']
-FTP_USER = config['setting']['FTP_USER']
-FTP_PASS = config['setting']['FTP_PASS']
-
 MODBUS_IP_PLC = config['setting']['MODBUS_IP_PLC']
 MODBUS_CLIENT = ModbusTcpClient(MODBUS_IP_PLC)
-REGISTER_DATA_LOAD = int(config['setting']['REGISTER_DATA_LOAD'])
-REGISTER_DATA_BRAKE = int(config['setting']['REGISTER_DATA_BRAKE'])
+REGISTER_DATA_LOAD_R = int(config['setting']['REGISTER_DATA_LOAD_R']) # V1200
+REGISTER_DATA_LOAD_L = int(config['setting']['REGISTER_DATA_LOAD_R']) # V1201
+REGISTER_DATA_BRAKE_R = int(config['setting']['REGISTER_DATA_BRAKE_R']) # V1202
+REGISTER_DATA_BRAKE_L = int(config['setting']['REGISTER_DATA_BRAKE_R']) # V1203
 
 # system standard
 STANDARD_MAX_AXLE_LOAD = float(config['standard']['STANDARD_MAX_AXLE_LOAD']) # in kg
@@ -94,6 +112,8 @@ class ScreenHome(MDScreen):
         Clock.schedule_once(self.delayed_init, 1)
     
     def delayed_init(self, dt):
+        self.ids.lb_title.text = APP_TITLE
+        self.ids.lb_subtitle.text = APP_SUBTITLE
         self.ids.img_pemkab.source = f'assets/images/{IMG_LOGO_PEMKAB}'
         self.ids.img_dishub.source = f'assets/images/{IMG_LOGO_DISHUB}'
         self.ids.lb_pemkab.text = LB_PEMKAB
@@ -131,12 +151,14 @@ class ScreenHome(MDScreen):
             if (dt_user == ""):
                 self.screen_manager.current = 'screen_login'
             else:
-                toast(f"Anda sudah login sebagai {dt_user}")
+                toast_msg = f"Anda sudah login sebagai {dt_user}"
+                toast(toast_msg)
+                Logger.info(f"{self.name}: {toast_msg}")  
 
         except Exception as e:
             toast_msg = f'Error Navigate to Login Screen: {e}'
             toast(toast_msg)
-            Logger.error(toast_msg, e)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
     def exec_navigate_main(self):
         try:
@@ -145,7 +167,7 @@ class ScreenHome(MDScreen):
         except Exception as e:
             toast_msg = f'Error Navigate to Main Screen: {e}'
             toast(toast_msg)
-            Logger.error(toast_msg, e)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
 class ScreenLogin(MDScreen):
     def __init__(self, **kwargs):
@@ -153,6 +175,8 @@ class ScreenLogin(MDScreen):
         Clock.schedule_once(self.delayed_init, 1)
     
     def delayed_init(self, dt):
+        self.ids.lb_title.text = APP_TITLE
+        self.ids.lb_subtitle.text = APP_SUBTITLE        
         self.ids.img_pemkab.source = f'assets/images/{IMG_LOGO_PEMKAB}'
         self.ids.img_dishub.source = f'assets/images/{IMG_LOGO_DISHUB}'
         self.ids.lb_pemkab.text = LB_PEMKAB
@@ -189,10 +213,14 @@ class ScreenLogin(MDScreen):
             db_users = np.array(myresult).T
             
             if myresult is None:
-                toast('Gagal Masuk, Nama Pengguna atau Password Salah')
+                toast_msg = f'Gagal Masuk, Nama Pengguna atau Password Salah'
+                toast(toast_msg) 
+                Logger.warning(f"{self.name}: {toast_msg}") 
             else:
                 toast_msg = f'Berhasil Masuk, Selamat Datang {myresult[1]}'
                 toast(toast_msg)
+                Logger.info(f"{self.name}: {toast_msg}")  
+
                 dt_id_user = myresult[0]
                 dt_user = myresult[1]
                 dt_foto_user = myresult[4]
@@ -203,7 +231,7 @@ class ScreenLogin(MDScreen):
         except Exception as e:
             toast_msg = f'Gagal masuk, silahkan isi nama user dan password yang sesuai'
             toast(toast_msg)  
-            print(toast_msg, e)  
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
     def exec_navigate_home(self):
         try:
@@ -212,7 +240,7 @@ class ScreenLogin(MDScreen):
         except Exception as e:
             toast_msg = f'Gagal Berpindah ke Halaman Awal'
             toast(toast_msg)
-            print(toast_msg, e)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")
 
     def exec_navigate_login(self):
         global dt_user
@@ -220,12 +248,14 @@ class ScreenLogin(MDScreen):
             if (dt_user == ""):
                 self.screen_manager.current = 'screen_login'
             else:
-                toast(f"Anda sudah login sebagai {dt_user}")
+                toast_msg = f"Anda sudah login sebagai {dt_user}"
+                toast(toast_msg)
+                Logger.info(f"{self.name}: {toast_msg}")  
 
         except Exception as e:
             toast_msg = f'Gagal Berpindah ke Halaman Login'
             toast(toast_msg)
-            print(toast_msg, e)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
     def exec_navigate_main(self):
         try:
@@ -234,7 +264,7 @@ class ScreenLogin(MDScreen):
         except Exception as e:
             toast_msg = f'Gagal Berpindah ke Halaman Utama'
             toast(toast_msg)
-            print(toast_msg, e)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
 class ScreenMain(MDScreen):   
     def __init__(self, **kwargs):
@@ -277,6 +307,8 @@ class ScreenMain(MDScreen):
         Clock.schedule_once(self.delayed_init, 1)
     
     def delayed_init(self, dt):
+        self.ids.lb_title.text = APP_TITLE
+        self.ids.lb_subtitle.text = APP_SUBTITLE        
         self.ids.img_pemkab.source = f'assets/images/{IMG_LOGO_PEMKAB}'
         self.ids.img_dishub.source = f'assets/images/{IMG_LOGO_DISHUB}'
         self.ids.lb_pemkab.text = LB_PEMKAB
@@ -501,6 +533,7 @@ class ScreenMain(MDScreen):
                 screen_resume.ids.lb_comm.text = 'PLC Terhubung'
 
             self.ids.bt_logout.disabled = False if dt_user != '' else True
+            self.ids.bt_add_queue.disabled = False if dt_user != '' else True
 
             self.ids.lb_operator.text = f'Login Sebagai: {dt_user}' if dt_user != '' else 'Silahkan Login'
             screen_home.ids.lb_operator.text = f'Login Sebagai: {dt_user}' if dt_user != '' else 'Silahkan Login'
@@ -518,7 +551,7 @@ class ScreenMain(MDScreen):
         except Exception as e:
             toast_msg = f'Gagal Memperbaharui Tampilan'
             toast(toast_msg)
-            print(toast_msg, e)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")
 
     def regular_update_connection(self, dt):
         global flag_conn_stat
@@ -529,8 +562,9 @@ class ScreenMain(MDScreen):
             MODBUS_CLIENT.close()
             
         except Exception as e:
-            toast_msg = f'Error Update Connection: {e}'
-            toast(toast_msg)   
+            toast_msg = f'Gagal Memperbaharui Koneksi: {e}'
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
             flag_conn_stat = False
 
     def unsigned_to_signed(self, val):
@@ -562,8 +596,8 @@ class ScreenMain(MDScreen):
 
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
-                axle_load_registers = MODBUS_CLIENT.read_holding_registers(REGISTER_DATA_LOAD, count=2, slave=1) #V1200 - V1201
-                brake_registers = MODBUS_CLIENT.read_holding_registers(REGISTER_DATA_BRAKE, count=2, slave=1) #V1250 - V1201
+                axle_load_registers = MODBUS_CLIENT.read_holding_registers(REGISTER_DATA_LOAD_R, count=2, slave=1) #V1200 - V1201
+                brake_registers = MODBUS_CLIENT.read_holding_registers(REGISTER_DATA_BRAKE_R, count=2, slave=1) #V1250 - V1251
                 MODBUS_CLIENT.close()
 
                 db_load_left_value[dt_test_number] = np.round(self.unsigned_to_signed(axle_load_registers.registers[0]) / 10 , 2)
@@ -598,16 +632,17 @@ class ScreenMain(MDScreen):
                     dt_handbrake_difference_value = np.round(np.sum(db_handbrake_difference_value), 2)
 
         except Exception as e:
-            toast_msg = f'Error Get Data: {e}'
-            print(toast_msg)      
+            toast_msg = f'Gagal Mengambil Data: {e}'
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
     def exec_reload_database(self):
         global mydb
         try:
             mydb = mysql.connector.connect(host = DB_HOST,user = DB_USER,password = DB_PASSWORD,database = DB_NAME)
         except Exception as e:
-            toast_msg = f'Error Initiate Database: {e}'
-            toast(toast_msg)   
+            toast_msg = f'Gagal Menginisiasi Database: {e}'
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
     def exec_reload_table(self):
         global mydb, db_antrian, db_merk
@@ -631,14 +666,14 @@ class ScreenMain(MDScreen):
             db_merk = np.array(result_tb_merk)
         except Exception as e:
             toast_msg = f'Error Fetch Database: {e}'
-            print(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
         try:            
             layout_list = self.ids.layout_list
             layout_list.clear_widgets(children=None)
         except Exception as e:
             toast_msg = f'Error Remove Widget: {e}'
-            print(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
         
         try:           
             layout_list = self.ids.layout_list
@@ -669,8 +704,7 @@ class ScreenMain(MDScreen):
                     )
         except Exception as e:
             toast_msg = f'Error Reload Table: {e}'
-            print(toast_msg)
-
+            Logger.error(f"{self.name}: {toast_msg}, {e}")
 
     def on_antrian_row_press(self, instance):
         global dt_no_antrian, dt_no_pol, dt_no_uji, dt_nama, dt_load_flag, dt_brake_flag, dt_handbrake_flag
@@ -697,7 +731,8 @@ class ScreenMain(MDScreen):
 
         except Exception as e:
             toast_msg = f'Error Execute Command from Table Row: {e}'
-            toast(toast_msg)   
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
             
     def exec_start(self):
         global dt_load_flag, dt_brake_flag, dt_handbrake_flag, dt_no_antrian, dt_user
@@ -706,9 +741,13 @@ class ScreenMain(MDScreen):
             if (dt_load_flag == 'Belum Tes' or dt_brake_flag == 'Belum Tes' or dt_handbrake_flag == 'Belum Tes'):
                 self.open_screen_menu()
             else:
-                toast(f'No. Antrian {dt_no_antrian} Sudah Tes')
+                toast_msg = f'No. Antrian {dt_no_antrian} Sudah Tes'
+                toast(toast_msg)
+                Logger.info(f"{self.name}: {toast_msg}")
         else:
-            toast(f'Silahkan Login Untuk Melakukan Pengujian')        
+            toast_msg = f'Silahkan Login Untuk Melakukan Pengujian'
+            toast(toast_msg)
+            Logger.info(f"{self.name}: {toast_msg}")      
 
     def open_screen_menu(self):
         self.screen_manager.current = 'screen_menu'
@@ -725,7 +764,8 @@ class ScreenMain(MDScreen):
 
         except Exception as e:
             toast_msg = f'Error Navigate to Home Screen: {e}'
-            toast(toast_msg)        
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
     def exec_navigate_login(self):
         global dt_user
@@ -733,11 +773,24 @@ class ScreenMain(MDScreen):
             if (dt_user == ""):
                 self.screen_manager.current = 'screen_login'
             else:
-                toast(f"Anda sudah login sebagai {dt_user}")
+                toast_msg = f"Anda sudah login sebagai {dt_user}"
+                toast(toast_msg)
+                Logger.info(f"{self.name}: {toast_msg}")
 
         except Exception as e:
             toast_msg = f'Error Navigate to Login Screen: {e}'
-            toast(toast_msg)    
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
+
+    def exec_navigate_add_queue(self):
+        global dt_user
+        try:
+            self.screen_manager.current = 'screen_add_queue'
+
+        except Exception as e:
+            toast_msg = f'Error Navigate to Add Queue Screen: {e}'
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
     def exec_navigate_main(self):
         try:
@@ -745,14 +798,77 @@ class ScreenMain(MDScreen):
 
         except Exception as e:
             toast_msg = f'Error Navigate to Main Screen: {e}'
-            toast(toast_msg)   
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
+
+class ScreenCalibration(MDScreen):
+    def __init__(self, **kwargs):
+        super(ScreenCalibration, self).__init__(**kwargs)
+        Clock.schedule_once(self.delayed_init, 1)
+    
+    def delayed_init(self, dt):
+        self.ids.lb_title.text = APP_TITLE
+        self.ids.lb_subtitle.text = APP_SUBTITLE
+        self.ids.img_pemkab.source = f'assets/images/{IMG_LOGO_PEMKAB}'
+        self.ids.img_dishub.source = f'assets/images/{IMG_LOGO_DISHUB}'
+        self.ids.lb_pemkab.text = LB_PEMKAB
+        self.ids.lb_dishub.text = LB_DISHUB
+        self.ids.lb_unit.text = LB_UNIT
+        self.ids.lb_unit_address.text = LB_UNIT_ADDRESS
+
+    def on_enter(self):
+        pass
+
+    def on_leave(self):
+        pass
+
+    def exec_navigate_menu(self):
+        try:
+            self.screen_manager.current = 'screen_menu'
+
+        except Exception as e:
+            toast_msg = f'Error Navigate to Menu Screen: {e}'
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
+
+class ScreenAddQueue(MDScreen):
+    def __init__(self, **kwargs):
+        super(ScreenAddQueue, self).__init__(**kwargs)
+        Clock.schedule_once(self.delayed_init, 1)
+    
+    def delayed_init(self, dt):
+        self.ids.lb_title.text = APP_TITLE
+        self.ids.lb_subtitle.text = APP_SUBTITLE
+        self.ids.img_pemkab.source = f'assets/images/{IMG_LOGO_PEMKAB}'
+        self.ids.img_dishub.source = f'assets/images/{IMG_LOGO_DISHUB}'
+        self.ids.lb_pemkab.text = LB_PEMKAB
+        self.ids.lb_dishub.text = LB_DISHUB
+        self.ids.lb_unit.text = LB_UNIT
+        self.ids.lb_unit_address.text = LB_UNIT_ADDRESS
+
+    def on_enter(self):
+        pass
+
+    def on_leave(self):
+        pass
+
+    def exec_cancel(self):
+        try:
+            self.screen_manager.current = 'screen_main'
+
+        except Exception as e:
+            toast_msg = f'Error Navigate to Main Screen: {e}'
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
 class ScreenMenu(MDScreen):        
     def __init__(self, **kwargs):
         super(ScreenMenu, self).__init__(**kwargs)
-        Clock.schedule_once(self.delayed_init, 2)        
+        Clock.schedule_once(self.delayed_init, 1)        
 
     def delayed_init(self, dt):
+        self.ids.lb_title.text = APP_TITLE
+        self.ids.lb_subtitle.text = APP_SUBTITLE        
         self.ids.img_pemkab.source = f'assets/images/{IMG_LOGO_PEMKAB}'
         self.ids.img_dishub.source = f'assets/images/{IMG_LOGO_DISHUB}'
         self.ids.lb_pemkab.text = LB_PEMKAB
@@ -813,7 +929,18 @@ class ScreenMenu(MDScreen):
 
         except Exception as e:
             toast_msg = f'Error Navigate to Main Screen: {e}'
-            toast(toast_msg)   
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
+
+    def exec_navigate_calibration(self):
+        global dt_user
+        try:
+            self.screen_manager.current = 'screen_calibration'
+
+        except Exception as e:
+            toast_msg = f'Error Navigate to Calibration Screen: {e}'
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
     def open_screen_load_meter(self):
         self.screen_manager.current = 'screen_load_meter'
@@ -830,9 +957,11 @@ class ScreenMenu(MDScreen):
 class ScreenLoadMeter(MDScreen):        
     def __init__(self, **kwargs):
         super(ScreenLoadMeter, self).__init__(**kwargs)
-        Clock.schedule_once(self.delayed_init, 2)        
+        Clock.schedule_once(self.delayed_init, 1)        
 
     def delayed_init(self, dt):
+        self.ids.lb_title.text = APP_TITLE
+        self.ids.lb_subtitle.text = APP_SUBTITLE        
         self.ids.img_pemkab.source = f'assets/images/{IMG_LOGO_PEMKAB}'
         self.ids.img_dishub.source = f'assets/images/{IMG_LOGO_DISHUB}'
         self.ids.lb_pemkab.text = LB_PEMKAB
@@ -871,9 +1000,11 @@ class ScreenLoadMeter(MDScreen):
 class ScreenBrakeMeter(MDScreen):        
     def __init__(self, **kwargs):
         super(ScreenBrakeMeter, self).__init__(**kwargs)
-        Clock.schedule_once(self.delayed_init, 2)
+        Clock.schedule_once(self.delayed_init, 1)
         
     def delayed_init(self, dt):
+        self.ids.lb_title.text = APP_TITLE
+        self.ids.lb_subtitle.text = APP_SUBTITLE        
         self.ids.img_pemkab.source = f'assets/images/{IMG_LOGO_PEMKAB}'
         self.ids.img_dishub.source = f'assets/images/{IMG_LOGO_DISHUB}'
         self.ids.lb_pemkab.text = LB_PEMKAB
@@ -893,8 +1024,10 @@ class ScreenBrakeMeter(MDScreen):
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_coil(3082, flag_cylinder, slave=1) #M10
                 MODBUS_CLIENT.close()
-        except:
-            toast("error send exec_cylinder_up data to PLC Slave") 
+        except Exception as e:
+            toast_msg = f"error send exec_cylinder_up data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
     def exec_cylinder_down(self):
         global flag_conn_stat
@@ -908,8 +1041,10 @@ class ScreenBrakeMeter(MDScreen):
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_coil(3083, not flag_cylinder, slave=1) #M11
                 MODBUS_CLIENT.close()
-        except:
-            toast("error send exec_cylinder_down data to PLC Slave") 
+        except Exception as e:
+            toast_msg = f"error send exec_cylinder_down data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
     def exec_cylinder_stop(self):
         global flag_conn_stat
@@ -920,8 +1055,10 @@ class ScreenBrakeMeter(MDScreen):
                 MODBUS_CLIENT.write_coil(3082, False, slave=1) #M10
                 MODBUS_CLIENT.write_coil(3083, False, slave=1) #M11
                 MODBUS_CLIENT.close()
-        except:
-            toast("error send exec_cylinder_stop data to PLC Slave")   
+        except Exception as e:
+            toast_msg = f"error send exec_cylinder_stop data to PLC Slave"
+            toast(toast_msg)  
+            Logger.error(f"{self.name}: {toast_msg}, {e}")   
 
     def exec_reload(self):
         global flag_play
@@ -954,9 +1091,11 @@ class ScreenBrakeMeter(MDScreen):
 class ScreenHandbrakeMeter(MDScreen):        
     def __init__(self, **kwargs):
         super(ScreenHandbrakeMeter, self).__init__(**kwargs)
-        Clock.schedule_once(self.delayed_init, 2)
+        Clock.schedule_once(self.delayed_init, 1)
         
     def delayed_init(self, dt):
+        self.ids.lb_title.text = APP_TITLE
+        self.ids.lb_subtitle.text = APP_SUBTITLE        
         self.ids.img_pemkab.source = f'assets/images/{IMG_LOGO_PEMKAB}'
         self.ids.img_dishub.source = f'assets/images/{IMG_LOGO_DISHUB}'
         self.ids.lb_pemkab.text = LB_PEMKAB
@@ -976,8 +1115,10 @@ class ScreenHandbrakeMeter(MDScreen):
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_coil(3082, flag_cylinder, slave=1) #M10
                 MODBUS_CLIENT.close()
-        except:
-            toast("error send exec_cylinder_up data to PLC Slave") 
+        except Exception as e:
+            toast_msg = f"error send exec_cylinder_up data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
     def exec_cylinder_down(self):
         global flag_conn_stat
@@ -991,8 +1132,10 @@ class ScreenHandbrakeMeter(MDScreen):
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_coil(3083, not flag_cylinder, slave=1) #M11
                 MODBUS_CLIENT.close()
-        except:
-            toast("error send exec_cylinder_down data to PLC Slave") 
+        except Exception as e:
+            toast_msg = f"error send exec_cylinder_down data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")
 
     def exec_cylinder_stop(self):
         global flag_conn_stat
@@ -1003,8 +1146,10 @@ class ScreenHandbrakeMeter(MDScreen):
                 MODBUS_CLIENT.write_coil(3082, False, slave=1) #M10
                 MODBUS_CLIENT.write_coil(3083, False, slave=1) #M11
                 MODBUS_CLIENT.close()
-        except:
-            toast("error send exec_cylinder_stop data to PLC Slave")   
+        except Exception as e:
+            toast_msg = f"error send exec_cylinder_stop data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")   
 
     def exec_reload(self):
         global flag_play
@@ -1037,9 +1182,11 @@ class ScreenHandbrakeMeter(MDScreen):
 class ScreenResume(MDScreen):        
     def __init__(self, **kwargs):
         super(ScreenResume, self).__init__(**kwargs)
-        Clock.schedule_once(self.delayed_init, 2)        
+        Clock.schedule_once(self.delayed_init, 1)        
 
     def delayed_init(self, dt):
+        self.ids.lb_title.text = APP_TITLE
+        self.ids.lb_subtitle.text = APP_SUBTITLE        
         self.ids.img_pemkab.source = f'assets/images/{IMG_LOGO_PEMKAB}'
         self.ids.img_dishub.source = f'assets/images/{IMG_LOGO_DISHUB}'
         self.ids.lb_pemkab.text = LB_PEMKAB
@@ -1067,7 +1214,7 @@ class ScreenResume(MDScreen):
             layout_list_handbrake.clear_widgets(children=None)
         except Exception as e:
             toast_msg = f'Error Remove Widget: {e}'
-            print(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
         try: 
             layout_list_load = self.ids.layout_list_load
@@ -1085,10 +1232,9 @@ class ScreenResume(MDScreen):
                             orientation='horizontal'
                             )
                         )
-                    
         except Exception as e:
             toast_msg = f'Error Reload Load Table: {e}'
-            print(toast_msg)        
+            Logger.error(f"{self.name}: {toast_msg}, {e}")          
 
         try:           
             layout_list_brake = self.ids.layout_list_brake
@@ -1110,7 +1256,7 @@ class ScreenResume(MDScreen):
                         )
         except Exception as e:
             toast_msg = f'Error Reload Brake Table: {e}'
-            print(toast_msg)  
+            Logger.error(f"{self.name}: {toast_msg}, {e}")
 
         try:           
             layout_list_handbrake = self.ids.layout_list_handbrake
@@ -1132,7 +1278,7 @@ class ScreenResume(MDScreen):
                         )
         except Exception as e:
             toast_msg = f'Error Reload Brake Table: {e}'
-            print(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")
 
     def exec_navigate_back(self):
         try:
@@ -1141,6 +1287,7 @@ class ScreenResume(MDScreen):
         except Exception as e:
             toast_msg = f'Error Navigate to Menu Screen: {e}'
             toast(toast_msg)   
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
     def exec_save(self):
         global flag_play
@@ -1184,6 +1331,7 @@ class ScreenResume(MDScreen):
         except Exception as e:
             toast_msg = f'Error Save Data: {e}'
             toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
     def exec_navigate_main(self):
         try:
@@ -1191,7 +1339,8 @@ class ScreenResume(MDScreen):
 
         except Exception as e:
             toast_msg = f'Error Navigate to Main Screen: {e}'
-            toast(toast_msg)  
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
 class RootScreen(ScreenManager):
     pass             
@@ -1262,7 +1411,7 @@ class LoadBrakeMeterApp(MDApp):
         return RootScreen()
 
     def on_window_resize(self, window, width, height):
-        print(f"Window resized: {width}x{height}")
+        Logger.info(f"Window size: {width}x{height}")
         self.set_dynamic_fonts((width, height))
         self.refresh_all_fonts()
 
@@ -1293,7 +1442,7 @@ class LoadBrakeMeterApp(MDApp):
         font_size_l = np.array([64, 32, 30, 20, 16, 11, 10, 9, 8])
         scale = min(screen_size_x / 1920, screen_size_y / 1080)
         font_size = np.round(font_size_l * scale, 0)
-        print(f"Font resized: {font_size_l} to {font_size}")
+        Logger.info(f"Font resized: {font_size_l} to {font_size}")
         self.theme_cls.font_styles["H1"] = [
             "Orbitron-Regular", font_size[0], False, 0.15]
         self.theme_cls.font_styles["H2"] = [

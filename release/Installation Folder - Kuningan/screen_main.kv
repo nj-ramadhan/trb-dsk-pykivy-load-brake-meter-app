@@ -24,7 +24,7 @@
 				size_hint_x: 0.7
 
 				MDLabel:
-					id: title            
+					id: lb_title            
 					text: "VEHICLE INSPECTION INTEGRATION MANAGEMENT SYSTEM"
 					halign: "left"
 					valign: "middle"
@@ -34,7 +34,7 @@
 
 
 				MDLabel:
-					id: subtitle            
+					id: lb_subtitle            
 					text: "AXLE LOAD & BRAKE METER"
 					halign: "left"
 					valign: "middle"
@@ -206,6 +206,16 @@
 							on_press: root.exec_reload_table()
 
 						MDRectangleFlatIconButton:
+							id: bt_add_queue
+							icon: "plus"
+							text: "ADD QUEUE"
+							theme_text_color: "Custom"
+							text_color: "#EEEEEE"
+							md_bg_color: "#FF2A2A"
+							size_hint_x: 0.3
+							on_press: root.exec_navigate_add_queue()
+
+						MDRectangleFlatIconButton:
 							id: bt_logout
 							icon: "logout"
 							text: "LOGOUT"
@@ -214,7 +224,7 @@
 							md_bg_color: "#FF2A2A"
 							size_hint_x: 0.3
 							on_press: root.exec_logout()
-														
+
 					MDBoxLayout:
 						orientation: "horizontal"
 						md_bg_color: "#FFFFFF"

@@ -16,13 +16,13 @@ logger_name = f'app.log'
 logger_dir = os.path.join(application_path, "logs")
 # os.makedirs(logger_dir, exist_ok=True)
 
-for folder in [logger_dir, application_path]:
-    for fname in os.listdir(folder):
-        if fname.startswith("app") and (fname.endswith(".log") or fname.endswith(".txt")):
-            try:
-                os.remove(os.path.join(folder, fname))
-            except Exception as e:
-                print(f'Error removing old log file: {e}', fname)
+# for folder in [logger_dir, application_path]:
+#     for fname in os.listdir(folder):
+#         if fname.startswith("app") and (fname.endswith(".log") or fname.endswith(".txt")):
+#             try:
+#                 os.remove(os.path.join(folder, fname))
+#             except Exception as e:
+#                 print(f'Error removing old log file: {e}', fname)
 
 from kivy.config import Config
 Config.set('kivy', 'keyboard_mode', 'systemanddock')

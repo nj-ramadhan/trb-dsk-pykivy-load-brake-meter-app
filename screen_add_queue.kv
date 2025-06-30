@@ -1,0 +1,415 @@
+#:kivy 2.1.0
+
+<ScreenAddQueue>:
+    MDBoxLayout:
+        orientation: "vertical"
+
+		# header layout
+        MDBoxLayout:
+            id: header_layout
+            orientation: "horizontal"
+            padding: 20
+			spacing: 20
+			size_hint_y: 0.2
+			md_bg_color: "#111111"
+                    
+            Image:
+                id: logo
+                source:'assets/images/logo-trb.png'
+                size_hint_x: 0.15
+                allow_stretch: True 
+
+			MDBoxLayout:
+				orientation: "vertical"
+				size_hint_x: 0.7
+
+				MDLabel:
+					id: title            
+					text: "VEHICLE INSPECTION INTEGRATION MANAGEMENT SYSTEM"
+					halign: "left"
+					valign: "middle"
+					font_style: 'H4'
+					theme_text_color: "Custom"
+					text_color: "#FFFFFF"
+
+				MDLabel:
+					id: subtitle            
+					text: "PENDAFTARAN UJI"
+					halign: "left"
+					valign: "middle"
+					font_style: 'H5'
+					theme_text_color: "Custom"
+					text_color: "#FFFFFF"
+
+			MDBoxLayout:
+				orientation: "vertical"
+				size_hint_x: 0.15
+
+
+				MDLabel:
+					id: lb_time
+					text: "12:34:00"
+					halign: "center"
+					valign: "middle"
+					font_style: 'H6'
+					theme_text_color: "Custom"
+					text_color: "#FFFFFF"
+
+				MDLabel:
+					id: lb_date
+					text: "17/08/2024"
+					halign: "center"
+					valign: "middle"
+					font_style: 'H6'
+					theme_text_color: "Custom"
+					text_color: "#FFFFFF"
+
+				MDLabel:
+					id: lb_operator
+					text: "Nama Operator"
+					halign: "center"
+					valign: "middle"
+					font_style: 'H6'
+					theme_text_color: "Custom"
+					text_color: "#FFFFFF"
+
+				MDLabel:
+					id: lb_comm
+					text: "Status : Disconnected"
+					halign: "center"
+					valign: "middle"
+					font_style: 'H6'
+					theme_text_color: "Custom"
+
+		# main layout
+		MDBoxLayout:
+			id: layout_main
+			orientation: "horizontal"
+			size_hint_y: 0.7
+			padding:20
+
+			MDBoxLayout:
+				orientation: "horizontal"
+				spacing:50
+
+				MDBoxLayout:
+					orientation: "vertical"
+					size_hint_x: 0.1
+					spacing: 20
+
+					MDCard:
+						ripple_behavior: True
+                        on_press: root.exec_navigate_home()
+						md_bg_color: "#EEEEEE"
+                        padding: 10
+						Image:
+							source:'assets/images/icon-home.png'
+							size_hint_x: 0.15
+							allow_stretch: True 
+
+					MDCard:
+						ripple_behavior: True
+                        on_press: root.exec_navigate_login()
+						md_bg_color: "#EEEEEE"
+                        padding: 10
+						AsyncImage:
+							id: img_user
+							source:'assets/images/icon-login.png'
+							size_hint_x: 0.15
+							allow_stretch: True 
+
+					MDCard:
+						ripple_behavior: True
+                        on_press: root.exec_navigate_main()
+						md_bg_color: "#EEEEEE"
+                        padding: 10
+						Image:
+							source:'assets/images/icon-realtime.png'
+							size_hint_x: 0.15
+							allow_stretch: True 
+
+				MDBoxLayout:
+					orientation: "vertical"
+					size_hint_x: 0.9
+					spacing: 20
+
+					MDLabel:
+						text: "SILAHKAN ISI DATA"
+						halign: "center"
+						valign: "middle"
+						font_style: 'H6'
+						theme_text_color: "Custom"
+						size_hint_y: 0.05
+
+					MDBoxLayout:
+						orientation: "horizontal"
+						spacing: 100
+						size_hint_y: 0.15
+
+						MDTextField:
+							id: tx_nouji
+							font_size: '40sp'
+							font_name: "Recharge"
+							font_name_hint_text:'Recharge'
+							icon_left: "account"
+							hint_text: "Nomor Uji"
+							text_color_focus: "#4471C4"
+							hint_text_color_focus: "#4471C4"
+							line_color_focus: "#4471C4"	
+							icon_left_color_focus: "#4471C4"				
+							mode: "rectangle"
+							on_text_validate: root.exec_find()
+
+						MDTextField:
+							id: tx_nopol
+							font_size: '40sp'
+							font_name: "Recharge"
+							font_name_hint_text:'Recharge'
+							icon_left: "account"
+							hint_text: "Nomor Polisi"
+							text_color_focus: "#4471C4"
+							hint_text_color_focus: "#4471C4"
+							line_color_focus: "#4471C4"	
+							icon_left_color_focus: "#4471C4"				
+							mode: "rectangle"
+							on_text_validate: root.exec_find()
+						
+					MDBoxLayout:
+						orientation: "horizontal"
+						spacing: 100
+						size_hint_y: 0.15
+
+						MDRectangleFlatIconButton:
+							id: bt_find
+							type: "large"
+							size_hint_x: 0.5
+							size_hint_y: 1
+							icon: "magnify"
+							text:"CARI"
+							text_color: "#EEEEEE"
+							md_bg_color: "#4471C4"
+							font_style: 'H6'
+							on_press: root.exec_find()
+
+						MDRectangleFlatIconButton:
+							id: bt_register
+							type: "large"
+							size_hint_x: 0.5
+							size_hint_y: 1
+							icon: "plus"
+							text:"DAFTAR"
+							text_color: "#EEEEEE"
+							md_bg_color: "#2CA02C"
+							font_style: 'H6'
+							disabled: True
+							on_press: root.exec_register()
+
+						MDRectangleFlatIconButton:
+							id: bt_cancel
+							type: "large"
+							size_hint_x: 0.5
+							size_hint_y: 1
+							icon: "cancel"
+							text:"BATAL"
+							text_color: "#EEEEEE"
+							md_bg_color: "#FF2A2A"
+							font_style: 'H6'
+							on_press: root.exec_cancel()
+
+					MDBoxLayout:
+						orientation: "vertical"
+						size_hint_y: 0.65
+						padding: 20
+						spacing: 40
+
+						MDGridLayout:
+							cols: 2
+							MDLabel:
+								text: "Nama :"
+								font_style: 'H6'
+								size_hint_x: 0.4
+							MDLabel:
+								text: "Alamat :"
+								font_style: 'H6'
+								size_hint_x: 0.6
+							MDLabel:
+								id: lb_temp_nama
+								font_style: 'H5'
+								size_hint_x: 0.4
+							MDLabel:
+								id: lb_temp_alamat
+								font_style: 'H5'	
+								size_hint_x: 0.6
+
+						MDGridLayout:
+							cols: 5
+							MDLabel:
+								text: "No. Uji :"
+								font_style: 'H6'	
+							MDLabel:
+								text: "No. Polisi :"
+								font_style: 'H6'
+							MDLabel:
+								text: "Status Uji :"
+								font_style: 'H6'	
+							MDLabel:
+								text: "Tanggal Terakhir Uji :"
+								font_style: 'H6'	
+							MDLabel:
+								text: "Tanggal Habis Uji :"
+								font_style: 'H6'	
+							MDLabel:
+								id: lb_temp_no_uji
+								font_style: 'H5'	
+							MDLabel:
+								id: lb_temp_no_pol
+								font_style: 'H5'
+							MDLabel:
+								id: lb_temp_status_uji
+								font_style: 'H5'	
+							MDLabel:
+								id: lb_temp_tgl_uji_terakhir
+								font_style: 'H5'	
+							MDLabel:
+								id: lb_temp_tgl_uji_habis
+								font_style: 'H5'
+
+						MDGridLayout:
+							cols: 4
+							MDLabel:
+								text: "Merk :"
+								font_style: 'H6'	
+							MDLabel:
+								text: "Type :"
+								font_style: 'H6'	
+							MDLabel:
+								text: "Jenis Kendaraan :"
+								font_style: 'H6'	
+							MDLabel:
+								text: "Warna :"
+								font_style: 'H6'
+							MDLabel:
+								id: lb_temp_merk
+								font_style: 'H5'	
+							MDLabel:
+								id: lb_temp_type
+								font_style: 'H5'	
+							MDLabel:
+								id: lb_temp_jenis_kendaraan
+								font_style: 'H5'	
+							MDLabel:
+								id: lb_temp_warna
+								font_style: 'H5'
+
+						MDGridLayout:
+							cols: 4
+							MDLabel:
+								text: "No. Rangka :"
+								font_style: 'H6'	
+							MDLabel:
+								text: "No. Mesin :"
+								font_style: 'H6'	
+							MDLabel:
+								text: "Bahan Bakar :"
+								font_style: 'H6'	
+							MDLabel:
+								text: "JBB :"
+								font_style: 'H6'
+							MDLabel:
+								id: lb_temp_chasis
+								font_style: 'H5'	
+							MDLabel:
+								id: lb_temp_mesin
+								font_style: 'H5'	
+							MDLabel:
+								id: lb_temp_bahan_bakar
+								font_style: 'H5'	
+							MDLabel:
+								id: lb_temp_jbb
+								font_style: 'H5'	
+
+		# footer layout
+        MDBoxLayout:
+            orientation: "horizontal"
+			size_hint_y: 0.1
+
+			MDBoxLayout:
+				orientation: "horizontal"
+				padding: 20
+				spacing: 20
+				md_bg_color: "#4471C4"
+				size_hint_x: 0.4
+				
+				AsyncImage:
+					id: img_pemkab
+					source:'assets/images/logo-sorong.png'
+					size_hint_x: 0.1
+					allow_stretch: True  
+
+				AsyncImage:
+					id: img_dishub
+					source:'assets/images/logo-dishub.png'
+					size_hint_x: 0.1
+					allow_stretch: True  
+
+				MDBoxLayout:
+					orientation: "vertical"
+					size_hint_x: 0.8
+
+					MDLabel:
+						id: lb_pemkab
+						text: "PEMERINTAH KABUPATEN SORONG"
+						halign: "left"
+						valign: "middle"
+						theme_text_color: "Custom"
+						text_color: "#EEEEEE"						
+						font_style: 'Subtitle1'
+
+					MDLabel:
+						id: lb_dishub
+						text: "DINAS PERHUBUNGAN"
+						halign: "left"
+						valign: "middle"
+						theme_text_color: "Custom"
+						text_color: "#EEEEEE"
+						font_style: 'Subtitle1'
+
+					MDLabel:
+						id: lb_unit			
+						text: "UNIT PELAKSANA UJI BERKALA KENDARAAN BERMOTOR"
+						halign: "left"
+						valign: "middle"
+						theme_text_color: "Custom"
+						text_color: "#EEEEEE"
+						font_style: 'Subtitle1'
+
+					MDLabel:
+						id: lb_unit_address
+						text: " Klamasen, Distrik Mariat, Kabupaten Sorong, Papua Barat Daya. 98416"
+						halign: "left"
+						valign: "middle"
+						md_bg_color: "#EEEEEE"
+						theme_text_color: "Custom"
+						text_color: "#000000"
+						font_style: 'Subtitle1'
+
+			MDBoxLayout:
+				orientation: "vertical"
+				padding: 20
+				spacing: 20
+				md_bg_color: "#FFC000"
+				size_hint_x: 0.6
+
+				MDLabel:			
+					text: "INFORMASI"
+					halign: "left"
+					valign: "middle"
+					font_style: 'H5'
+
+				MDLabel:
+					id: lb_info
+					text: "Silahkan Login untuk menggunakan aplikasi"
+					halign: "left"
+					valign: "middle"
+					font_style: 'H6'
+		

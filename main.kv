@@ -5,10 +5,12 @@
 #:include screen_login.kv
 #:include screen_main.kv
 #:include screen_menu.kv
-#:include screen_resume.kv
+#:include screen_add_queue.kv
+#:include screen_calibration.kv
 #:include screen_load_meter.kv
 #:include screen_brake_meter.kv
 #:include screen_handbrake_meter.kv
+#:include screen_resume.kv
 
 # ScreenManager:
 <RootScreen>:
@@ -33,6 +35,16 @@
     ScreenMenu:
         id: screen_menu
         name: 'screen_menu'
+        screen_manager: screen_manager
+
+    ScreenAddQueue:
+        id: screen_add_queue
+        name: 'screen_add_queue'
+        screen_manager: screen_manager
+
+    ScreenCalibration:
+        id: screen_calibration
+        name: 'screen_calibration'
         screen_manager: screen_manager
 
     ScreenLoadMeter:

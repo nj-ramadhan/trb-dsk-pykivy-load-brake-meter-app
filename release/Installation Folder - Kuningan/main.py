@@ -84,8 +84,8 @@ DB_PASSWORD = "@kuningan2025"
 # DB_HOST = "156.67.217.60"
 # DB_USER = "pkbsorong2024!"
 # DB_PASSWORD = "@Sorongpkb2024"
-DB_NAME = "dishub"
 
+DB_NAME = "dishub"
 TB_DATA = "tb_cekident"
 TB_USER = "users"
 TB_MERK = "merk"
@@ -293,13 +293,23 @@ class ScreenMain(MDScreen):
         count_starting = COUNT_STARTING
         count_get_data = COUNT_ACQUISITION
 
-        db_load_left_value = db_load_right_value = db_load_total_value = np.zeros(10, dtype=float)
+        db_load_left_value = np.zeros(10, dtype=float)
+        db_load_right_value = np.zeros(10, dtype=float)
+        db_load_total_value = np.zeros(10, dtype=float)
         dt_load_total_value = dt_load_flag = 0
 
-        db_brake_left_value = db_brake_right_value = db_brake_total_value = db_brake_efficiency_value = db_brake_difference_value = np.zeros(10, dtype=float)
+        db_brake_left_value = np.zeros(10, dtype=float)
+        db_brake_right_value = np.zeros(10, dtype=float)
+        db_brake_total_value = np.zeros(10, dtype=float)
+        db_brake_efficiency_value = np.zeros(10, dtype=float)
+        db_brake_difference_value = np.zeros(10, dtype=float)
         dt_brake_total_value = dt_brake_efficiency_value = dt_brake_difference_value = dt_brake_flag = 0
 
-        db_handbrake_left_value = db_handbrake_right_value = db_handbrake_total_value = db_handbrake_efficiency_value = db_handbrake_difference_value = np.zeros(10, dtype=float)
+        db_handbrake_left_value = np.zeros(10, dtype=float)
+        db_handbrake_right_value = np.zeros(10, dtype=float)
+        db_handbrake_total_value = np.zeros(10, dtype=float)
+        db_handbrake_efficiency_value = np.zeros(10, dtype=float)
+        db_handbrake_difference_value = np.zeros(10, dtype=float)
         dt_handbrake_total_value = dt_handbrake_efficiency_value = dt_handbrake_difference_value = dt_handbrake_flag = 0
 
         dt_load_user = dt_brake_user = dt_handbrake_user = 1
@@ -606,40 +616,42 @@ class ScreenMain(MDScreen):
                 axle_load_registers = MODBUS_CLIENT.read_holding_registers(REGISTER_DATA_LOAD, count=2, slave=1) #V1200 - V1201
                 brake_registers = MODBUS_CLIENT.read_holding_registers(REGISTER_DATA_BRAKE, count=2, slave=1) #V1250 - V1251
                 MODBUS_CLIENT.close()
-                Logger.info(f"DATA: Axle Load = {axle_load_registers.registers}, Brake = {brake_registers.registers}")
+                Logger.info(f"DATA: Test Number = {dt_test_number} Axle Load = {axle_load_registers.registers}, Brake = {brake_registers.registers}")
 
                 db_load_left_value[dt_test_number] = np.round(self.unsigned_to_signed(axle_load_registers.registers[0]) / 10 , 2)
                 db_load_right_value[dt_test_number] = np.round(self.unsigned_to_signed(axle_load_registers.registers[1]) / 10 , 2)
                 db_brake_left_value[dt_test_number] = np.round(self.unsigned_to_signed(brake_registers.registers[0]) / 10 , 2)
                 db_brake_right_value[dt_test_number] = np.round(self.unsigned_to_signed(brake_registers.registers[1]) / 10 , 2)
+                db_handbrake_left_value[dt_test_number] = np.round(self.unsigned_to_signed(brake_registers.registers[0]) / 10 , 2)
+                db_handbrake_right_value[dt_test_number] = np.round(self.unsigned_to_signed(brake_registers.registers[1]) / 10 , 2)
 
                 if self.screen_manager.current == 'screen_load_meter':
-                    if(dt_test_number == 0 and db_load_right_value[dt_test_number] >= 60):
-                        db_load_right_value[dt_test_number] = db_load_right_value[dt_test_number] - 60
-                    db_load_total_value[dt_test_number] = np.round(db_load_left_value[dt_test_number] + db_load_right_value[dt_test_number], 2)
-                    dt_load_total_value = np.round(np.sum(db_load_total_value) ,2)
+                    if(dt_test_number == 0 and dt_load_right_val >= 60):
+                        dt_load_right_val = dt_load_right_val - 60
+                    db_load_total_value[dt_test_number] = db_load_left_value[dt_test_number] + db_load_right_value[dt_test_number]
+                    dt_load_total_value = np.sum(db_load_total_value)
+                    Logger.info(f"{self.screen_manager.current}: DB Load Left = {db_load_left_value}, DB Load Right = {db_load_right_value}, DB Load Total = {db_load_total_value}")
+                    Logger.info(f"{self.screen_manager.current}: DB Load Left = {db_load_left_value[dt_test_number]}, DB Load Right = {db_load_right_value[dt_test_number]}, DB Load Total = {db_load_total_value[dt_test_number]}")
 
-                if self.screen_manager.current == 'screen_brake_meter':               
-                    db_brake_left_value[dt_test_number] = np.round(self.unsigned_to_signed(brake_registers.registers[0]) / 10 , 2) - db_load_left_value[dt_test_number]
-                    db_brake_right_value[dt_test_number] = np.round(self.unsigned_to_signed(brake_registers.registers[1]) / 10 , 2) - db_load_right_value[dt_test_number]
+                if self.screen_manager.current == 'screen_brake_meter':
+                    db_brake_total_value[dt_test_number] = db_brake_left_value[dt_test_number] + db_brake_right_value[dt_test_number]
+                    db_brake_efficiency_value[dt_test_number] = ((db_brake_total_value[dt_test_number] - db_load_total_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100
+                    db_brake_difference_value[dt_test_number] = (np.abs(db_brake_total_value[dt_test_number] - db_brake_total_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100
+                    dt_brake_total_value = np.sum(db_brake_total_value)
+                    dt_brake_efficiency_value = (dt_brake_total_value / dt_load_total_value) * 100
+                    dt_brake_difference_value = np.sum(db_brake_difference_value)
+                    Logger.info(f"{self.screen_manager.current}: DB Brake Left = {db_brake_left_value}, DB Brake Right = {db_brake_right_value}, DB Brake Total = {db_brake_total_value}, DB Brake Efficiency = {db_brake_efficiency_value}, DB Brake Difference = {db_brake_difference_value}")
+                    Logger.info(f"{self.screen_manager.current}: DB Brake Left = {db_brake_left_value[dt_test_number]}, DB Brake Right = {db_brake_right_value[dt_test_number]}, DB Brake Total = {db_brake_total_value[dt_test_number]}, DB Brake Efficiency = {db_brake_efficiency_value[dt_test_number]}, DB Brake Difference = {db_brake_difference_value[dt_test_number]}")
 
-                    db_brake_total_value[dt_test_number] = np.round(db_brake_left_value[dt_test_number] + db_brake_right_value[dt_test_number], 2)
-                    db_brake_efficiency_value[dt_test_number] = np.round(((db_brake_total_value[dt_test_number] - db_load_total_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100, 2)
-                    db_brake_difference_value[dt_test_number] = np.round((np.abs(db_brake_total_value[dt_test_number] - db_brake_total_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100, 2)
-                    dt_brake_total_value = np.round(np.sum(db_brake_total_value), 2)
-                    dt_brake_efficiency_value = np.round((dt_brake_total_value / dt_load_total_value) * 100, 2)
-                    dt_brake_difference_value = np.round(np.sum(db_brake_difference_value), 2)
-
-                if self.screen_manager.current == 'screen_handbrake_meter':                      
-                    db_handbrake_left_value[dt_test_number] = np.round(self.unsigned_to_signed(brake_registers.registers[0]) / 10 , 2) - db_load_left_value[dt_test_number] 
-                    db_handbrake_right_value[dt_test_number] = np.round(self.unsigned_to_signed(brake_registers.registers[1]) / 10 , 2) - db_load_right_value[dt_test_number] 
-
-                    db_handbrake_total_value[dt_test_number] = np.round(db_handbrake_left_value[dt_test_number] + db_handbrake_right_value[dt_test_number])
+                if self.screen_manager.current == 'screen_handbrake_meter':
+                    db_handbrake_total_value[dt_test_number] = db_handbrake_left_value[dt_test_number] + db_handbrake_right_value[dt_test_number]
                     db_handbrake_efficiency_value[dt_test_number] = np.round(((db_handbrake_total_value[dt_test_number] - db_load_total_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100, 2)
                     db_handbrake_difference_value[dt_test_number] = np.round((np.abs(db_handbrake_total_value[dt_test_number] - db_handbrake_total_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100, 2)
-                    dt_handbrake_total_value = np.round(np.sum(db_handbrake_total_value), 2)
-                    dt_handbrake_efficiency_value = np.round((dt_handbrake_total_value / dt_load_total_value) * 100, 2)
-                    dt_handbrake_difference_value = np.round(np.sum(db_handbrake_difference_value), 2)
+                    dt_handbrake_total_value = np.sum(db_handbrake_total_value)
+                    dt_handbrake_efficiency_value = (dt_handbrake_total_value / dt_load_total_value) * 100
+                    dt_handbrake_difference_value = np.sum(db_handbrake_difference_value)
+                    Logger.info(f"{self.screen_manager.current}: DB Handbrake Left = {db_handbrake_left_value}, DB Handbrake Right = {db_handbrake_right_value}, DB Handbrake Total = {db_handbrake_total_value}, DB Handbrake Efficiency = {db_handbrake_efficiency_value}, DB Handbrake Difference = {db_handbrake_difference_value}")
+                    Logger.info(f"{self.screen_manager.current}: DB Handbrake Left = {db_handbrake_left_value[dt_test_number]}, DB Handbrake Right = {db_handbrake_right_value[dt_test_number]}, DB Handbrake Total = {db_handbrake_total_value[dt_test_number]}, DB Handbrake Efficiency = {db_handbrake_efficiency_value[dt_test_number]}, DB Handbrake Difference = {db_handbrake_difference_value[dt_test_number]}")
 
         except Exception as e:
             toast_msg = f'Gagal Mengambil Data: {e}'
@@ -867,7 +879,7 @@ class ScreenCalibration(MDScreen):
         try:
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_register(1726, int(self.ids.tx_calibrate_load_l_value1.text), slave=1) #V1214
+                MODBUS_CLIENT.write_register(1726, int(int(self.ids.tx_calibrate_load_l_value1.text) * 10), slave=1) #V1214
                 MODBUS_CLIENT.write_coil(3095, 1, slave=1) #M23
                 time.sleep(0.1)
                 MODBUS_CLIENT.write_coil(3095, 0, slave=1) #M23
@@ -882,7 +894,7 @@ class ScreenCalibration(MDScreen):
         try:
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_register(1728, int(self.ids.tx_calibrate_load_l_value2.text), slave=1) #V1216
+                MODBUS_CLIENT.write_register(1728, int(int(self.ids.tx_calibrate_load_l_value2.text) * 10), slave=1) #V1216
                 MODBUS_CLIENT.write_coil(3096, 1, slave=1) #M24
                 time.sleep(0.1)
                 MODBUS_CLIENT.write_coil(3096, 0, slave=1) #M24
@@ -942,7 +954,7 @@ class ScreenCalibration(MDScreen):
         try:
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_register(1756, int(self.ids.tx_calibrate_load_r_value1.text), slave=1) #V1244
+                MODBUS_CLIENT.write_register(1756, int(int(self.ids.tx_calibrate_load_r_value1.text) * 10), slave=1) #V1244
                 MODBUS_CLIENT.write_coil(3195, 1, slave=1) #M123
                 time.sleep(0.1)
                 MODBUS_CLIENT.write_coil(3195, 0, slave=1) #M123
@@ -957,7 +969,7 @@ class ScreenCalibration(MDScreen):
         try:
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_register(1758, int(self.ids.tx_calibrate_load_r_value2.text), slave=1) #V1246
+                MODBUS_CLIENT.write_register(1758, int(int(self.ids.tx_calibrate_load_r_value2.text) * 10), slave=1) #V1246
                 MODBUS_CLIENT.write_coil(3196, 1, slave=1) #M124
                 time.sleep(0.1)
                 MODBUS_CLIENT.write_coil(3196, 0, slave=1) #M124
@@ -1018,7 +1030,7 @@ class ScreenCalibration(MDScreen):
         try:
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_register(1786, int(self.ids.tx_calibrate_brake_l_value1.text), slave=1) #V1274
+                MODBUS_CLIENT.write_register(1786, int(int(self.ids.tx_calibrate_brake_l_value1.text) * 10), slave=1) #V1274
                 MODBUS_CLIENT.write_coil(3295, 1, slave=1) #M223
                 time.sleep(0.1)
                 MODBUS_CLIENT.write_coil(3295, 0, slave=1) #M223
@@ -1033,7 +1045,7 @@ class ScreenCalibration(MDScreen):
         try:
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_register(1788, int(self.ids.tx_calibrate_brake_l_value2.text), slave=1) #V1276
+                MODBUS_CLIENT.write_register(1788, int(int(self.ids.tx_calibrate_brake_l_value2.text) * 10), slave=1) #V1276
                 MODBUS_CLIENT.write_coil(3296, 1, slave=1) #M224
                 time.sleep(0.1)
                 MODBUS_CLIENT.write_coil(3296, 0, slave=1) #M224
@@ -1093,7 +1105,7 @@ class ScreenCalibration(MDScreen):
         try:
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_register(1816, int(self.ids.tx_calibrate_brake_r_value1.text), slave=1) #V1304
+                MODBUS_CLIENT.write_register(1816, int(int(self.ids.tx_calibrate_brake_r_value1.text) * 10), slave=1) #V1304
                 MODBUS_CLIENT.write_coil(3395, 1, slave=1) #M123
                 time.sleep(0.1)
                 MODBUS_CLIENT.write_coil(3395, 0, slave=1) #M123
@@ -1108,7 +1120,7 @@ class ScreenCalibration(MDScreen):
         try:
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_register(1818, int(self.ids.tx_calibrate_brake_r_value2.text), slave=1) #V1306
+                MODBUS_CLIENT.write_register(1818, int(int(self.ids.tx_calibrate_brake_r_value2.text) * 10), slave=1) #V1306
                 MODBUS_CLIENT.write_coil(3396, 1, slave=1) #M324
                 time.sleep(0.1)
                 MODBUS_CLIENT.write_coil(3396, 0, slave=1) #M324

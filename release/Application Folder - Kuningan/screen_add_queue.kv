@@ -158,7 +158,6 @@
 							line_color_focus: "#4471C4"	
 							icon_left_color_focus: "#4471C4"				
 							mode: "rectangle"
-							on_text_validate: root.exec_find()
 
 						MDTextField:
 							id: tx_nopol
@@ -172,24 +171,104 @@
 							line_color_focus: "#4471C4"	
 							icon_left_color_focus: "#4471C4"				
 							mode: "rectangle"
-							on_text_validate: root.exec_find()
-						
+
 					MDBoxLayout:
 						orientation: "horizontal"
 						spacing: 100
 						size_hint_y: 0.15
 
-						MDRectangleFlatIconButton:
-							id: bt_find
-							type: "large"
-							size_hint_x: 0.5
-							size_hint_y: 1
-							icon: "magnify"
-							text:"CARI"
-							text_color: "#EEEEEE"
-							md_bg_color: "#4471C4"
-							font_style: 'H6'
-							on_press: root.exec_find()
+                        MDTextField:
+                            id: tx_merk
+                            hint_text: "Merk"
+							font_size: '40sp'
+							font_name: "Recharge"
+							font_name_hint_text:'Recharge'
+							icon_left: "branding"
+							text_color_focus: "#4471C4"
+							hint_text_color_focus: "#4471C4"
+							line_color_focus: "#4471C4"	
+							icon_left_color_focus: "#4471C4"				
+							mode: "rectangle"
+
+                        MDTextField:
+                            id: tx_type
+                            hint_text: "Type"
+							font_size: '40sp'
+							font_name: "Recharge"
+							font_name_hint_text:'Recharge'
+							icon_left: "car"
+							text_color_focus: "#4471C4"
+							hint_text_color_focus: "#4471C4"
+							line_color_focus: "#4471C4"	
+							icon_left_color_focus: "#4471C4"				
+							mode: "rectangle"
+
+					MDBoxLayout:
+						orientation: "horizontal"
+						spacing: 100
+						size_hint_y: 0.15
+
+                        MDTextField:
+                            id: tx_idjeniskendaraan
+                            hint_text: "ID Jenis Kendaraan"
+							font_size: '40sp'
+							font_name: "Recharge"
+							font_name_hint_text:'Recharge'
+							icon_left: "account"
+							text_color_focus: "#4471C4"
+							hint_text_color_focus: "#4471C4"
+							line_color_focus: "#4471C4"	
+							icon_left_color_focus: "#4471C4"				
+							mode: "rectangle"
+
+                        MDTextField:
+                            id: tx_jbb
+                            hint_text: "JBB"
+							font_size: '40sp'
+							font_name: "Recharge"
+							font_name_hint_text:'Recharge'
+							icon_left: "account"
+							text_color_focus: "#4471C4"
+							hint_text_color_focus: "#4471C4"
+							line_color_focus: "#4471C4"	
+							icon_left_color_focus: "#4471C4"				
+							mode: "rectangle"
+
+					MDBoxLayout:
+						orientation: "horizontal"
+						spacing: 100
+						size_hint_y: 0.15
+						
+                        MDTextField:
+                            id: tx_bahan_bakar
+                            hint_text: "Bahan Bakar"
+							font_size: '40sp'
+							font_name: "Recharge"
+							font_name_hint_text:'Recharge'
+							icon_left: "account"
+							text_color_focus: "#4471C4"
+							hint_text_color_focus: "#4471C4"
+							line_color_focus: "#4471C4"	
+							icon_left_color_focus: "#4471C4"				
+							mode: "rectangle"
+
+                        MDTextField:
+                            id: tx_warna
+                            hint_text: "Warna"
+							font_size: '40sp'
+							font_name: "Recharge"
+							font_name_hint_text:'Recharge'
+							icon_left: "account"
+							text_color_focus: "#4471C4"
+							hint_text_color_focus: "#4471C4"
+							line_color_focus: "#4471C4"	
+							icon_left_color_focus: "#4471C4"				
+							mode: "rectangle"
+
+					MDBoxLayout:
+						orientation: "horizontal"
+						spacing: 100
+						size_hint_y: 0.15
 
 						MDRectangleFlatIconButton:
 							id: bt_register
@@ -201,7 +280,6 @@
 							text_color: "#EEEEEE"
 							md_bg_color: "#2CA02C"
 							font_style: 'H6'
-							disabled: True
 							on_press: root.exec_register()
 
 						MDRectangleFlatIconButton:
@@ -216,117 +294,6 @@
 							font_style: 'H6'
 							on_press: root.exec_cancel()
 
-					MDBoxLayout:
-						orientation: "vertical"
-						size_hint_y: 0.65
-						padding: 20
-						spacing: 40
-
-						MDGridLayout:
-							cols: 2
-							MDLabel:
-								text: "Nama :"
-								font_style: 'H6'
-								size_hint_x: 0.4
-							MDLabel:
-								text: "Alamat :"
-								font_style: 'H6'
-								size_hint_x: 0.6
-							MDLabel:
-								id: lb_temp_nama
-								font_style: 'H5'
-								size_hint_x: 0.4
-							MDLabel:
-								id: lb_temp_alamat
-								font_style: 'H5'	
-								size_hint_x: 0.6
-
-						MDGridLayout:
-							cols: 5
-							MDLabel:
-								text: "No. Uji :"
-								font_style: 'H6'	
-							MDLabel:
-								text: "No. Polisi :"
-								font_style: 'H6'
-							MDLabel:
-								text: "Status Uji :"
-								font_style: 'H6'	
-							MDLabel:
-								text: "Tanggal Terakhir Uji :"
-								font_style: 'H6'	
-							MDLabel:
-								text: "Tanggal Habis Uji :"
-								font_style: 'H6'	
-							MDLabel:
-								id: lb_temp_no_uji
-								font_style: 'H5'	
-							MDLabel:
-								id: lb_temp_no_pol
-								font_style: 'H5'
-							MDLabel:
-								id: lb_temp_status_uji
-								font_style: 'H5'	
-							MDLabel:
-								id: lb_temp_tgl_uji_terakhir
-								font_style: 'H5'	
-							MDLabel:
-								id: lb_temp_tgl_uji_habis
-								font_style: 'H5'
-
-						MDGridLayout:
-							cols: 4
-							MDLabel:
-								text: "Merk :"
-								font_style: 'H6'	
-							MDLabel:
-								text: "Type :"
-								font_style: 'H6'	
-							MDLabel:
-								text: "Jenis Kendaraan :"
-								font_style: 'H6'	
-							MDLabel:
-								text: "Warna :"
-								font_style: 'H6'
-							MDLabel:
-								id: lb_temp_merk
-								font_style: 'H5'	
-							MDLabel:
-								id: lb_temp_type
-								font_style: 'H5'	
-							MDLabel:
-								id: lb_temp_jenis_kendaraan
-								font_style: 'H5'	
-							MDLabel:
-								id: lb_temp_warna
-								font_style: 'H5'
-
-						MDGridLayout:
-							cols: 4
-							MDLabel:
-								text: "No. Rangka :"
-								font_style: 'H6'	
-							MDLabel:
-								text: "No. Mesin :"
-								font_style: 'H6'	
-							MDLabel:
-								text: "Bahan Bakar :"
-								font_style: 'H6'	
-							MDLabel:
-								text: "JBB :"
-								font_style: 'H6'
-							MDLabel:
-								id: lb_temp_chasis
-								font_style: 'H5'	
-							MDLabel:
-								id: lb_temp_mesin
-								font_style: 'H5'	
-							MDLabel:
-								id: lb_temp_bahan_bakar
-								font_style: 'H5'	
-							MDLabel:
-								id: lb_temp_jbb
-								font_style: 'H5'	
 
 		# footer layout
         MDBoxLayout:
@@ -412,4 +379,5 @@
 					halign: "left"
 					valign: "middle"
 					font_style: 'H6'
-		
+
+

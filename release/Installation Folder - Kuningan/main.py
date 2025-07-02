@@ -25,7 +25,8 @@ logger_dir = os.path.join(application_path, "logs")
 #                 print(f'Error removing old log file: {e}', fname)
 
 from kivy.config import Config
-Config.set('kivy', 'keyboard_mode', 'systemanddock')
+Config.set('kivy', 'keyboard_mode', 'system')
+# Config.set('kivy', 'keyboard_mode', 'systemanddock')
 # Config.set('kivy', 'log_level', 'info')
 # Config.set('kivy', 'log_enable', 0)
 # Config.set('kivy', 'log_dir', logger_dir)
@@ -148,7 +149,7 @@ class ScreenHome(MDScreen):
             self.screen_manager.current = 'screen_home'
 
         except Exception as e:
-            toast_msg = f'Error Navigate to Home Screen: {e}'
+            toast_msg = f'Terjadi kesalahan saat berpindah ke halaman Beranda'
             toast(toast_msg)
             Logger.error(toast_msg, e)
 
@@ -163,7 +164,7 @@ class ScreenHome(MDScreen):
                 Logger.info(f"{self.name}: {toast_msg}")  
 
         except Exception as e:
-            toast_msg = f'Error Navigate to Login Screen: {e}'
+            toast_msg = f'Terjadi kesalahan saat berpindah ke halaman Login'
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
@@ -172,7 +173,7 @@ class ScreenHome(MDScreen):
             self.screen_manager.current = 'screen_main'
 
         except Exception as e:
-            toast_msg = f'Error Navigate to Main Screen: {e}'
+            toast_msg = f'Terjadi kesalahan saat berpindah ke halaman Utama'
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
@@ -785,7 +786,7 @@ class ScreenMain(MDScreen):
             self.screen_manager.current = 'screen_home'
 
         except Exception as e:
-            toast_msg = f'Error Navigate to Home Screen: {e}'
+            toast_msg = f'Terjadi kesalahan saat berpindah ke halaman Beranda'
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
@@ -800,7 +801,7 @@ class ScreenMain(MDScreen):
                 Logger.info(f"{self.name}: {toast_msg}")
 
         except Exception as e:
-            toast_msg = f'Error Navigate to Login Screen: {e}'
+            toast_msg = f'Terjadi kesalahan saat berpindah ke halaman Login'
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
@@ -819,7 +820,7 @@ class ScreenMain(MDScreen):
             self.screen_manager.current = 'screen_main'
 
         except Exception as e:
-            toast_msg = f'Error Navigate to Main Screen: {e}'
+            toast_msg = f'Terjadi kesalahan saat berpindah ke halaman Utama'
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
@@ -1181,9 +1182,34 @@ class ScreenAddQueue(MDScreen):
             self.screen_manager.current = 'screen_main'
 
         except Exception as e:
-            toast_msg = f'Error Navigate to Main Screen: {e}'
+            toast_msg = f'Terjadi kesalahan saat berpindah ke halaman Utama'
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")  
+
+    def exec_register(self):
+        try:
+            nopol = self.ids.tx_nopol.text
+            nouji = self.ids.tx_nouji.text
+            merk = self.ids.tx_merk.text
+            tipe = self.ids.tx_type.text
+            idjeniskendaraan = self.ids.tx_idjeniskendaraan.text
+            jbb = self.ids.tx_jbb.text
+            bahan_bakar = self.ids.tx_bahan_bakar.text
+            warna = self.ids.tx_warna.text
+
+            mycursor = mydb.cursor()
+            sql = f"INSERT INTO {TB_DATA} (nopol, nouji, merk, type, idjeniskendaraan, jbb, bahan_bakar, warna) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
+            values = (nopol, nouji, merk, tipe, idjeniskendaraan, jbb, bahan_bakar, warna)
+            mycursor.execute(sql, values)
+            mydb.commit()
+
+            toast("Data berhasil didaftarkan")
+            self.screen_manager.current = 'screen_main'
+
+        except Exception as e:
+            toast_msg = f'Terjadi kesalahan saat mendaftar: {e}'
+            toast(f"Terjadi kesalahan saat mendaftar: {e}")
+
 
 class ScreenMenu(MDScreen):        
     def __init__(self, **kwargs):
@@ -1252,7 +1278,7 @@ class ScreenMenu(MDScreen):
             self.screen_manager.current = 'screen_main'
 
         except Exception as e:
-            toast_msg = f'Error Navigate to Main Screen: {e}'
+            toast_msg = f'Terjadi kesalahan saat berpindah ke halaman Utama'
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
@@ -1662,7 +1688,7 @@ class ScreenResume(MDScreen):
             self.screen_manager.current = 'screen_main'
 
         except Exception as e:
-            toast_msg = f'Error Navigate to Main Screen: {e}'
+            toast_msg = f'Terjadi kesalahan saat berpindah ke halaman Utama'
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")  
 

@@ -1188,6 +1188,13 @@ class ScreenAddQueue(MDScreen):
 
     def exec_register(self):
         try:
+            # Get the last noantrian
+            mycursor = mydb.cursor()
+            mycursor.execute(f"SELECT MAX(noantrian) FROM {TB_DATA}")
+            result = mycursor.fetchone()
+            last_noantrian = int(result[0]) if result[0] is not None else 0
+            noantrian = f"{last_noantrian + 1:04d}"
+
             nopol = self.ids.tx_nopol.text
             nouji = self.ids.tx_nouji.text
             merk = self.ids.tx_merk.text
@@ -1198,8 +1205,8 @@ class ScreenAddQueue(MDScreen):
             warna = self.ids.tx_warna.text
 
             mycursor = mydb.cursor()
-            sql = f"INSERT INTO {TB_DATA} (nopol, nouji, merk, type, idjeniskendaraan, jbb, bahan_bakar, warna) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
-            values = (nopol, nouji, merk, tipe, idjeniskendaraan, jbb, bahan_bakar, warna)
+            sql = f"INSERT INTO {TB_DATA} (noantrian, nopol, nouji, NEW_NOUJI, merk, type, idjeniskendaraan, jbb, bahan_bakar, warna) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+            values = (noantrian, nopol, nouji, nouji, merk, tipe, idjeniskendaraan, jbb, bahan_bakar, warna)
             mycursor.execute(sql, values)
             mydb.commit()
 

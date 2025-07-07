@@ -50,6 +50,8 @@ from kivymd.app import MDApp
 import numpy as np
 import configparser, hashlib, mysql.connector
 from pymodbus.client import ModbusTcpClient
+from fpdf import FPDF
+from escpos.printer import Serial
 
 colors = {
     "Red"   : {"A200": "#FF2A2A","A500": "#FF8080","A700": "#FFD5D5",},
@@ -103,6 +105,7 @@ UPDATE_CAROUSEL_INTERVAL = float(config['setting']['UPDATE_CAROUSEL_INTERVAL'])
 UPDATE_CONNECTION_INTERVAL = float(config['setting']['UPDATE_CONNECTION_INTERVAL'])
 GET_DATA_INTERVAL = float(config['setting']['GET_DATA_INTERVAL'])
 
+PRINTER_THERM_COM = config['setting']['PRINTER_THERM_COM']
 MODBUS_IP_PLC = config['setting']['MODBUS_IP_PLC']
 MODBUS_CLIENT = ModbusTcpClient(MODBUS_IP_PLC)
 REGISTER_DATA_LOAD = int(config['setting']['REGISTER_DATA_LOAD']) # V1200
@@ -852,13 +855,23 @@ class ScreenCalibration(MDScreen):
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1722, 1, slave=1) #V1210
                 MODBUS_CLIENT.write_coil(3093, 1, slave=1) #M21
-                time.sleep(0.1)
-                MODBUS_CLIENT.write_coil(3093, 0, slave=1) #M21
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_load_l_start data to PLC Slave"
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")  
+
+    def rel_calibrate_load_l_start(self):
+        global flag_conn_stat
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_coil(3093, 0, slave=1) #M21
+                MODBUS_CLIENT.close()
+        except Exception as e:
+            toast_msg = f"error send rel_calibrate_load_l_start data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}") 
 
     def exec_calibrate_load_l_zero(self):
         global flag_conn_stat
@@ -867,13 +880,23 @@ class ScreenCalibration(MDScreen):
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1724, 0, slave=1) #V1212
                 MODBUS_CLIENT.write_coil(3094, 1, slave=1) #M22
-                time.sleep(0.1)
-                MODBUS_CLIENT.write_coil(3094, 0, slave=1) #M22
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_load_l_zero data to PLC Slave"
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")  
+
+    def rel_calibrate_load_l_zero(self):
+        global flag_conn_stat
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_coil(3094, 0, slave=1) # M22
+                MODBUS_CLIENT.close()
+        except Exception as e:
+            toast_msg = f"error send rel_calibrate_load_l_zero data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")
 
     def exec_calibrate_load_l_value1(self):
         global flag_conn_stat
@@ -882,13 +905,23 @@ class ScreenCalibration(MDScreen):
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1726, int(int(self.ids.tx_calibrate_load_l_value1.text) * 10), slave=1) #V1214
                 MODBUS_CLIENT.write_coil(3095, 1, slave=1) #M23
-                time.sleep(0.1)
-                MODBUS_CLIENT.write_coil(3095, 0, slave=1) #M23
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_load_l_value1 data to PLC Slave"
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")  
+
+    def rel_calibrate_load_l_value1(self):
+        global flag_conn_stat
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_coil(3095, 0, slave=1) # M23
+                MODBUS_CLIENT.close()
+        except Exception as e:
+            toast_msg = f"error send rel_calibrate_load_l_value1 data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")
 
     def exec_calibrate_load_l_value2(self):
         global flag_conn_stat
@@ -897,13 +930,23 @@ class ScreenCalibration(MDScreen):
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1728, int(int(self.ids.tx_calibrate_load_l_value2.text) * 10), slave=1) #V1216
                 MODBUS_CLIENT.write_coil(3096, 1, slave=1) #M24
-                time.sleep(0.1)
-                MODBUS_CLIENT.write_coil(3096, 0, slave=1) #M24
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_load_l_value2 data to PLC Slave"
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")  
+
+    def rel_calibrate_load_l_value2(self):
+        global flag_conn_stat
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_coil(3096, 0, slave=1) # M24
+                MODBUS_CLIENT.close()
+        except Exception as e:
+            toast_msg = f"error send rel_calibrate_load_l_value2 data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")
 
     def exec_calibrate_load_l_stop(self):
         global flag_conn_stat
@@ -912,13 +955,23 @@ class ScreenCalibration(MDScreen):
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1730, 2, slave=1) #V1218
                 MODBUS_CLIENT.write_coil(3097, 1, slave=1) #M25
-                time.sleep(0.1)
-                MODBUS_CLIENT.write_coil(3097, 0, slave=1) #M25
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_load_l_stop data to PLC Slave"
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}") 
+
+    def rel_calibrate_load_l_stop(self):
+        global flag_conn_stat
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_coil(3097, 0, slave=1) # M25
+                MODBUS_CLIENT.close()
+        except Exception as e:
+            toast_msg = f"error send rel_calibrate_load_l_stop data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")
 
     def exec_calibrate_load_r_start(self):
         global flag_conn_stat
@@ -927,13 +980,23 @@ class ScreenCalibration(MDScreen):
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1752, 1, slave=1) #V1240
                 MODBUS_CLIENT.write_coil(3193, 1, slave=1) #M121
-                time.sleep(0.1)
-                MODBUS_CLIENT.write_coil(3193, 0, slave=1) #M121
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_load_r_start data to PLC Slave"
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")  
+
+    def rel_calibrate_load_r_start(self):
+        global flag_conn_stat
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_coil(3193, 0, slave=1) # M121
+                MODBUS_CLIENT.close()
+        except Exception as e:
+            toast_msg = f"error send rel_calibrate_load_r_start data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")
 
     def exec_calibrate_load_r_zero(self):
         global flag_conn_stat
@@ -942,14 +1005,24 @@ class ScreenCalibration(MDScreen):
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1754, 0, slave=1) #V1242
                 MODBUS_CLIENT.write_coil(3194, 1, slave=1) #M122
-                time.sleep(0.1)
-                MODBUS_CLIENT.write_coil(3194, 0, slave=1) #M122
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_load_r_zero data to PLC Slave"
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
+    def rel_calibrate_load_r_zero(self):
+        global flag_conn_stat
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_coil(3194, 0, slave=1) # M122
+                MODBUS_CLIENT.close()
+        except Exception as e:
+            toast_msg = f"error send rel_calibrate_load_r_zero data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")
+            
     def exec_calibrate_load_r_value1(self):
         global flag_conn_stat
         try:
@@ -957,13 +1030,23 @@ class ScreenCalibration(MDScreen):
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1756, int(int(self.ids.tx_calibrate_load_r_value1.text) * 10), slave=1) #V1244
                 MODBUS_CLIENT.write_coil(3195, 1, slave=1) #M123
-                time.sleep(0.1)
-                MODBUS_CLIENT.write_coil(3195, 0, slave=1) #M123
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_load_r_value1 data to PLC Slave"
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")  
+
+    def rel_calibrate_load_r_value1(self):
+        global flag_conn_stat
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_coil(3195, 0, slave=1) # M123
+                MODBUS_CLIENT.close()
+        except Exception as e:
+            toast_msg = f"error send rel_calibrate_load_r_value1 data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")
 
     def exec_calibrate_load_r_value2(self):
         global flag_conn_stat
@@ -972,13 +1055,24 @@ class ScreenCalibration(MDScreen):
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1758, int(int(self.ids.tx_calibrate_load_r_value2.text) * 10), slave=1) #V1246
                 MODBUS_CLIENT.write_coil(3196, 1, slave=1) #M124
-                time.sleep(0.1)
-                MODBUS_CLIENT.write_coil(3196, 0, slave=1) #M124
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_load_r_value2 data to PLC Slave"
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")  
+
+
+    def rel_calibrate_load_r_value2(self):
+        global flag_conn_stat
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_coil(3196, 0, slave=1) # M124
+                MODBUS_CLIENT.close()
+        except Exception as e:
+            toast_msg = f"error send rel_calibrate_load_r_value2 data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")
 
     def exec_calibrate_load_r_stop(self):
         global flag_conn_stat
@@ -987,14 +1081,23 @@ class ScreenCalibration(MDScreen):
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1760, 2, slave=1) #V1248
                 MODBUS_CLIENT.write_coil(3197, 1, slave=1) #M125
-                time.sleep(0.1)
-                MODBUS_CLIENT.write_coil(3197, 0, slave=1) #M125
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_load_r_stop data to PLC Slave"
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}") 
 
+    def rel_calibrate_load_r_stop(self):
+        global flag_conn_stat
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_coil(3197, 0, slave=1) # M125
+                MODBUS_CLIENT.close()
+        except Exception as e:
+            toast_msg = f"error send rel_calibrate_load_r_stop data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")
 
     def exec_calibrate_brake_l_start(self):
         global flag_conn_stat
@@ -1003,13 +1106,23 @@ class ScreenCalibration(MDScreen):
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1782, 1, slave=1) #V1270
                 MODBUS_CLIENT.write_coil(3293, 1, slave=1) #M221
-                time.sleep(0.1)
-                MODBUS_CLIENT.write_coil(3293, 0, slave=1) #M221
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_brake_l_start data to PLC Slave"
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")  
+
+    def rel_calibrate_brake_l_start(self):
+        global flag_conn_stat
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_coil(3293, 0, slave=1) # M221
+                MODBUS_CLIENT.close()
+        except Exception as e:
+            toast_msg = f"error send rel_calibrate_brake_l_start data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")
 
     def exec_calibrate_brake_l_zero(self):
         global flag_conn_stat
@@ -1018,13 +1131,23 @@ class ScreenCalibration(MDScreen):
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1784, 0, slave=1) #V1272
                 MODBUS_CLIENT.write_coil(3294, 1, slave=1) #M222
-                time.sleep(0.1)
-                MODBUS_CLIENT.write_coil(3294, 0, slave=1) #M222
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_brake_l_zero data to PLC Slave"
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")  
+
+    def rel_calibrate_brake_l_zero(self):
+        global flag_conn_stat
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_coil(3294, 0, slave=1) # M222
+                MODBUS_CLIENT.close()
+        except Exception as e:
+            toast_msg = f"error send rel_calibrate_brake_l_zero data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")
 
     def exec_calibrate_brake_l_value1(self):
         global flag_conn_stat
@@ -1033,13 +1156,23 @@ class ScreenCalibration(MDScreen):
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1786, int(int(self.ids.tx_calibrate_brake_l_value1.text) * 10), slave=1) #V1274
                 MODBUS_CLIENT.write_coil(3295, 1, slave=1) #M223
-                time.sleep(0.1)
-                MODBUS_CLIENT.write_coil(3295, 0, slave=1) #M223
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_brake_l_value1 data to PLC Slave"
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")  
+
+    def rel_calibrate_brake_l_value1(self):
+        global flag_conn_stat
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_coil(3295, 0, slave=1) # M223
+                MODBUS_CLIENT.close()
+        except Exception as e:
+            toast_msg = f"error send rel_calibrate_brake_l_value1 data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")
 
     def exec_calibrate_brake_l_value2(self):
         global flag_conn_stat
@@ -1048,13 +1181,23 @@ class ScreenCalibration(MDScreen):
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1788, int(int(self.ids.tx_calibrate_brake_l_value2.text) * 10), slave=1) #V1276
                 MODBUS_CLIENT.write_coil(3296, 1, slave=1) #M224
-                time.sleep(0.1)
-                MODBUS_CLIENT.write_coil(3296, 0, slave=1) #M224
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_brake_l_value2 data to PLC Slave"
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")  
+
+    def rel_calibrate_brake_l_value2(self):
+        global flag_conn_stat
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_coil(3296, 0, slave=1) # M224
+                MODBUS_CLIENT.close()
+        except Exception as e:
+            toast_msg = f"error send rel_calibrate_brake_l_value2 data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")
 
     def exec_calibrate_brake_l_stop(self):
         global flag_conn_stat
@@ -1063,13 +1206,23 @@ class ScreenCalibration(MDScreen):
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1790, 2, slave=1) #V1278
                 MODBUS_CLIENT.write_coil(3297, 1, slave=1) #2M25
-                time.sleep(0.1)
-                MODBUS_CLIENT.write_coil(3297, 0, slave=1) #M225
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_brake_l_stop data to PLC Slave"
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}") 
+
+    def rel_calibrate_brake_l_stop(self):
+        global flag_conn_stat
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_coil(3297, 0, slave=1) # M225
+                MODBUS_CLIENT.close()
+        except Exception as e:
+            toast_msg = f"error send rel_calibrate_brake_l_stop data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")
 
     def exec_calibrate_brake_r_start(self):
         global flag_conn_stat
@@ -1078,13 +1231,23 @@ class ScreenCalibration(MDScreen):
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1812, 1, slave=1) #V1300
                 MODBUS_CLIENT.write_coil(3393, 1, slave=1) #M321
-                time.sleep(0.1)
-                MODBUS_CLIENT.write_coil(3393, 0, slave=1) #M321
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_brake_r_start data to PLC Slave"
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")  
+
+    def rel_calibrate_brake_r_start(self):
+        global flag_conn_stat
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_coil(3393, 0, slave=1) # M321
+                MODBUS_CLIENT.close()
+        except Exception as e:
+            toast_msg = f"error send rel_calibrate_brake_r_start data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")
 
     def exec_calibrate_brake_r_zero(self):
         global flag_conn_stat
@@ -1093,14 +1256,24 @@ class ScreenCalibration(MDScreen):
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1814, 0, slave=1) #V1302
                 MODBUS_CLIENT.write_coil(3394, 1, slave=1) #M322
-                time.sleep(0.1)
-                MODBUS_CLIENT.write_coil(3394, 0, slave=1) #M322
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_brake_r_zero data to PLC Slave"
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
+    def rel_calibrate_brake_r_zero(self):
+        global flag_conn_stat
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_coil(3394, 0, slave=1) # M322
+                MODBUS_CLIENT.close()
+        except Exception as e:
+            toast_msg = f"error send rel_calibrate_brake_r_zero data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")
+            
     def exec_calibrate_brake_r_value1(self):
         global flag_conn_stat
         try:
@@ -1108,13 +1281,23 @@ class ScreenCalibration(MDScreen):
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1816, int(int(self.ids.tx_calibrate_brake_r_value1.text) * 10), slave=1) #V1304
                 MODBUS_CLIENT.write_coil(3395, 1, slave=1) #M123
-                time.sleep(0.1)
-                MODBUS_CLIENT.write_coil(3395, 0, slave=1) #M123
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_brake_r_value1 data to PLC Slave"
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")  
+
+    def rel_calibrate_brake_r_value1(self):
+        global flag_conn_stat
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_coil(3395, 0, slave=1) # M323
+                MODBUS_CLIENT.close()
+        except Exception as e:
+            toast_msg = f"error send rel_calibrate_brake_r_value1 data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")
 
     def exec_calibrate_brake_r_value2(self):
         global flag_conn_stat
@@ -1123,13 +1306,23 @@ class ScreenCalibration(MDScreen):
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1818, int(int(self.ids.tx_calibrate_brake_r_value2.text) * 10), slave=1) #V1306
                 MODBUS_CLIENT.write_coil(3396, 1, slave=1) #M324
-                time.sleep(0.1)
-                MODBUS_CLIENT.write_coil(3396, 0, slave=1) #M324
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_brake_r_value2 data to PLC Slave"
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")  
+
+    def rel_calibrate_brake_r_value2(self):
+        global flag_conn_stat
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_coil(3396, 0, slave=1) # M324
+                MODBUS_CLIENT.close()
+        except Exception as e:
+            toast_msg = f"error send rel_calibrate_brake_r_value2 data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")
 
     def exec_calibrate_brake_r_stop(self):
         global flag_conn_stat
@@ -1138,14 +1331,23 @@ class ScreenCalibration(MDScreen):
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1820, 2, slave=1) #V1308
                 MODBUS_CLIENT.write_coil(3397, 1, slave=1) #M325
-                time.sleep(0.1)
-                MODBUS_CLIENT.write_coil(3397, 0, slave=1) #M325
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_brake_r_stop data to PLC Slave"
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}") 
 
+    def rel_calibrate_brake_r_stop(self):
+        global flag_conn_stat
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_coil(3397, 0, slave=1) # M325
+                MODBUS_CLIENT.close()
+        except Exception as e:
+            toast_msg = f"error send rel_calibrate_brake_r_stop data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")
 
     def exec_navigate_menu(self):
         try:
@@ -1683,12 +1885,133 @@ class ScreenResume(MDScreen):
             mycursor.execute(sql, sql_val)
             mydb.commit()
 
+            self.exec_print()
+            self.exec_thermal_print()
+
             self.exec_navigate_main()
         
         except Exception as e:
             toast_msg = f'Error Save Data: {e}'
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")  
+
+    def exec_print(self):
+        global flag_play
+        global count_starting, count_get_data
+        global mydb, db_antrian
+        global dt_no_antrian, dt_no_pol, dt_no_uji, dt_nama, dt_jenis_kendaraan
+        global dt_load_flag, dt_brake_flag, dt_handbrake_flag
+        global db_load_left_value, db_load_right_value, db_load_total_value
+        global db_brake_left_value, db_brake_right_value, db_brake_total_value, db_brake_efficiency_value, db_brake_difference_value
+        global db_handbrake_left_value, db_handbrake_right_value, db_handbrake_total_value, db_handbrake_efficiency_value, db_handbrake_difference_value
+        global dt_load_total_value, dt_brake_total_value, dt_brake_efficiency_value, dt_brake_difference_value, dt_handbrake_total_value, dt_handbrake_efficiency_value, dt_handbrake_difference_value
+
+        try:
+            mycursor = mydb.cursor()
+            sql = f"UPDATE {TB_DATA} SET print_flag = %s WHERE noantrian = %s"
+            print_datetime = str(time.strftime("%d %B %Y %H:%M:%S", time.localtime()))
+            sql_val = (1, dt_no_antrian)
+            mycursor.execute(sql, sql_val)
+            mydb.commit()
+
+            pdf = FPDF()
+            pdf.add_page()
+            pdf.set_xy(0, 10)
+            pdf.image("assets/logo-dishub.png", w=30.0, h=0, x=90)
+            pdf.set_font('Arial', 'B', 24.0)
+            pdf.cell(ln=1, h=5.0, w=0)
+            pdf.cell(ln=1, h=15.0, align='C', w=0, txt="HASIL UJI KENDARAAN", border=0)
+            pdf.cell(ln=1, h=5.0, w=0)
+            pdf.set_font('Arial', 'B', 14.0)
+            pdf.cell(ln=0, h=10.0, align='L', w=0, txt=f"Tanggal: {print_datetime}", border=0)
+            pdf.cell(ln=1, h=10.0, align='R', w=0, txt=f"No Antrian: {dt_no_antrian}", border=0)
+            pdf.cell(ln=0, h=10.0, align='L', w=0, txt=f"No Reg: {dt_no_pol}", border=0)
+            pdf.cell(ln=1, h=10.0, align='R', w=0, txt=f"No Uji: {dt_no_uji}", border=0)
+            pdf.cell(ln=0, h=10.0, align='L', w=0, txt=f"Nama: {dt_nama}", border=0)
+            pdf.cell(ln=1, h=10.0, align='R', w=0, txt=f"Jenis Kendaraan: {dt_jenis_kendaraan}", border=0)
+            pdf.cell(ln=1, h=10.0, w=0)
+            pdf.set_font('Arial', '', 14.0)
+            pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"Axle Load")
+            pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Nilai Axle Load Total : {dt_load_total_value}")
+            pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Status Pengujian Axle Load : {'Lulus' if dt_load_flag == 1 else 'Tidak Lulus' if dt_load_flag == 2 else 'Belum Diuji'}")
+            pdf.cell(ln=1, h=5.0, w=0)
+            pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"Rem")
+            pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Nilai Rem Total : {dt_brake_total_value}")
+            pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Nilai Efisiensi Rem : {dt_brake_efficiency_value}")
+            pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Nilai Diferensiasi Rem : {dt_brake_difference_value}")
+            pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Status Pengujian Rem : {'Lulus' if dt_brake_flag == 1 else 'Tidak Lulus' if dt_brake_flag == 2 else 'Belum Diuji'}")
+            pdf.cell(ln=1, h=5.0, w=0)
+            pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"Rem Tangan")
+            pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Nilai Rem Tangan Total : {dt_handbrake_total_value}")
+            pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Nilai Efisiensi Rem Tangan : {dt_handbrake_efficiency_value}")
+            pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Nilai Diferensiasi Rem Tangan : {dt_handbrake_difference_value}")
+            pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Status Pengujian Rem Tangan : {'Lulus' if dt_handbrake_flag == 1 else 'Tidak Lulus' if dt_handbrake_flag == 2 else 'Belum Diuji'}")
+
+            pdf.output(f'{os.path.join(os.path.join(os.environ["USERPROFILE"]), "Documents")}\\Hasil_Uji_VIIS_AxleLoad_Brake_{str(time.strftime("%d_%B_%Y_%H_%M_%S", time.localtime()))}.pdf', 'F')
+
+        except Exception as e:
+            toast_msg = f'Error Print Data: {e}'
+            print(toast_msg)
+
+    def exec_thermal_print(self):
+        global flag_play
+        global count_starting, count_get_data
+        global mydb, db_antrian
+        global dt_no_antrian, dt_no_pol, dt_no_uji, dt_nama, dt_jenis_kendaraan
+        global dt_load_flag, dt_brake_flag, dt_handbrake_flag
+        global db_load_left_value, db_load_right_value, db_load_total_value
+        global db_brake_left_value, db_brake_right_value, db_brake_total_value, db_brake_efficiency_value, db_brake_difference_value
+        global db_handbrake_left_value, db_handbrake_right_value, db_handbrake_total_value, db_handbrake_efficiency_value, db_handbrake_difference_value
+        global dt_load_total_value, dt_brake_total_value, dt_brake_efficiency_value, dt_brake_difference_value, dt_handbrake_total_value, dt_handbrake_efficiency_value, dt_handbrake_difference_value
+
+        try:
+            """ 9600 Baud, 8N1, Flow Control Enabled """
+            printer = Serial(devfile=PRINTER_THERM_COM,
+                    baudrate=38400,
+                    bytesize=8,
+                    parity='N',
+                    stopbits=1,
+                    timeout=1.00,
+                    dsrdtr=True)
+            print_datetime = str(time.strftime("%d %B %Y %H:%M:%S", time.localtime()))
+            
+            printer.image("assets/images/logo-load-app.png")
+            printer.textln(" \n ")
+            printer.textln("VEHICLE INSPECTION INTEGRATION SYSTEM")
+            printer.textln("AXLE LOAD & BRAKE")
+            printer.textln("================================================================")
+            printer.text(f"No Antrian: {dt_no_antrian}\t")
+            printer.text(f"No Reg: {dt_no_pol}\t")
+            printer.textln(f"No Uji: {dt_no_uji}")
+            printer.textln("  ")
+            printer.text(f"Nama: {dt_nama}\t")
+            printer.textln(f"Jenis Kendaraan: {dt_jenis_kendaraan}")
+            printer.textln("  ")
+            printer.textln(f"Tanggal: {print_datetime}")
+            printer.textln("  ")
+            printer.textln(f"Axle Load")
+            printer.textln(f"Nilai Axle Load Total : {dt_load_total_value}")
+            printer.textln(f"Status Pengujian Axle Load : {'Lulus' if dt_load_flag == 1 else 'Tidak Lulus' if dt_load_flag == 2 else 'Belum Diuji'}")
+            printer.textln("  ")
+            printer.textln(f"Rem")
+            printer.textln(f"Nilai Rem Total : {dt_brake_total_value}")
+            printer.textln(f"Nilai Efisiensi Rem : {dt_brake_efficiency_value}")
+            printer.textln(f"Nilai Diferensiasi Rem : {dt_brake_difference_value}")
+            printer.textln(f"Status Pengujian Rem : {'Lulus' if dt_brake_flag == 1 else 'Tidak Lulus' if dt_brake_flag == 2 else 'Belum Diuji'}")
+            printer.textln("  ")            
+            printer.textln(f"Rem Tangan")
+            printer.textln(f"Nilai Rem Tangan Total : {dt_handbrake_total_value}")
+            printer.textln(f"Nilai Efisiensi Rem Tangan : {dt_handbrake_efficiency_value}")
+            printer.textln(f"Nilai Diferensiasi Rem Tangan : {dt_handbrake_difference_value}")
+            printer.textln(f"Status Pengujian Rem Tangan : {'Lulus' if dt_handbrake_flag == 1 else 'Tidak Lulus' if dt_handbrake_flag == 2 else 'Belum Diuji'}")
+            printer.textln("  ")
+            printer.textln("================================================================")
+            printer.cut()
+
+        except Exception as e:
+            toast_msg = f'Error Print Thermal Data: {e}'
+            print(toast_msg)
+
 
     def exec_navigate_main(self):
         try:

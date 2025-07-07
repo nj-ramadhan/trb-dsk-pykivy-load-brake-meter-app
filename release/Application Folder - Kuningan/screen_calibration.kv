@@ -118,7 +118,8 @@
 							text_color: "#EEEEEE"
 							md_bg_color: "#2CA02C"
 							font_style: 'H6'
-							on_press: root.exec_calibrate_load_l_start()	
+							on_press: root.exec_calibrate_load_l_start()
+							on_release: root.rel_calibrate_load_l_start()
 
 						MDBoxLayout:
 							orientation: "horizontal"
@@ -138,7 +139,8 @@
 								text_color: "#EEEEEE"
 								md_bg_color: "#2CA02C"
 								font_style: 'H6'
-								on_press: root.exec_calibrate_load_l_zero()				
+								on_press: root.exec_calibrate_load_l_zero()
+								on_release: root.rel_calibrate_load_l_zero()			
 
 						MDBoxLayout:
 							orientation: "horizontal"
@@ -170,7 +172,8 @@
 								text_color: "#EEEEEE"
 								md_bg_color: "#2CA02C"
 								font_style: 'H6'
-								on_press: root.exec_calibrate_load_l_value1()	
+								on_press: root.exec_calibrate_load_l_value1()
+								on_release: root.rel_calibrate_load_l_value1()
 
 						MDBoxLayout:
 							orientation: "horizontal"
@@ -203,6 +206,7 @@
 								md_bg_color: "#2CA02C"
 								font_style: 'H6'
 								on_press: root.exec_calibrate_load_l_value2()
+								on_release: root.rel_calibrate_load_l_value2()
 
 						MDRectangleFlatIconButton:
 							id: bt_exec_calibrate_load_l_stop
@@ -214,6 +218,7 @@
 							md_bg_color: "#2CA02C"
 							font_style: 'H6'
 							on_press: root.exec_calibrate_load_l_stop()
+							on_release: root.rel_calibrate_load_l_stop()
 
 					MDBoxLayout:
 						orientation: "vertical"
@@ -236,6 +241,7 @@
 							md_bg_color: "#2CA02C"
 							font_style: 'H6'
 							on_press: root.exec_calibrate_load_r_start()
+							on_release: root.rel_calibrate_load_r_start()
 
 						MDBoxLayout:
 							orientation: "horizontal"
@@ -255,7 +261,8 @@
 								text_color: "#EEEEEE"
 								md_bg_color: "#2CA02C"
 								font_style: 'H6'
-								on_press: root.exec_calibrate_load_r_zero()				
+								on_press: root.exec_calibrate_load_r_zero()	
+								on_release: root.rel_calibrate_load_r_zero()			
 
 						MDBoxLayout:
 							orientation: "horizontal"
@@ -287,7 +294,8 @@
 								text_color: "#EEEEEE"
 								md_bg_color: "#2CA02C"
 								font_style: 'H6'
-								on_press: root.exec_calibrate_load_r_value1()	
+								on_press: root.exec_calibrate_load_r_value1()
+								on_release: root.rel_calibrate_load_r_value1()
 
 						MDBoxLayout:
 							orientation: "horizontal"
@@ -319,7 +327,8 @@
 								text_color: "#EEEEEE"
 								md_bg_color: "#2CA02C"
 								font_style: 'H6'
-								on_press: root.exec_calibrate_load_r_value2()	
+								on_press: root.exec_calibrate_load_r_value2()
+								on_release: root.rel_calibrate_load_r_value2()
 
 						MDRectangleFlatIconButton:
 							id: bt_exec_calibrate_load_r_stop
@@ -331,6 +340,7 @@
 							md_bg_color: "#2CA02C"
 							font_style: 'H6'
 							on_press: root.exec_calibrate_load_r_stop()
+							on_release: root.rel_calibrate_load_r_stop()
 
 				MDBoxLayout:
 					orientation: "vertical"
@@ -359,6 +369,7 @@
 							md_bg_color: "#2CA02C"
 							font_style: 'H6'
 							on_press: root.exec_calibrate_brake_l_start()
+							on_release: root.rel_calibrate_brake_l_start()
 
 						MDBoxLayout:
 							orientation: "horizontal"
@@ -378,7 +389,8 @@
 								text_color: "#EEEEEE"
 								md_bg_color: "#2CA02C"
 								font_style: 'H6'
-								on_press: root.exec_calibrate_brake_l_zero()				
+								on_press: root.exec_calibrate_brake_l_zero()
+								on_release: root.rel_calibrate_brake_l_zero()				
 
 						MDBoxLayout:
 							orientation: "horizontal"
@@ -410,7 +422,8 @@
 								text_color: "#EEEEEE"
 								md_bg_color: "#2CA02C"
 								font_style: 'H6'
-								on_press: root.exec_calibrate_brake_l_value1()	
+								on_press: root.exec_calibrate_brake_l_value1()
+								on_release: root.rel_calibrate_brake_l_value1()	
 
 						MDBoxLayout:
 							orientation: "horizontal"
@@ -443,6 +456,7 @@
 								md_bg_color: "#2CA02C"
 								font_style: 'H6'
 								on_press: root.exec_calibrate_brake_l_value2()
+								on_release: root.rel_calibrate_brake_l_value2()
 
 						MDRectangleFlatIconButton:
 							id: bt_exec_calibrate_brake_l_stop
@@ -454,6 +468,7 @@
 							md_bg_color: "#2CA02C"
 							font_style: 'H6'
 							on_press: root.exec_calibrate_brake_l_stop()
+							on_release: root.rel_calibrate_brake_l_stop()
 
 					MDBoxLayout:
 						orientation: "vertical"
@@ -476,6 +491,7 @@
 							md_bg_color: "#2CA02C"
 							font_style: 'H6'
 							on_press: root.exec_calibrate_brake_r_start()
+							on_release: root.rel_calibrate_brake_r_start()
 
 						MDBoxLayout:
 							orientation: "horizontal"
@@ -495,7 +511,8 @@
 								text_color: "#EEEEEE"
 								md_bg_color: "#2CA02C"
 								font_style: 'H6'
-								on_press: root.exec_calibrate_brake_r_zero()				
+								on_press: root.exec_calibrate_brake_r_zero()
+								on_release: root.rel_calibrate_brake_r_zero()				
 
 						MDBoxLayout:
 							orientation: "horizontal"
@@ -527,7 +544,8 @@
 								text_color: "#EEEEEE"
 								md_bg_color: "#2CA02C"
 								font_style: 'H6'
-								on_press: root.exec_calibrate_brake_r_value1()	
+								on_press: root.exec_calibrate_brake_r_value1()
+								on_release: root.rel_calibrate_brake_r_value1()
 
 						MDBoxLayout:
 							orientation: "horizontal"
@@ -560,6 +578,7 @@
 								md_bg_color: "#2CA02C"
 								font_style: 'H6'
 								on_press: root.exec_calibrate_brake_r_value2()
+								on_release: root.rel_calibrate_brake_r_value2()
 
 						MDRectangleFlatIconButton:
 							id: bt_exec_calibrate_brake_r_stop
@@ -571,6 +590,7 @@
 							md_bg_color: "#2CA02C"
 							font_style: 'H6'
 							on_press: root.exec_calibrate_brake_r_stop()
+							on_release: root.rel_calibrate_brake_r_stop()
 	
 			MDBoxLayout:
 				orientation: "horizontal"

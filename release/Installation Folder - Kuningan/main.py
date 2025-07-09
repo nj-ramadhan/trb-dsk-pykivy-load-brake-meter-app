@@ -106,6 +106,14 @@ UPDATE_CONNECTION_INTERVAL = float(config['setting']['UPDATE_CONNECTION_INTERVAL
 GET_DATA_INTERVAL = float(config['setting']['GET_DATA_INTERVAL'])
 
 PRINTER_THERM_COM = config['setting']['PRINTER_THERM_COM']
+PRINTER_THERM_BAUD = int(config['setting']['PRINTER_THERM_BAUD'])
+PRINTER_THERM_BYTESIZE = int(config['setting']['PRINTER_THERM_BYTESIZE'])
+PRINTER_THERM_PARITY = config['setting']['PRINTER_THERM_PARITY']
+PRINTER_THERM_STOPBITS = int(config['setting']['PRINTER_THERM_STOPBITS'])
+PRINTER_THERM_TIMEOUT = float(config['setting']['PRINTER_THERM_TIMEOUT'])
+PRINTER_THERM_DSRDTR = bool(config['setting']['PRINTER_THERM_DSRDTR'])
+
+print(PRINTER_THERM_DSRDTR)
 MODBUS_IP_PLC = config['setting']['MODBUS_IP_PLC']
 MODBUS_CLIENT = ModbusTcpClient(MODBUS_IP_PLC)
 REGISTER_DATA_LOAD = int(config['setting']['REGISTER_DATA_LOAD']) # V1200
@@ -1940,17 +1948,17 @@ class ScreenResume(MDScreen):
             pdf.cell(ln=1, h=10.0, align='R', w=0, txt=f"Jenis Kendaraan: {dt_jenis_kendaraan}", border=0)
             pdf.cell(ln=1, h=10.0, w=0)
             pdf.set_font('Arial', '', 14.0)
-            pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"Axle Load")
+            pdf.cell(ln=1, h=10.0, align='L', w=80, txt=f"Axle Load")
             pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Nilai Axle Load Total : {dt_load_total_value}")
             pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Status Pengujian Axle Load : {'Lulus' if dt_load_flag == 1 else 'Tidak Lulus' if dt_load_flag == 2 else 'Belum Diuji'}")
             pdf.cell(ln=1, h=5.0, w=0)
-            pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"Rem")
+            pdf.cell(ln=1, h=10.0, align='L', w=80, txt=f"Rem")
             pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Nilai Rem Total : {dt_brake_total_value}")
             pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Nilai Efisiensi Rem : {dt_brake_efficiency_value}")
             pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Nilai Diferensiasi Rem : {dt_brake_difference_value}")
             pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Status Pengujian Rem : {'Lulus' if dt_brake_flag == 1 else 'Tidak Lulus' if dt_brake_flag == 2 else 'Belum Diuji'}")
             pdf.cell(ln=1, h=5.0, w=0)
-            pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"Rem Tangan")
+            pdf.cell(ln=1, h=10.0, align='L', w=80, txt=f"Rem Tangan")
             pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Nilai Rem Tangan Total : {dt_handbrake_total_value}")
             pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Nilai Efisiensi Rem Tangan : {dt_handbrake_efficiency_value}")
             pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Nilai Diferensiasi Rem Tangan : {dt_handbrake_difference_value}")
@@ -1977,12 +1985,12 @@ class ScreenResume(MDScreen):
         try:
             """ 9600 Baud, 8N1, Flow Control Enabled """
             printer = Serial(devfile=PRINTER_THERM_COM,
-                    baudrate=38400,
-                    bytesize=8,
-                    parity='N',
-                    stopbits=1,
-                    timeout=1.00,
-                    dsrdtr=True)
+                    baudrate=PRINTER_THERM_BAUD,
+                    bytesize=PRINTER_THERM_BYTESIZE,
+                    parity=PRINTER_THERM_PARITY,
+                    stopbits=PRINTER_THERM_STOPBITS,
+                    timeout=PRINTER_THERM_TIMEOUT,
+                    dsrdtr=PRINTER_THERM_DSRDTR,)
             print_datetime = str(time.strftime("%d %B %Y %H:%M:%S", time.localtime()))
             
             printer.image("assets/images/logo-dishub.png")

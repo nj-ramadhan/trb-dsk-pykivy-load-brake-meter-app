@@ -422,6 +422,7 @@ class ScreenMain(MDScreen):
             if(not flag_play):
                 screen_resume.ids.bt_save.md_bg_color = colors['Green']['200']
                 screen_resume.ids.bt_save.disabled = False
+                screen_resume.ids.bt_print.disabled = False
                 screen_load_meter.ids.bt_reload.md_bg_color = colors['Red']['A200']
                 screen_load_meter.ids.bt_reload.disabled = False
                 screen_brake_meter.ids.bt_reload.md_bg_color = colors['Red']['A200']
@@ -430,6 +431,7 @@ class ScreenMain(MDScreen):
                 screen_handbrake_meter.ids.bt_reload.disabled = False   
             else:
                 screen_resume.ids.bt_save.disabled = True
+                screen_resume.ids.bt_print.disabled = True
                 screen_load_meter.ids.bt_reload.disabled = True
                 screen_brake_meter.ids.bt_reload.disabled = True
                 screen_handbrake_meter.ids.bt_reload.disabled = True
@@ -1859,8 +1861,6 @@ class ScreenResume(MDScreen):
         global dt_test_number
 
         try:
-            self.ids.bt_save.disabled = True
-
             mycursor = mydb.cursor()
             sql = f"UPDATE {TB_DATA} SET load_flag = %s, load_l_value = %s, load_r_value = %s, load_total_value = %s, load_user = %s, load_post = %s WHERE noantrian = %s"
             sql_load_flag = (1 if dt_load_flag == "Lulus" else 2)
@@ -1885,17 +1885,26 @@ class ScreenResume(MDScreen):
             mycursor.execute(sql, sql_val)
             mydb.commit()
 
-            self.exec_print()
-            self.exec_thermal_print()
-
-            self.exec_navigate_main()
+            self.ids.bt_save.disabled = True
         
         except Exception as e:
-            toast_msg = f'Error Save Data: {e}'
+            toast_msg = f'Error Save Data'
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
     def exec_print(self):
+        try:
+            self.exec_print_thermal()
+            self.exec_print_pdf()
+
+            self.ids.bt_print.disabled = True
+
+        except Exception as e:
+            toast_msg = f'Gagal Mencetak Hasil Uji'
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
+
+    def exec_print_pdf(self):
         global flag_play
         global count_starting, count_get_data
         global mydb, db_antrian
@@ -1917,7 +1926,7 @@ class ScreenResume(MDScreen):
             pdf = FPDF()
             pdf.add_page()
             pdf.set_xy(0, 10)
-            pdf.image("assets/logo-dishub.png", w=30.0, h=0, x=90)
+            pdf.image("assets/images/logo-dishub.png", w=30.0, h=0, x=90)
             pdf.set_font('Arial', 'B', 24.0)
             pdf.cell(ln=1, h=5.0, w=0)
             pdf.cell(ln=1, h=15.0, align='C', w=0, txt="HASIL UJI KENDARAAN", border=0)
@@ -1950,10 +1959,11 @@ class ScreenResume(MDScreen):
             pdf.output(f'{os.path.join(os.path.join(os.environ["USERPROFILE"]), "Documents")}\\Hasil_Uji_VIIS_AxleLoad_Brake_{str(time.strftime("%d_%B_%Y_%H_%M_%S", time.localtime()))}.pdf', 'F')
 
         except Exception as e:
-            toast_msg = f'Error Print Data: {e}'
-            print(toast_msg)
+            toast_msg = f'Gagal menyimpan ke pdf'
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
-    def exec_thermal_print(self):
+    def exec_print_thermal(self):
         global flag_play
         global count_starting, count_get_data
         global mydb, db_antrian
@@ -1975,7 +1985,7 @@ class ScreenResume(MDScreen):
                     dsrdtr=True)
             print_datetime = str(time.strftime("%d %B %Y %H:%M:%S", time.localtime()))
             
-            printer.image("assets/images/logo-load-app.png")
+            printer.image("assets/images/logo-dishub.png")
             printer.textln(" \n ")
             printer.textln("VEHICLE INSPECTION INTEGRATION SYSTEM")
             printer.textln("AXLE LOAD & BRAKE")
@@ -2009,8 +2019,9 @@ class ScreenResume(MDScreen):
             printer.cut()
 
         except Exception as e:
-            toast_msg = f'Error Print Thermal Data: {e}'
-            print(toast_msg)
+            toast_msg = f'Gagal mencetak menggunakan Thermal Printer'
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
 
     def exec_navigate_main(self):

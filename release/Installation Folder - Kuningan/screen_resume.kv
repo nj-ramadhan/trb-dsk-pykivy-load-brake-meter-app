@@ -315,20 +315,31 @@
 							icon: "arrow-left"
 							theme_text_color: "Custom"
 							text_color: "#EEEEEE"
-							md_bg_color: "4471C4"
-							size_hint_x: 0.5
+							md_bg_color: "#FF2A2A"
+							size_hint_x: 0.3
 							on_press: root.exec_navigate_back()
 
 						MDRectangleFlatIconButton:
 							id: bt_save
 							text: "SIMPAN"
-							icon: "printer"
+							icon: "floppy"
 							theme_text_color: "Custom"
 							text_color: "#EEEEEE"
 							md_bg_color: "#2CA02C"
 							disabled: True
-							size_hint_x: 0.5
+							size_hint_x: 0.3
 							on_press: root.exec_save()
+
+						MDRectangleFlatIconButton:
+							id: bt_print
+							text: "CETAK"
+							icon: "printer"
+							theme_text_color: "Custom"
+							text_color: "#EEEEEE"
+							md_bg_color: "#4471C4"
+							disabled: True
+							size_hint_x: 0.3
+							on_press: root.exec_print()
 
 		# footer layout
         MDBoxLayout:

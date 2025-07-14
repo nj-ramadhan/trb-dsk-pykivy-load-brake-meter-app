@@ -1766,17 +1766,17 @@ class ScreenResume(MDScreen):
         global dt_load_flag, dt_brake_flag, dt_handbrake_flag
         self.exec_reload_table_detail()
         try:
-            self.ids.lb_load_left_sum.text = f'{int(np.sum(db_load_left_value))} N'
-            self.ids.lb_load_right_sum.text = f'{int(np.sum(db_load_right_value))} N'
-            self.ids.lb_load_total_sum.text = f'{int(dt_load_total_value)} N'
-            self.ids.lb_brake_left_sum.text = f'{int(np.sum(db_brake_left_value))} N'
-            self.ids.lb_brake_right_sum.text = f'{int(np.sum(db_brake_right_value))} N'
-            self.ids.lb_brake_total_sum.text = f'{int(dt_brake_total_value)} N'
+            self.ids.lb_load_left_sum.text = f'{int(np.sum(db_load_left_value))} kg'
+            self.ids.lb_load_right_sum.text = f'{int(np.sum(db_load_right_value))} kg'
+            self.ids.lb_load_total_sum.text = f'{int(dt_load_total_value)} kg'
+            self.ids.lb_brake_left_sum.text = f'{int(np.sum(db_brake_left_value))} kg'
+            self.ids.lb_brake_right_sum.text = f'{int(np.sum(db_brake_right_value))} kg'
+            self.ids.lb_brake_total_sum.text = f'{int(dt_brake_total_value)} kg'
             self.ids.lb_brake_diff_sum.text = f'{np.round(dt_brake_difference_value, 1)} %'
             self.ids.lb_brake_efficiency.text = f'{np.round(dt_brake_efficiency_value, 1)} %'
-            self.ids.lb_handbrake_left_sum.text = f'{int(np.sum(db_handbrake_left_value))} N'
-            self.ids.lb_handbrake_right_sum.text = f'{int(np.sum(db_handbrake_right_value))} N'
-            self.ids.lb_handbrake_total_sum.text = f'{int(dt_handbrake_total_value)} N'
+            self.ids.lb_handbrake_left_sum.text = f'{int(np.sum(db_handbrake_left_value))} kg'
+            self.ids.lb_handbrake_right_sum.text = f'{int(np.sum(db_handbrake_right_value))} kg'
+            self.ids.lb_handbrake_total_sum.text = f'{int(dt_handbrake_total_value)} kg'
             self.ids.lb_handbrake_efficiency.text = f'{np.round(dt_handbrake_efficiency_value, 1)} %'
 
             if(dt_brake_efficiency_value >= 50 and dt_handbrake_efficiency_value >= 12 and dt_brake_difference_value <= 8):
@@ -1969,7 +1969,7 @@ class ScreenResume(MDScreen):
             pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Jenis Kendaraan: {dt_jenis_kendaraan}", border=0)
             pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Nama: {dt_nama}", border=0)
             pdf.cell(ln=0, h=10.0, align='L', w=0, txt=f"JBB: {dt_jbb}", border=0)
-            pdf.cell(ln=1, h=10.0, align='R', w=0, txt=f"Berat Kosong: {dt_berat_kosong}", border=0)
+            pdf.cell(ln=1, h=10.0, align='R', w=0, txt=f"Berat Kosong: {int(dt_berat_kosong)}", border=0)
             pdf.cell(ln=1, h=10.0, w=0)
             pdf.set_font('Arial', '', 14.0)
             pdf.cell(ln=1, h=10.0, align='L', w=80, txt=f"AXLE LOAD")
@@ -1980,10 +1980,10 @@ class ScreenResume(MDScreen):
             for i in range(10):
                 if (db_load_total_value[i] > 0.0):
                     pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"S{i+1}")
-                    pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"{db_load_left_value[i]}")
-                    pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"{db_load_right_value[i]}")
-                    pdf.cell(ln=1, h=10.0, align='L', w=80, txt=f"{db_load_total_value[i]}")
-            pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Nilai Axle Load Total : {dt_load_total_value}")
+                    pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"{int(db_load_left_value[i])} kg")
+                    pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"{int(db_load_right_value[i])} kg")
+                    pdf.cell(ln=1, h=10.0, align='L', w=80, txt=f"{int(db_load_total_value[i])} kg")
+            pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Nilai Axle Load Total : {int(dt_load_total_value)} kg")
             pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Status Pengujian Axle Load: {'Lulus' if dt_load_flag == 1 else 'Tidak Lulus' if dt_load_flag == 2 else 'Belum Diuji'}")
             pdf.cell(ln=1, h=5.0, w=0)
 
@@ -1996,12 +1996,12 @@ class ScreenResume(MDScreen):
             for i in range(10):
                 if (db_load_total_value[i] > 0.0):
                     pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"S{i+1}")
-                    pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"{db_brake_left_value[i]}")
-                    pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"{db_brake_right_value[i]}")
-                    pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"{db_brake_total_value[i]}")
-                    pdf.cell(ln=1, h=10.0, align='L', w=80, txt=f"{db_brake_difference_value[i]}")
-            pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Nilai Rem Utama Total : {dt_brake_total_value}")
-            pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Nilai Efisiensi Rem Utama : {dt_brake_efficiency_value}")
+                    pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"{int(db_brake_left_value[i])} kg")
+                    pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"{int(db_brake_right_value[i])} kg")
+                    pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"{int(db_brake_total_value[i])} kg")
+                    pdf.cell(ln=1, h=10.0, align='L', w=80, txt=f"{int(db_brake_difference_value[i])} kg")
+            pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Nilai Rem Utama Total : {int(dt_brake_total_value)} kg")
+            pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Nilai Efisiensi Rem Utama : {str(np.round(dt_brake_efficiency_value, 1)).replace('.', ',')} %")
             pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Status Pengujian Rem Urama: {'Lulus' if dt_brake_flag == 1 else 'Tidak Lulus' if dt_brake_flag == 2 else 'Belum Diuji'}")
             pdf.cell(ln=1, h=5.0, w=0)
 
@@ -2013,12 +2013,12 @@ class ScreenResume(MDScreen):
             for i in range(10):
                 if (db_load_total_value[i] > 0.0):
                     pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"S{i+1}")
-                    pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"{db_handbrake_left_value[i]}")
-                    pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"{db_handbrake_right_value[i]}")
-                    pdf.cell(ln=1, h=10.0, align='L', w=80, txt=f"{db_handbrake_total_value[i]}")
+                    pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"{int(db_handbrake_left_value[i])} kg")
+                    pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"{int(db_handbrake_right_value[i])} kg")
+                    pdf.cell(ln=1, h=10.0, align='L', w=80, txt=f"{int(db_handbrake_total_value[i])} kg")
 
-            pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Nilai Rem Parkir Total : {dt_handbrake_total_value}")
-            pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Nilai Efisiensi Rem Parkir : {dt_handbrake_efficiency_value}")
+            pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Nilai Rem Parkir Total : {int(dt_handbrake_total_value)} kg")
+            pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Nilai Efisiensi Rem Parkir : {str(np.round(dt_handbrake_efficiency_value, 1)).replace('.', ',')} %")
             pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Status Pengujian Rem Parkir: {'Lulus' if dt_handbrake_flag == 1 else 'Tidak Lulus' if dt_handbrake_flag == 2 else 'Belum Diuji'}")
             pdf.output(f'{os.path.join(os.path.join(os.environ["USERPROFILE"]), "Documents")}\\Hasil_Uji_VIIS_AxleLoad_Brake_{str(time.strftime("%d_%B_%Y_%H_%M_%S", time.localtime()))}.pdf', 'F')
 

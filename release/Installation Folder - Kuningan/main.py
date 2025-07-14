@@ -695,11 +695,11 @@ class ScreenMain(MDScreen):
             dt_dash_belum_uji = np.where(db_pendaftaran[:,3] == 0)[0].size
             dt_dash_sudah_uji = np.where(db_pendaftaran[:,3] == 1)[0].size
 
-            tb_merk = mydb.cursor()
-            tb_merk.execute(f"SELECT ID, DESCRIPTION FROM {TB_MERK}")
-            result_tb_merk = tb_merk.fetchall()
-            mydb.commit()
-            db_merk = np.array(result_tb_merk)
+            # tb_merk = mydb.cursor()
+            # tb_merk.execute(f"SELECT ID, DESCRIPTION FROM {TB_MERK}")
+            # result_tb_merk = tb_merk.fetchall()
+            # mydb.commit()
+            # db_merk = np.array(result_tb_merk)
         except Exception as e:
             toast_msg = f'Error Fetch Database: {e}'
             Logger.error(f"{self.name}: {toast_msg}, {e}")  
@@ -723,7 +723,8 @@ class ScreenMain(MDScreen):
                         MDLabel(text='Lulus' if (int(db_antrian[4, i]) == 2) else 'Tidak Lulus' if (int(db_antrian[4, i]) == 1) else 'Belum Tes', size_hint_x= 0.07),
                         MDLabel(text='Lulus' if (int(db_antrian[5, i]) == 2) else 'Tidak Lulus' if (int(db_antrian[5, i]) == 1) else 'Belum Tes', size_hint_x= 0.07),
                         MDLabel(text=f"{db_antrian[6, i]}", size_hint_x= 0.08),
-                        MDLabel(text=f"{db_merk[np.where(db_merk == db_antrian[7, i])[0][0],1]}", size_hint_x= 0.08),
+                        # MDLabel(text=f"{db_merk[np.where(db_merk == db_antrian[7, i])[0][0],1]}", size_hint_x= 0.08),
+                        MDLabel(text=f"{db_antrian[7, i]}", size_hint_x= 0.08),
                         MDLabel(text=f"{db_antrian[8, i]}", size_hint_x= 0.05),
                         MDLabel(text=f"{db_antrian[9, i]}", size_hint_x= 0.13),
                         MDLabel(text=f"{db_antrian[10, i]}", size_hint_x= 0.05),
@@ -756,7 +757,8 @@ class ScreenMain(MDScreen):
             dt_brake_flag           = 'Lulus' if (int(db_antrian[4, row]) == 2) else 'Tidak Lulus' if (int(db_antrian[4, row]) == 1) else 'Belum Tes'
             dt_handbrake_flag       = 'Lulus' if (int(db_antrian[5, row]) == 2) else 'Tidak Lulus' if (int(db_antrian[5, row]) == 1) else 'Belum Tes'
             dt_nama                 = f"{db_antrian[6, row]}"
-            dt_merk                 = f"{db_merk[np.where(db_merk == db_antrian[7, row])[0][0],1]}"
+            # dt_merk                 = f"{db_merk[np.where(db_merk == db_antrian[7, row])[0][0],1]}"
+            dt_merk                 = f"{db_antrian[7, row]}"
             dt_type                 = f"{db_antrian[8, row]}"
             dt_jenis_kendaraan      = f"{db_antrian[9, row]}"
             dt_jbb                  = f"{db_antrian[10, row]}"
@@ -864,7 +866,7 @@ class ScreenCalibration(MDScreen):
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1722, 1, slave=1) #V1210
-                MODBUS_CLIENT.write_coil(3093, 1, slave=1) #M21
+                MODBUS_CLIENT.write_coil(3093, True, slave=1) #M21
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_load_l_start data to PLC Slave"
@@ -876,7 +878,7 @@ class ScreenCalibration(MDScreen):
         try:
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_coil(3093, 0, slave=1) #M21
+                MODBUS_CLIENT.write_coil(3093, False, slave=1) #M21
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send rel_calibrate_load_l_start data to PLC Slave"
@@ -889,7 +891,7 @@ class ScreenCalibration(MDScreen):
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1724, 0, slave=1) #V1212
-                MODBUS_CLIENT.write_coil(3094, 1, slave=1) #M22
+                MODBUS_CLIENT.write_coil(3094, True, slave=1) #M22
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_load_l_zero data to PLC Slave"
@@ -901,7 +903,7 @@ class ScreenCalibration(MDScreen):
         try:
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_coil(3094, 0, slave=1) # M22
+                MODBUS_CLIENT.write_coil(3094, False, slave=1) # M22
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send rel_calibrate_load_l_zero data to PLC Slave"
@@ -914,7 +916,7 @@ class ScreenCalibration(MDScreen):
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1726, int(self.ids.tx_calibrate_load_l_value1.text), slave=1) #V1214
-                MODBUS_CLIENT.write_coil(3095, 1, slave=1) #M23
+                MODBUS_CLIENT.write_coil(3095, True, slave=1) #M23
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_load_l_value1 data to PLC Slave"
@@ -926,7 +928,7 @@ class ScreenCalibration(MDScreen):
         try:
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_coil(3095, 0, slave=1) # M23
+                MODBUS_CLIENT.write_coil(3095, False, slave=1) # M23
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send rel_calibrate_load_l_value1 data to PLC Slave"
@@ -939,7 +941,7 @@ class ScreenCalibration(MDScreen):
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1728, int(self.ids.tx_calibrate_load_l_value2.text), slave=1) #V1216
-                MODBUS_CLIENT.write_coil(3096, 1, slave=1) #M24
+                MODBUS_CLIENT.write_coil(3096, True, slave=1) #M24
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_load_l_value2 data to PLC Slave"
@@ -951,7 +953,7 @@ class ScreenCalibration(MDScreen):
         try:
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_coil(3096, 0, slave=1) # M24
+                MODBUS_CLIENT.write_coil(3096, False, slave=1) # M24
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send rel_calibrate_load_l_value2 data to PLC Slave"
@@ -964,7 +966,7 @@ class ScreenCalibration(MDScreen):
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1730, 2, slave=1) #V1218
-                MODBUS_CLIENT.write_coil(3097, 1, slave=1) #M25
+                MODBUS_CLIENT.write_coil(3097, True, slave=1) #M25
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_load_l_stop data to PLC Slave"
@@ -976,7 +978,7 @@ class ScreenCalibration(MDScreen):
         try:
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_coil(3097, 0, slave=1) # M25
+                MODBUS_CLIENT.write_coil(3097, False, slave=1) # M25
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send rel_calibrate_load_l_stop data to PLC Slave"
@@ -989,7 +991,7 @@ class ScreenCalibration(MDScreen):
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1752, 1, slave=1) #V1240
-                MODBUS_CLIENT.write_coil(3193, 1, slave=1) #M121
+                MODBUS_CLIENT.write_coil(3193, True, slave=1) #M121
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_load_r_start data to PLC Slave"
@@ -1001,7 +1003,7 @@ class ScreenCalibration(MDScreen):
         try:
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_coil(3193, 0, slave=1) # M121
+                MODBUS_CLIENT.write_coil(3193, False, slave=1) # M121
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send rel_calibrate_load_r_start data to PLC Slave"
@@ -1014,7 +1016,7 @@ class ScreenCalibration(MDScreen):
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1754, 0, slave=1) #V1242
-                MODBUS_CLIENT.write_coil(3194, 1, slave=1) #M122
+                MODBUS_CLIENT.write_coil(3194, True, slave=1) #M122
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_load_r_zero data to PLC Slave"
@@ -1026,7 +1028,7 @@ class ScreenCalibration(MDScreen):
         try:
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_coil(3194, 0, slave=1) # M122
+                MODBUS_CLIENT.write_coil(3194, False, slave=1) # M122
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send rel_calibrate_load_r_zero data to PLC Slave"
@@ -1039,7 +1041,7 @@ class ScreenCalibration(MDScreen):
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1756, int(self.ids.tx_calibrate_load_r_value1.text), slave=1) #V1244
-                MODBUS_CLIENT.write_coil(3195, 1, slave=1) #M123
+                MODBUS_CLIENT.write_coil(3195, True, slave=1) #M123
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_load_r_value1 data to PLC Slave"
@@ -1051,7 +1053,7 @@ class ScreenCalibration(MDScreen):
         try:
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_coil(3195, 0, slave=1) # M123
+                MODBUS_CLIENT.write_coil(3195, False, slave=1) # M123
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send rel_calibrate_load_r_value1 data to PLC Slave"
@@ -1064,7 +1066,7 @@ class ScreenCalibration(MDScreen):
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1758, int(self.ids.tx_calibrate_load_r_value2.text), slave=1) #V1246
-                MODBUS_CLIENT.write_coil(3196, 1, slave=1) #M124
+                MODBUS_CLIENT.write_coil(3196, True, slave=1) #M124
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_load_r_value2 data to PLC Slave"
@@ -1077,7 +1079,7 @@ class ScreenCalibration(MDScreen):
         try:
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_coil(3196, 0, slave=1) # M124
+                MODBUS_CLIENT.write_coil(3196, False, slave=1) # M124
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send rel_calibrate_load_r_value2 data to PLC Slave"
@@ -1090,7 +1092,7 @@ class ScreenCalibration(MDScreen):
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1760, 2, slave=1) #V1248
-                MODBUS_CLIENT.write_coil(3197, 1, slave=1) #M125
+                MODBUS_CLIENT.write_coil(3197, True, slave=1) #M125
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_load_r_stop data to PLC Slave"
@@ -1102,7 +1104,7 @@ class ScreenCalibration(MDScreen):
         try:
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_coil(3197, 0, slave=1) # M125
+                MODBUS_CLIENT.write_coil(3197, False, slave=1) # M125
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send rel_calibrate_load_r_stop data to PLC Slave"
@@ -1115,7 +1117,7 @@ class ScreenCalibration(MDScreen):
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1782, 1, slave=1) #V1270
-                MODBUS_CLIENT.write_coil(3293, 1, slave=1) #M221
+                MODBUS_CLIENT.write_coil(3293, True, slave=1) #M221
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_brake_l_start data to PLC Slave"
@@ -1127,7 +1129,7 @@ class ScreenCalibration(MDScreen):
         try:
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_coil(3293, 0, slave=1) # M221
+                MODBUS_CLIENT.write_coil(3293, False, slave=1) # M221
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send rel_calibrate_brake_l_start data to PLC Slave"
@@ -1140,7 +1142,7 @@ class ScreenCalibration(MDScreen):
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1784, 0, slave=1) #V1272
-                MODBUS_CLIENT.write_coil(3294, 1, slave=1) #M222
+                MODBUS_CLIENT.write_coil(3294, True, slave=1) #M222
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_brake_l_zero data to PLC Slave"
@@ -1152,7 +1154,7 @@ class ScreenCalibration(MDScreen):
         try:
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_coil(3294, 0, slave=1) # M222
+                MODBUS_CLIENT.write_coil(3294, False, slave=1) # M222
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send rel_calibrate_brake_l_zero data to PLC Slave"
@@ -1165,7 +1167,7 @@ class ScreenCalibration(MDScreen):
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1786, int(self.ids.tx_calibrate_brake_l_value1.text), slave=1) #V1274
-                MODBUS_CLIENT.write_coil(3295, 1, slave=1) #M223
+                MODBUS_CLIENT.write_coil(3295, True, slave=1) #M223
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_brake_l_value1 data to PLC Slave"
@@ -1177,7 +1179,7 @@ class ScreenCalibration(MDScreen):
         try:
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_coil(3295, 0, slave=1) # M223
+                MODBUS_CLIENT.write_coil(3295, False, slave=1) # M223
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send rel_calibrate_brake_l_value1 data to PLC Slave"
@@ -1190,7 +1192,7 @@ class ScreenCalibration(MDScreen):
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1788, int(self.ids.tx_calibrate_brake_l_value2.text), slave=1) #V1276
-                MODBUS_CLIENT.write_coil(3296, 1, slave=1) #M224
+                MODBUS_CLIENT.write_coil(3296, True, slave=1) #M224
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_brake_l_value2 data to PLC Slave"
@@ -1202,7 +1204,7 @@ class ScreenCalibration(MDScreen):
         try:
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_coil(3296, 0, slave=1) # M224
+                MODBUS_CLIENT.write_coil(3296, False, slave=1) # M224
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send rel_calibrate_brake_l_value2 data to PLC Slave"
@@ -1215,7 +1217,7 @@ class ScreenCalibration(MDScreen):
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1790, 2, slave=1) #V1278
-                MODBUS_CLIENT.write_coil(3297, 1, slave=1) #2M25
+                MODBUS_CLIENT.write_coil(3297, True, slave=1) #2M25
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_brake_l_stop data to PLC Slave"
@@ -1227,7 +1229,7 @@ class ScreenCalibration(MDScreen):
         try:
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_coil(3297, 0, slave=1) # M225
+                MODBUS_CLIENT.write_coil(3297, False, slave=1) # M225
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send rel_calibrate_brake_l_stop data to PLC Slave"
@@ -1240,7 +1242,7 @@ class ScreenCalibration(MDScreen):
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1812, 1, slave=1) #V1300
-                MODBUS_CLIENT.write_coil(3393, 1, slave=1) #M321
+                MODBUS_CLIENT.write_coil(3393, True, slave=1) #M321
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_brake_r_start data to PLC Slave"
@@ -1252,7 +1254,7 @@ class ScreenCalibration(MDScreen):
         try:
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_coil(3393, 0, slave=1) # M321
+                MODBUS_CLIENT.write_coil(3393, False, slave=1) # M321
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send rel_calibrate_brake_r_start data to PLC Slave"
@@ -1265,7 +1267,7 @@ class ScreenCalibration(MDScreen):
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1814, 0, slave=1) #V1302
-                MODBUS_CLIENT.write_coil(3394, 1, slave=1) #M322
+                MODBUS_CLIENT.write_coil(3394, True, slave=1) #M322
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_brake_r_zero data to PLC Slave"
@@ -1277,7 +1279,7 @@ class ScreenCalibration(MDScreen):
         try:
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_coil(3394, 0, slave=1) # M322
+                MODBUS_CLIENT.write_coil(3394, False, slave=1) # M322
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send rel_calibrate_brake_r_zero data to PLC Slave"
@@ -1290,7 +1292,7 @@ class ScreenCalibration(MDScreen):
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1816, int(self.ids.tx_calibrate_brake_r_value1.text), slave=1) #V1304
-                MODBUS_CLIENT.write_coil(3395, 1, slave=1) #M123
+                MODBUS_CLIENT.write_coil(3395, True, slave=1) #M123
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_brake_r_value1 data to PLC Slave"
@@ -1302,7 +1304,7 @@ class ScreenCalibration(MDScreen):
         try:
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_coil(3395, 0, slave=1) # M323
+                MODBUS_CLIENT.write_coil(3395, False, slave=1) # M323
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send rel_calibrate_brake_r_value1 data to PLC Slave"
@@ -1315,7 +1317,7 @@ class ScreenCalibration(MDScreen):
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1818, int(int(self.ids.tx_calibrate_brake_r_value2.text)), slave=1) #V1306
-                MODBUS_CLIENT.write_coil(3396, 1, slave=1) #M324
+                MODBUS_CLIENT.write_coil(3396, True, slave=1) #M324
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_brake_r_value2 data to PLC Slave"
@@ -1327,7 +1329,7 @@ class ScreenCalibration(MDScreen):
         try:
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_coil(3396, 0, slave=1) # M324
+                MODBUS_CLIENT.write_coil(3396, False, slave=1) # M324
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send rel_calibrate_brake_r_value2 data to PLC Slave"
@@ -1340,7 +1342,7 @@ class ScreenCalibration(MDScreen):
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1820, 2, slave=1) #V1308
-                MODBUS_CLIENT.write_coil(3397, 1, slave=1) #M325
+                MODBUS_CLIENT.write_coil(3397, True, slave=1) #M325
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_brake_r_stop data to PLC Slave"
@@ -1352,7 +1354,7 @@ class ScreenCalibration(MDScreen):
         try:
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_coil(3397, 0, slave=1) # M325
+                MODBUS_CLIENT.write_coil(3397, False, slave=1) # M325
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send rel_calibrate_brake_r_stop data to PLC Slave"

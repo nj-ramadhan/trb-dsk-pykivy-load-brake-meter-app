@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "VIIMS - Axle Load & Brake Meter Application - Kuningan"
-#define MyAppVersion "1.12.250711"
+#define MyAppVersion "1.13.250714"
 #define MyAppPublisher "PT. Tiga Ratu Berkarya"
 #define MyAppExeName "TRB-VIIMS-LoadBrakeMeterApp-Kuningan.exe"
 #define MyAppAssocName "VIIMS - Axle Load & Brake Meter Files - Kuningan"

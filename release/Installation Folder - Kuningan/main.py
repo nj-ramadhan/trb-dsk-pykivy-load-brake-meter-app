@@ -115,8 +115,12 @@ PRINTER_THERM_DSRDTR = bool(config['setting']['PRINTER_THERM_DSRDTR'])
 
 MODBUS_IP_PLC = config['setting']['MODBUS_IP_PLC']
 MODBUS_CLIENT = ModbusTcpClient(MODBUS_IP_PLC)
-REGISTER_DATA_LOAD = int(config['setting']['REGISTER_DATA_LOAD']) # V1200
-REGISTER_DATA_BRAKE = int(config['setting']['REGISTER_DATA_BRAKE']) # V1250
+REGISTER_DATA_LOAD_L = int(config['setting']['REGISTER_DATA_LOAD_L']) # 1912 = V1400
+REGISTER_DATA_LOAD_R = int(config['setting']['REGISTER_DATA_LOAD_R']) # 1922 = V1410
+REGISTER_DATA_BRAKE_L = int(config['setting']['REGISTER_DATA_BRAKE_L']) # 1932 = V1420
+REGISTER_DATA_BRAKE_R = int(config['setting']['REGISTER_DATA_BRAKE_R']) # 1942 = V1430
+MAX_LOAD_DATA = int(config['setting']['MAX_LOAD_DATA'])
+MAX_BRAKE_DATA = int(config['setting']['MAX_BRAKE_DATA'])
 
 # system standard
 STANDARD_MAX_AXLE_LOAD = float(config['standard']['STANDARD_MAX_AXLE_LOAD']) # in kg
@@ -627,21 +631,29 @@ class ScreenMain(MDScreen):
             
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
-                axle_load_registers = MODBUS_CLIENT.read_holding_registers(REGISTER_DATA_LOAD, count=2, slave=1) #V1200 - V1201
-                brake_registers = MODBUS_CLIENT.read_holding_registers(REGISTER_DATA_BRAKE, count=2, slave=1) #V1250 - V1251
-                MODBUS_CLIENT.close()                
-                Logger.info(f"DATA: Test Number = {dt_test_number} Axle Load = {axle_load_registers.registers}, Brake = {brake_registers.registers}")
+                load_l_registers = MODBUS_CLIENT.read_holding_registers(REGISTER_DATA_LOAD_L, count=1, slave=1) #V1400
+                load_r_registers = MODBUS_CLIENT.read_holding_registers(REGISTER_DATA_LOAD_R, count=1, slave=1) #V1410
+                brake_l_registers = MODBUS_CLIENT.read_holding_registers(REGISTER_DATA_BRAKE_L, count=1, slave=1) #V1420
+                brake_r_registers = MODBUS_CLIENT.read_holding_registers(REGISTER_DATA_BRAKE_R, count=1, slave=1) #V1430
+                MODBUS_CLIENT.close()
 
-                db_load_left_value[dt_test_number] = int(self.unsigned_to_signed(axle_load_registers.registers[0]))
-                db_load_right_value[dt_test_number] = int(self.unsigned_to_signed(axle_load_registers.registers[1]))
-                db_brake_left_value[dt_test_number] = int(self.unsigned_to_signed(brake_registers.registers[0]))
-                db_brake_right_value[dt_test_number] = int(self.unsigned_to_signed(brake_registers.registers[1]))
-                db_handbrake_left_value[dt_test_number] = int(self.unsigned_to_signed(brake_registers.registers[0]))
-                db_handbrake_right_value[dt_test_number] = int(self.unsigned_to_signed(brake_registers.registers[1]))
+                db_load_left_value[dt_test_number] = int(self.unsigned_to_signed(load_l_registers.registers[0]))
+                db_load_right_value[dt_test_number] = int(self.unsigned_to_signed(load_r_registers.registers[0]))
+                db_brake_left_value[dt_test_number] = int(self.unsigned_to_signed(brake_l_registers.registers[0]))
+                db_brake_right_value[dt_test_number] = int(self.unsigned_to_signed(brake_r_registers.registers[0]))
+                db_handbrake_left_value[dt_test_number] = int(self.unsigned_to_signed(brake_l_registers.registers[0]))
+                db_handbrake_right_value[dt_test_number] = int(self.unsigned_to_signed(brake_r_registers.registers[0]))
+
+                db_load_left_value[dt_test_number] = db_load_left_value[dt_test_number] if db_load_left_value[dt_test_number] >= 0 and db_load_left_value[dt_test_number] <= MAX_LOAD_DATA else 0
+                db_load_right_value[dt_test_number] = db_load_right_value[dt_test_number] if db_load_right_value[dt_test_number] >= 0 and db_load_right_value[dt_test_number] <= MAX_LOAD_DATA else 0
+                db_brake_left_value[dt_test_number] = db_brake_left_value[dt_test_number] if db_brake_left_value[dt_test_number] >= 0 and db_brake_left_value[dt_test_number] <= MAX_BRAKE_DATA else 0
+                db_brake_right_value[dt_test_number] = db_brake_right_value[dt_test_number] if db_brake_right_value[dt_test_number] >= 0 and db_brake_right_value[dt_test_number] <= MAX_BRAKE_DATA else 0
+                db_handbrake_left_value[dt_test_number] = db_handbrake_left_value[dt_test_number] if db_handbrake_left_value[dt_test_number] >= 0 and db_handbrake_left_value[dt_test_number] <= MAX_BRAKE_DATA else 0
+                db_handbrake_right_value[dt_test_number] = db_handbrake_right_value[dt_test_number] if db_handbrake_right_value[dt_test_number] >= 0 and db_handbrake_right_value[dt_test_number] <= MAX_BRAKE_DATA else 0
 
             if self.screen_manager.current == 'screen_load_meter':
-                if(dt_test_number == 0 and db_load_right_value[dt_test_number] >= 60):
-                    db_load_right_value[dt_test_number] = db_load_right_value[dt_test_number] - 60.0
+                # if(dt_test_number == 0 and db_load_right_value[dt_test_number] >= 60):
+                #     db_load_right_value[dt_test_number] = db_load_right_value[dt_test_number] - 60.0
                 db_load_total_value[dt_test_number] = int(db_load_left_value[dt_test_number] + db_load_right_value[dt_test_number])
                 dt_load_total_value = int(np.sum(db_load_total_value))
                 Logger.info(f"{self.screen_manager.current}: DB Load Left = {db_load_left_value}, DB Load Right = {db_load_right_value}, DB Load Total = {db_load_total_value}")

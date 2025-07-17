@@ -202,8 +202,18 @@
 							theme_text_color: "Custom"
 							text_color: "#EEEEEE"
 							md_bg_color: "#4471C4"
-							size_hint_x: 0.3
+							size_hint_x: 0.25
 							on_press: root.exec_reload_table()
+
+						MDRectangleFlatIconButton:
+							id: bt_calibrate
+							icon: "gauge"
+							text: "CALIBRATE"
+							theme_text_color: "Custom"
+							text_color: "#EEEEEE"
+							md_bg_color: "#2CA02C"
+							size_hint_x: 0.25
+							on_press: root.exec_navigate_calibration()
 
 						MDRectangleFlatIconButton:
 							id: bt_add_queue
@@ -212,7 +222,7 @@
 							theme_text_color: "Custom"
 							text_color: "#EEEEEE"
 							md_bg_color: "#2CA02C"
-							size_hint_x: 0.3
+							size_hint_x: 0.25
 							on_press: root.exec_navigate_add_queue()
 
 						MDRectangleFlatIconButton:
@@ -222,7 +232,7 @@
 							theme_text_color: "Custom"
 							text_color: "#EEEEEE"
 							md_bg_color: "#FF2A2A"
-							size_hint_x: 0.3
+							size_hint_x: 0.25
 							on_press: root.exec_logout()
 
 					MDBoxLayout:

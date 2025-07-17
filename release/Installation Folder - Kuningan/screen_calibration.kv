@@ -103,11 +103,30 @@
 						padding:20
 						spacing:20
 						
-						MDLabel:
-							text: "KALIBRASI AXLE LOAD KIRI"
-							halign: "center"
-							valign: "middle"
-							font_style: 'H6'
+						MDBoxLayout:
+							orientation: "horizontal"
+
+							MDLabel:
+								text: "KALIBRASI AXLE LOAD KIRI"
+								halign: "center"
+								valign: "middle"
+								font_style: 'H6'
+								size_hint_x: 0.5
+
+							MDLabel:
+								text: "Realtime:"
+								halign: "right"
+								valign: "middle"
+								font_style: 'Subtitle1'
+								size_hint_x: 0.2
+
+							MDLabel:
+								id:lb_load_l_val
+								text: "..."
+								halign: "center"
+								valign: "middle"
+								font_style: 'Subtitle1'
+								size_hint_x: 0.3
 
 						MDRectangleFlatIconButton:
 							id: bt_exec_calibrate_load_l_start
@@ -225,11 +244,30 @@
 						padding:20
 						spacing:20
 						
-						MDLabel:
-							text: "KALIBRASI AXLE LOAD KANAN"
-							halign: "center"
-							valign: "middle"
-							font_style: 'H6'
+						MDBoxLayout:
+							orientation: "horizontal"
+
+							MDLabel:
+								text: "KALIBRASI AXLE LOAD KANAN"
+								halign: "center"
+								valign: "middle"
+								font_style: 'H6'
+								size_hint_x: 0.5
+
+							MDLabel:
+								text: "Realtime:"
+								halign: "right"
+								valign: "middle"
+								font_style: 'Subtitle1'
+								size_hint_x: 0.2
+
+							MDLabel:
+								id:lb_load_r_val
+								text: "..."
+								halign: "center"
+								valign: "middle"
+								font_style: 'Subtitle1'
+								size_hint_x: 0.3
 
 						MDRectangleFlatIconButton:
 							id: bt_exec_calibrate_load_r_start
@@ -352,12 +390,31 @@
 						orientation: "vertical"
 						padding:20
 						spacing:20
-						
-						MDLabel:
-							text: "KALIBRASI BRAKE KIRI"
-							halign: "center"
-							valign: "middle"
-							font_style: 'H6'
+
+						MDBoxLayout:
+							orientation: "horizontal"
+
+							MDLabel:
+								text: "KALIBRASI BRAKE KIRI"
+								halign: "center"
+								valign: "middle"
+								font_style: 'H6'
+								size_hint_x: 0.5
+
+							MDLabel:
+								text: "Realtime:"
+								halign: "right"
+								valign: "middle"
+								font_style: 'Subtitle1'
+								size_hint_x: 0.2
+
+							MDLabel:
+								id:lb_brake_l_val
+								text: "..."
+								halign: "center"
+								valign: "middle"
+								font_style: 'Subtitle1'
+								size_hint_x: 0.3
 
 						MDRectangleFlatIconButton:
 							id: bt_exec_calibrate_brake_l_start
@@ -475,11 +532,30 @@
 						padding:20
 						spacing:20
 						
-						MDLabel:
-							text: "KALIBRASI BRAKE KANAN"
-							halign: "center"
-							valign: "middle"
-							font_style: 'H6'
+						MDBoxLayout:
+							orientation: "horizontal"
+
+							MDLabel:
+								text: "KALIBRASI BRAKE KANAN"
+								halign: "center"
+								valign: "middle"
+								font_style: 'H6'
+								size_hint_x: 0.5
+
+							MDLabel:
+								text: "Realtime:"
+								halign: "right"
+								valign: "middle"
+								font_style: 'Subtitle1'
+								size_hint_x: 0.2
+
+							MDLabel:
+								id:lb_brake_r_val
+								text: "..."
+								halign: "center"
+								valign: "middle"
+								font_style: 'Subtitle1'
+								size_hint_x: 0.3
 
 						MDRectangleFlatIconButton:
 							id: bt_exec_calibrate_brake_r_start
@@ -605,7 +681,7 @@
 					text_color: "#EEEEEE"
 					md_bg_color: "4471C4"
 					size_hint_x: 0.5
-					on_press: root.exec_navigate_menu()
+					on_press: root.exec_navigate_main()
 
 		# footer layout
         MDBoxLayout:

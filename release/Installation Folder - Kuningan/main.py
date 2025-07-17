@@ -369,6 +369,7 @@ class ScreenMain(MDScreen):
             screen_home = self.screen_manager.get_screen('screen_home')
             screen_login = self.screen_manager.get_screen('screen_login')
             screen_menu = self.screen_manager.get_screen('screen_menu')
+            screen_calibration = self.screen_manager.get_screen('screen_calibration')
 
             screen_load_meter = self.screen_manager.get_screen('screen_load_meter')
             screen_brake_meter = self.screen_manager.get_screen('screen_brake_meter')
@@ -558,6 +559,29 @@ class ScreenMain(MDScreen):
                 screen_handbrake_meter.ids.lb_comm.text = 'PLC Terhubung'
                 screen_resume.ids.lb_comm.color = colors['Blue']['200']
                 screen_resume.ids.lb_comm.text = 'PLC Terhubung'
+
+            if(self.screen_manager.current == 'screen_calibration'):
+                MODBUS_CLIENT.connect()
+                load_l_registers = MODBUS_CLIENT.read_holding_registers(REGISTER_DATA_LOAD_L, count=1, slave=1) #V1400
+                load_r_registers = MODBUS_CLIENT.read_holding_registers(REGISTER_DATA_LOAD_R, count=1, slave=1) #V1410
+                brake_l_registers = MODBUS_CLIENT.read_holding_registers(REGISTER_DATA_BRAKE_L, count=1, slave=1) #V1420
+                brake_r_registers = MODBUS_CLIENT.read_holding_registers(REGISTER_DATA_BRAKE_R, count=1, slave=1) #V1430
+                MODBUS_CLIENT.close()
+
+                dt_load_l_val = int(self.unsigned_to_signed(load_l_registers.registers[0]))
+                dt_load_r_val = int(self.unsigned_to_signed(load_r_registers.registers[0]))
+                dt_brake_l_val = int(self.unsigned_to_signed(brake_l_registers.registers[0]))
+                dt_brake_r_val = int(self.unsigned_to_signed(brake_r_registers.registers[0]))
+
+                dt_load_l_val = dt_load_l_val if dt_load_l_val >= 0 and dt_load_l_val <= MAX_LOAD_DATA else 0
+                dt_load_r_val = dt_load_r_val if dt_load_r_val >= 0 and dt_load_r_val <= MAX_LOAD_DATA else 0
+                dt_brake_l_val = dt_brake_l_val if dt_brake_l_val >= 0 and dt_brake_l_val <= MAX_BRAKE_DATA else 0
+                dt_brake_r_val = dt_brake_r_val if dt_brake_r_val >= 0 and dt_brake_r_val <= MAX_BRAKE_DATA else 0
+
+                screen_calibration.ids.lb_load_l_val.text = str(dt_load_l_val)
+                screen_calibration.ids.lb_load_r_val.text = str(dt_load_r_val)
+                screen_calibration.ids.lb_brake_l_val.text = str(dt_brake_l_val)
+                screen_calibration.ids.lb_brake_r_val.text = str(dt_brake_r_val)
 
             self.ids.bt_logout.disabled = False if dt_user != '' else True
             self.ids.bt_add_queue.disabled = False if dt_user != '' else True
@@ -829,6 +853,17 @@ class ScreenMain(MDScreen):
 
         except Exception as e:
             toast_msg = f'Terjadi kesalahan saat berpindah ke halaman Login'
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
+
+
+    def exec_navigate_calibration(self):
+        global dt_user
+        try:
+            self.screen_manager.current = 'screen_calibration'
+
+        except Exception as e:
+            toast_msg = f'Error Navigate to Calibration Screen: {e}'
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
@@ -1373,12 +1408,12 @@ class ScreenCalibration(MDScreen):
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")
 
-    def exec_navigate_menu(self):
+    def exec_navigate_main(self):
         try:
-            self.screen_manager.current = 'screen_menu'
+            self.screen_manager.current = 'screen_main'
 
         except Exception as e:
-            toast_msg = f'Error Navigate to Menu Screen: {e}'
+            toast_msg = f'Error Navigate to Main Screen: {e}'
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
@@ -1511,16 +1546,6 @@ class ScreenMenu(MDScreen):
 
         except Exception as e:
             toast_msg = f'Terjadi kesalahan saat berpindah ke halaman Utama'
-            toast(toast_msg)
-            Logger.error(f"{self.name}: {toast_msg}, {e}")  
-
-    def exec_navigate_calibration(self):
-        global dt_user
-        try:
-            self.screen_manager.current = 'screen_calibration'
-
-        except Exception as e:
-            toast_msg = f'Error Navigate to Calibration Screen: {e}'
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")  
 

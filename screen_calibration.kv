@@ -103,11 +103,30 @@
 						padding:20
 						spacing:20
 						
-						MDLabel:
-							text: "KALIBRASI AXLE LOAD KIRI"
-							halign: "center"
-							valign: "middle"
-							font_style: 'H6'
+						MDBoxLayout:
+							orientation: "horizontal"
+
+							MDLabel:
+								text: "KALIBRASI AXLE LOAD KIRI"
+								halign: "center"
+								valign: "middle"
+								font_style: 'H6'
+								size_hint_x: 0.5
+
+							MDLabel:
+								text: "Realtime:"
+								halign: "right"
+								valign: "middle"
+								font_style: 'Subtitle1'
+								size_hint_x: 0.2
+
+							MDLabel:
+								id:lb_load_l_val
+								text: "..."
+								halign: "center"
+								valign: "middle"
+								font_style: 'Subtitle1'
+								size_hint_x: 0.3
 
 						MDRectangleFlatIconButton:
 							id: bt_exec_calibrate_load_l_start
@@ -118,7 +137,8 @@
 							text_color: "#EEEEEE"
 							md_bg_color: "#2CA02C"
 							font_style: 'H6'
-							on_press: root.exec_calibrate_load_l_start()	
+							on_press: root.exec_calibrate_load_l_start()
+							on_release: root.rel_calibrate_load_l_start()
 
 						MDBoxLayout:
 							orientation: "horizontal"
@@ -138,7 +158,8 @@
 								text_color: "#EEEEEE"
 								md_bg_color: "#2CA02C"
 								font_style: 'H6'
-								on_press: root.exec_calibrate_load_l_zero()				
+								on_press: root.exec_calibrate_load_l_zero()
+								on_release: root.rel_calibrate_load_l_zero()			
 
 						MDBoxLayout:
 							orientation: "horizontal"
@@ -170,7 +191,8 @@
 								text_color: "#EEEEEE"
 								md_bg_color: "#2CA02C"
 								font_style: 'H6'
-								on_press: root.exec_calibrate_load_l_value1()	
+								on_press: root.exec_calibrate_load_l_value1()
+								on_release: root.rel_calibrate_load_l_value1()
 
 						MDBoxLayout:
 							orientation: "horizontal"
@@ -203,6 +225,7 @@
 								md_bg_color: "#2CA02C"
 								font_style: 'H6'
 								on_press: root.exec_calibrate_load_l_value2()
+								on_release: root.rel_calibrate_load_l_value2()
 
 						MDRectangleFlatIconButton:
 							id: bt_exec_calibrate_load_l_stop
@@ -214,17 +237,37 @@
 							md_bg_color: "#2CA02C"
 							font_style: 'H6'
 							on_press: root.exec_calibrate_load_l_stop()
+							on_release: root.rel_calibrate_load_l_stop()
 
 					MDBoxLayout:
 						orientation: "vertical"
 						padding:20
 						spacing:20
 						
-						MDLabel:
-							text: "KALIBRASI AXLE LOAD KANAN"
-							halign: "center"
-							valign: "middle"
-							font_style: 'H6'
+						MDBoxLayout:
+							orientation: "horizontal"
+
+							MDLabel:
+								text: "KALIBRASI AXLE LOAD KANAN"
+								halign: "center"
+								valign: "middle"
+								font_style: 'H6'
+								size_hint_x: 0.5
+
+							MDLabel:
+								text: "Realtime:"
+								halign: "right"
+								valign: "middle"
+								font_style: 'Subtitle1'
+								size_hint_x: 0.2
+
+							MDLabel:
+								id:lb_load_r_val
+								text: "..."
+								halign: "center"
+								valign: "middle"
+								font_style: 'Subtitle1'
+								size_hint_x: 0.3
 
 						MDRectangleFlatIconButton:
 							id: bt_exec_calibrate_load_r_start
@@ -236,6 +279,7 @@
 							md_bg_color: "#2CA02C"
 							font_style: 'H6'
 							on_press: root.exec_calibrate_load_r_start()
+							on_release: root.rel_calibrate_load_r_start()
 
 						MDBoxLayout:
 							orientation: "horizontal"
@@ -255,7 +299,8 @@
 								text_color: "#EEEEEE"
 								md_bg_color: "#2CA02C"
 								font_style: 'H6'
-								on_press: root.exec_calibrate_load_r_zero()				
+								on_press: root.exec_calibrate_load_r_zero()	
+								on_release: root.rel_calibrate_load_r_zero()			
 
 						MDBoxLayout:
 							orientation: "horizontal"
@@ -287,7 +332,8 @@
 								text_color: "#EEEEEE"
 								md_bg_color: "#2CA02C"
 								font_style: 'H6'
-								on_press: root.exec_calibrate_load_r_value1()	
+								on_press: root.exec_calibrate_load_r_value1()
+								on_release: root.rel_calibrate_load_r_value1()
 
 						MDBoxLayout:
 							orientation: "horizontal"
@@ -319,7 +365,8 @@
 								text_color: "#EEEEEE"
 								md_bg_color: "#2CA02C"
 								font_style: 'H6'
-								on_press: root.exec_calibrate_load_r_value2()	
+								on_press: root.exec_calibrate_load_r_value2()
+								on_release: root.rel_calibrate_load_r_value2()
 
 						MDRectangleFlatIconButton:
 							id: bt_exec_calibrate_load_r_stop
@@ -331,6 +378,7 @@
 							md_bg_color: "#2CA02C"
 							font_style: 'H6'
 							on_press: root.exec_calibrate_load_r_stop()
+							on_release: root.rel_calibrate_load_r_stop()
 
 				MDBoxLayout:
 					orientation: "vertical"
@@ -342,12 +390,31 @@
 						orientation: "vertical"
 						padding:20
 						spacing:20
-						
-						MDLabel:
-							text: "KALIBRASI BRAKE KIRI"
-							halign: "center"
-							valign: "middle"
-							font_style: 'H6'
+
+						MDBoxLayout:
+							orientation: "horizontal"
+
+							MDLabel:
+								text: "KALIBRASI BRAKE KIRI"
+								halign: "center"
+								valign: "middle"
+								font_style: 'H6'
+								size_hint_x: 0.5
+
+							MDLabel:
+								text: "Realtime:"
+								halign: "right"
+								valign: "middle"
+								font_style: 'Subtitle1'
+								size_hint_x: 0.2
+
+							MDLabel:
+								id:lb_brake_l_val
+								text: "..."
+								halign: "center"
+								valign: "middle"
+								font_style: 'Subtitle1'
+								size_hint_x: 0.3
 
 						MDRectangleFlatIconButton:
 							id: bt_exec_calibrate_brake_l_start
@@ -359,6 +426,7 @@
 							md_bg_color: "#2CA02C"
 							font_style: 'H6'
 							on_press: root.exec_calibrate_brake_l_start()
+							on_release: root.rel_calibrate_brake_l_start()
 
 						MDBoxLayout:
 							orientation: "horizontal"
@@ -378,7 +446,8 @@
 								text_color: "#EEEEEE"
 								md_bg_color: "#2CA02C"
 								font_style: 'H6'
-								on_press: root.exec_calibrate_brake_l_zero()				
+								on_press: root.exec_calibrate_brake_l_zero()
+								on_release: root.rel_calibrate_brake_l_zero()				
 
 						MDBoxLayout:
 							orientation: "horizontal"
@@ -410,7 +479,8 @@
 								text_color: "#EEEEEE"
 								md_bg_color: "#2CA02C"
 								font_style: 'H6'
-								on_press: root.exec_calibrate_brake_l_value1()	
+								on_press: root.exec_calibrate_brake_l_value1()
+								on_release: root.rel_calibrate_brake_l_value1()	
 
 						MDBoxLayout:
 							orientation: "horizontal"
@@ -443,6 +513,7 @@
 								md_bg_color: "#2CA02C"
 								font_style: 'H6'
 								on_press: root.exec_calibrate_brake_l_value2()
+								on_release: root.rel_calibrate_brake_l_value2()
 
 						MDRectangleFlatIconButton:
 							id: bt_exec_calibrate_brake_l_stop
@@ -454,17 +525,37 @@
 							md_bg_color: "#2CA02C"
 							font_style: 'H6'
 							on_press: root.exec_calibrate_brake_l_stop()
+							on_release: root.rel_calibrate_brake_l_stop()
 
 					MDBoxLayout:
 						orientation: "vertical"
 						padding:20
 						spacing:20
 						
-						MDLabel:
-							text: "KALIBRASI BRAKE KANAN"
-							halign: "center"
-							valign: "middle"
-							font_style: 'H6'
+						MDBoxLayout:
+							orientation: "horizontal"
+
+							MDLabel:
+								text: "KALIBRASI BRAKE KANAN"
+								halign: "center"
+								valign: "middle"
+								font_style: 'H6'
+								size_hint_x: 0.5
+
+							MDLabel:
+								text: "Realtime:"
+								halign: "right"
+								valign: "middle"
+								font_style: 'Subtitle1'
+								size_hint_x: 0.2
+
+							MDLabel:
+								id:lb_brake_r_val
+								text: "..."
+								halign: "center"
+								valign: "middle"
+								font_style: 'Subtitle1'
+								size_hint_x: 0.3
 
 						MDRectangleFlatIconButton:
 							id: bt_exec_calibrate_brake_r_start
@@ -476,6 +567,7 @@
 							md_bg_color: "#2CA02C"
 							font_style: 'H6'
 							on_press: root.exec_calibrate_brake_r_start()
+							on_release: root.rel_calibrate_brake_r_start()
 
 						MDBoxLayout:
 							orientation: "horizontal"
@@ -495,7 +587,8 @@
 								text_color: "#EEEEEE"
 								md_bg_color: "#2CA02C"
 								font_style: 'H6'
-								on_press: root.exec_calibrate_brake_r_zero()				
+								on_press: root.exec_calibrate_brake_r_zero()
+								on_release: root.rel_calibrate_brake_r_zero()				
 
 						MDBoxLayout:
 							orientation: "horizontal"
@@ -508,7 +601,7 @@
 
 							MDTextField:
 								id: tx_calibrate_brake_r_value1
-								text: "Berat Beban Kalibrasi"
+								hint_text: "Berat Beban Kalibrasi"
 								halign: "left"
 								valign: "middle"
 								font_style: 'H6'
@@ -527,7 +620,8 @@
 								text_color: "#EEEEEE"
 								md_bg_color: "#2CA02C"
 								font_style: 'H6'
-								on_press: root.exec_calibrate_brake_r_value1()	
+								on_press: root.exec_calibrate_brake_r_value1()
+								on_release: root.rel_calibrate_brake_r_value1()
 
 						MDBoxLayout:
 							orientation: "horizontal"
@@ -540,7 +634,7 @@
 
 							MDTextField:
 								id: tx_calibrate_brake_r_value2
-								text: "Berat Beban Kalibrasi"
+								hint_text: "Berat Beban Kalibrasi"
 								halign: "left"
 								valign: "middle"
 								font_style: 'H6'
@@ -560,6 +654,7 @@
 								md_bg_color: "#2CA02C"
 								font_style: 'H6'
 								on_press: root.exec_calibrate_brake_r_value2()
+								on_release: root.rel_calibrate_brake_r_value2()
 
 						MDRectangleFlatIconButton:
 							id: bt_exec_calibrate_brake_r_stop
@@ -571,6 +666,7 @@
 							md_bg_color: "#2CA02C"
 							font_style: 'H6'
 							on_press: root.exec_calibrate_brake_r_stop()
+							on_release: root.rel_calibrate_brake_r_stop()
 	
 			MDBoxLayout:
 				orientation: "horizontal"
@@ -585,7 +681,7 @@
 					text_color: "#EEEEEE"
 					md_bg_color: "4471C4"
 					size_hint_x: 0.5
-					on_press: root.exec_navigate_menu()
+					on_press: root.exec_navigate_main()
 
 		# footer layout
         MDBoxLayout:

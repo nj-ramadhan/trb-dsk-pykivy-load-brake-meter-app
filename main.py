@@ -1,3 +1,4 @@
+import datetime
 import os, sys, time
 
 if getattr(sys, 'frozen', False):
@@ -418,7 +419,6 @@ class ScreenMain(MDScreen):
             if(not flag_play):
                 screen_resume.ids.bt_save.md_bg_color = colors['Green']['200']
                 screen_resume.ids.bt_save.disabled = False
-                screen_resume.ids.bt_print.disabled = False
                 screen_load_meter.ids.bt_reload.md_bg_color = colors['Red']['A200']
                 screen_load_meter.ids.bt_reload.disabled = False
                 screen_brake_meter.ids.bt_reload.md_bg_color = colors['Red']['A200']
@@ -427,7 +427,6 @@ class ScreenMain(MDScreen):
                 screen_handbrake_meter.ids.bt_reload.disabled = False   
             else:
                 screen_resume.ids.bt_save.disabled = True
-                screen_resume.ids.bt_print.disabled = True
                 screen_load_meter.ids.bt_reload.disabled = True
                 screen_brake_meter.ids.bt_reload.disabled = True
                 screen_handbrake_meter.ids.bt_reload.disabled = True
@@ -701,8 +700,19 @@ class ScreenMain(MDScreen):
             Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
     def exec_reload_table(self):
-        global mydb, db_antrian, db_merk
+        global mydb, db_antrian
         global dt_dash_pendaftaran, dt_dash_belum_uji, dt_dash_sudah_uji
+
+        try:
+            tb_antrian = mydb.cursor()
+            today = str(time.strftime("%Y-%M-%d", time.localtime()))
+            delete_query = f"DELETE FROM {TB_DATA} WHERE DATE(tgl_daftar) != %s"
+            tb_antrian.execute(delete_query, (today,))
+            mydb.commit()
+            toast_msg = f'Success Delete Expired Database'
+        except Exception as e:
+            toast_msg = f'Error Delete Expired Database: {e}'
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
         try:
             tb_antrian = mydb.cursor()
@@ -766,7 +776,7 @@ class ScreenMain(MDScreen):
     def on_antrian_row_press(self, instance):
         global dt_no_antrian, dt_no_pol, dt_no_uji, dt_nama, dt_load_flag, dt_brake_flag, dt_handbrake_flag
         global dt_merk, dt_type, dt_jenis_kendaraan, dt_jbb, dt_berat_kosong, dt_warna
-        global db_antrian, db_merk
+        global db_antrian
 
         try:
             row = int(str(instance.id).replace("card_antrian",""))
@@ -1786,7 +1796,13 @@ class ScreenResume(MDScreen):
         self.ids.lb_unit_address.text = LB_UNIT_ADDRESS
 
     def on_enter(self):
-        global dt_load_flag, dt_brake_flag, dt_handbrake_flag
+        global dt_user, dt_no_antrian, dt_no_pol, dt_no_uji, dt_nama, dt_jenis_kendaraan
+        global dt_load_flag, db_load_left_value, db_load_right_value, db_load_total_value, dt_load_user, dt_load_post
+        global dt_brake_flag, db_brake_left_value, db_brake_right_value, db_brake_total_value, db_brake_efficiency_value, db_brake_difference_value, dt_brake_user, dt_brake_post
+        global dt_handbrake_flag, db_handbrake_left_value, db_handbrake_right_value, db_handbrake_total_value, db_handbrake_efficiency_value, db_handbrake_difference_value, dt_handbrake_user, dt_handbrake_post
+        global dt_load_total_value, dt_brake_total_value, dt_brake_efficiency_value, dt_brake_difference_value, dt_handbrake_total_value, dt_handbrake_efficiency_value, dt_handbrake_difference_value
+        global dt_test_number
+
         self.exec_reload_table_detail()
         try:
             self.ids.lb_load_left_sum.text = f'{int(np.sum(db_load_left_value))} kg'
@@ -1952,6 +1968,8 @@ class ScreenResume(MDScreen):
             mycursor.execute(sql, sql_val)
             mydb.commit()
 
+            self.exec_print()
+
             self.ids.bt_save.disabled = True
         
         except Exception as e:
@@ -2063,8 +2081,22 @@ class ScreenResume(MDScreen):
             pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Nilai Efisiensi Rem Parkir : {str(np.round(dt_handbrake_efficiency_value, 1)).replace('.', ',')} %")
             pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Status Pengujian Rem Parkir: {'Lulus' if dt_handbrake_flag == 2 else 'Tidak Lulus' if dt_handbrake_flag == 1 else 'Belum Diuji'}")
 
-            pdf_path = os.path.join(os.path.join(os.environ["USERPROFILE"]), "Documents", f'Hasil_Uji_VIIS_AxleLoad_Brake_{str(time.strftime("%Y_%B_%d_%H_%M_%S", time.localtime()))}.pdf')
+            documents_dir = os.path.join(os.environ["USERPROFILE"], "Documents")
+
+            folder_name = f"Hasil_Uji_VIIS_AxleLoad_Brake_{time.strftime('%Y-%m-%d', time.localtime())}"
+            date_folder_path = os.path.join(documents_dir, folder_name)
+            
+            if not os.path.exists(date_folder_path):
+                os.makedirs(date_folder_path)
+                toast(f"Folder created: {date_folder_path}")
+            else:
+                toast(f"Folder already exists: {date_folder_path}")
+
+            pdf_filename = f"Hasil_Uji_No_{dt_no_antrian}.pdf"
+            pdf_path = os.path.join(date_folder_path, pdf_filename)
+
             pdf.output(pdf_path, 'F')
+            toast(f"PDF saved to: {pdf_path}")
             os.startfile(pdf_path)
 
         except Exception as e:

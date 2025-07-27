@@ -662,25 +662,108 @@ class ScreenMain(MDScreen):
                 Logger.info(f"{self.screen_manager.current}: DB Load Left = {db_load_left_value[dt_test_number]}, DB Load Right = {db_load_right_value[dt_test_number]}, DB Load Total = {db_load_total_value[dt_test_number]}")
 
             if self.screen_manager.current == 'screen_brake_meter':
+                # Initialize total for brake test
                 db_brake_total_value[dt_test_number] = int(db_brake_left_value[dt_test_number] + db_brake_right_value[dt_test_number])
-                db_brake_efficiency_value[dt_test_number] = np.round((db_brake_total_value[dt_test_number] / dt_load_total_value) * 100, 1)
-                db_brake_difference_value[dt_test_number] = np.round((np.abs(db_brake_left_value[dt_test_number] - db_brake_right_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100, 1)
+
+                # Efficiency: (total brake / total load) * 100
+                if dt_load_total_value != 0:
+                    db_brake_efficiency_value[dt_test_number] = np.round(
+                        (db_brake_total_value[dt_test_number] / dt_load_total_value) * 100, 1
+                    )
+                else:
+                    db_brake_efficiency_value[dt_test_number] = 0.0  # or np.nan, or None
+                    Logger.warning(f"{self.screen_manager.current}: dt_load_total_value is zero. Cannot calculate efficiency.")
+
+                # Brake difference: |left - right| / load * 100
+                if db_load_total_value[dt_test_number] != 0:
+                    db_brake_difference_value[dt_test_number] = np.round(
+                        (np.abs(db_brake_left_value[dt_test_number] - db_brake_right_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100, 1
+                    )
+                else:
+                    db_brake_difference_value[dt_test_number] = 0.0
+                    Logger.warning(f"{self.screen_manager.current}: db_load_total_value[{dt_test_number}] is zero. Cannot calculate brake difference.")
+
+                # Aggregate brake totals
                 dt_brake_total_value = int(np.sum(db_brake_total_value))
-                dt_brake_efficiency_value = np.round((dt_brake_total_value / dt_load_total_value) * 100, 1)
+
+                # Overall efficiency
+                if dt_load_total_value != 0:
+                    dt_brake_efficiency_value = np.round((dt_brake_total_value / dt_load_total_value) * 100, 1)
+                else:
+                    dt_brake_efficiency_value = 0.0
+                    Logger.warning(f"{self.screen_manager.current}: dt_load_total_value is zero. Cannot calculate total brake efficiency.")
+
+                # Overall difference
                 dt_brake_difference_value = int(np.sum(db_brake_difference_value))
-                Logger.info(f"{self.screen_manager.current}: DB Brake Left = {db_brake_left_value}, DB Brake Right = {db_brake_right_value}, DB Brake Total = {db_brake_total_value}, DB Brake Efficiency = {db_brake_efficiency_value}, DB Brake Difference = {db_brake_difference_value}")
-                Logger.info(f"{self.screen_manager.current}: DB Brake Left = {db_brake_left_value[dt_test_number]}, DB Brake Right = {db_brake_right_value[dt_test_number]}, DB Brake Total = {db_brake_total_value[dt_test_number]}, DB Brake Efficiency = {db_brake_efficiency_value[dt_test_number]}, DB Brake Difference = {db_brake_difference_value[dt_test_number]}")
 
+                # Logging
+                Logger.info(f"{self.screen_manager.current}: DB Brake Left = {db_brake_left_value}, "
+                            f"DB Brake Right = {db_brake_right_value}, "
+                            f"DB Brake Total = {db_brake_total_value}, "
+                            f"DB Brake Efficiency = {db_brake_efficiency_value}, "
+                            f"DB Brake Difference = {db_brake_difference_value}")
+
+                Logger.info(f"{self.screen_manager.current}: For test {dt_test_number}: "
+                            f"DB Brake Left = {db_brake_left_value[dt_test_number]}, "
+                            f"DB Brake Right = {db_brake_right_value[dt_test_number]}, "
+                            f"DB Brake Total = {db_brake_total_value[dt_test_number]}, "
+                            f"DB Brake Efficiency = {db_brake_efficiency_value[dt_test_number]}, "
+                            f"DB Brake Difference = {db_brake_difference_value[dt_test_number]}")
+                
             if self.screen_manager.current == 'screen_handbrake_meter':
-                db_handbrake_total_value[dt_test_number] = int(db_handbrake_left_value[dt_test_number] + db_handbrake_right_value[dt_test_number])
-                db_handbrake_efficiency_value[dt_test_number] = np.round((db_brake_total_value[dt_test_number] / int(dt_jbb)) * 100, 1)
-                db_handbrake_difference_value[dt_test_number] = np.round((np.abs(db_handbrake_left_value[dt_test_number] - db_handbrake_right_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100, 1)
-                dt_handbrake_total_value = int(np.sum(db_handbrake_total_value))
-                dt_handbrake_efficiency_value = np.round((dt_handbrake_total_value / dt_load_total_value) * 100, 1)
-                dt_handbrake_difference_value = int(np.sum(db_handbrake_difference_value))
-                Logger.info(f"{self.screen_manager.current}: DB Handbrake Left = {db_handbrake_left_value}, DB Handbrake Right = {db_handbrake_right_value}, DB Handbrake Total = {db_handbrake_total_value}, DB Handbrake Efficiency = {db_handbrake_efficiency_value}, DB Handbrake Difference = {db_handbrake_difference_value}")
-                Logger.info(f"{self.screen_manager.current}: DB Handbrake Left = {db_handbrake_left_value[dt_test_number]}, DB Handbrake Right = {db_handbrake_right_value[dt_test_number]}, DB Handbrake Total = {db_handbrake_total_value[dt_test_number]}, DB Handbrake Efficiency = {db_handbrake_efficiency_value[dt_test_number]}, DB Handbrake Difference = {db_handbrake_difference_value[dt_test_number]}")
+                # Initialize total for handbrake test
+                db_handbrake_total_value[dt_test_number] = int(
+                    db_handbrake_left_value[dt_test_number] + db_handbrake_right_value[dt_test_number]
+                )
 
+                # Handbrake efficiency: use handbrake total and dt_jbb (assuming jbb = axle load or test standard)
+                if dt_jbb != 0 and dt_jbb is not None:
+                    db_handbrake_efficiency_value[dt_test_number] = np.round(
+                        (db_handbrake_total_value[dt_test_number] / float(dt_jbb)) * 100, 1
+                    )
+                else:
+                    db_handbrake_efficiency_value[dt_test_number] = 0.0
+                    Logger.warning(f"{self.screen_manager.current}: dt_jbb is invalid ({dt_jbb}). Setting efficiency to 0.")
+
+                # Handbrake difference: |left - right| / load * 100
+                if db_load_total_value[dt_test_number] != 0:
+                    db_handbrake_difference_value[dt_test_number] = np.round(
+                        (np.abs(db_handbrake_left_value[dt_test_number] - db_handbrake_right_value[dt_test_number])
+                        / db_load_total_value[dt_test_number]) * 100, 1
+                    )
+                else:
+                    db_handbrake_difference_value[dt_test_number] = 0.0
+                    Logger.warning(f"{self.screen_manager.current}: db_load_total_value[{dt_test_number}] is zero. Setting difference to 0.")
+
+                # Aggregate handbrake totals
+                dt_handbrake_total_value = int(np.sum(db_handbrake_total_value))
+
+                # Overall handbrake efficiency
+                if dt_load_total_value != 0:
+                    dt_handbrake_efficiency_value = np.round(
+                        (dt_handbrake_total_value / dt_load_total_value) * 100, 1
+                    )
+                else:
+                    dt_handbrake_efficiency_value = 0.0
+                    Logger.warning(f"{self.screen_manager.current}: dt_load_total_value is zero. Overall efficiency set to 0.")
+
+                # Sum of percentage differences? Be careful — summing % can be misleading
+                dt_handbrake_difference_value = int(np.sum(db_handbrake_difference_value))
+
+                # Logging
+                Logger.info(f"{self.screen_manager.current}: DB Handbrake Left = {db_handbrake_left_value}, "
+                            f"DB Handbrake Right = {db_handbrake_right_value}, "
+                            f"DB Handbrake Total = {db_handbrake_total_value}, "
+                            f"DB Handbrake Efficiency = {db_handbrake_efficiency_value}, "
+                            f"DB Handbrake Difference = {db_handbrake_difference_value}")
+
+                Logger.info(f"{self.screen_manager.current}: Test {dt_test_number} - "
+                            f"Handbrake Left = {db_handbrake_left_value[dt_test_number]}, "
+                            f"Right = {db_handbrake_right_value[dt_test_number]}, "
+                            f"Total = {db_handbrake_total_value[dt_test_number]}, "
+                            f"Efficiency = {db_handbrake_efficiency_value[dt_test_number]}%, "
+                            f"Difference = {db_handbrake_difference_value[dt_test_number]}%")
+                
         except Exception as e:
             toast_msg = f'Gagal Mengambil Data dari PLC'
             toast(toast_msg)

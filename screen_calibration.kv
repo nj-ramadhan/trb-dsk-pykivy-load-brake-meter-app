@@ -667,12 +667,34 @@
 							font_style: 'H6'
 							on_press: root.exec_calibrate_brake_r_stop()
 							on_release: root.rel_calibrate_brake_r_stop()
-	
+
 			MDBoxLayout:
 				orientation: "horizontal"
 				spacing: 20
 				size_hint_y: 0.02
 
+				MDRectangleFlatIconButton:
+					id: bt_motor_brake_on
+					text: "MOTOR ON"
+					icon: "play"
+					theme_text_color: "Custom"
+					text_color: "#EEEEEE"
+					md_bg_color: "#FF2A2A"
+					size_hint_x: 0.3
+					on_press: root.exec_motor_brake_on()
+					on_release: root.rel_motor_brake_on()
+
+				MDRectangleFlatIconButton:
+					id: bt_motor_brake_off
+					text: "MOTOR OFF"
+					icon: "stop"
+					theme_text_color: "Custom"
+					text_color: "#EEEEEE"
+					md_bg_color: "#2CA02C"
+					size_hint_x: 0.3
+					on_press: root.exec_motor_brake_off()
+					on_release: root.rel_motor_brake_off()
+					
 				MDRectangleFlatIconButton:
 					id: bt_back
 					text: "KEMBALI"
@@ -680,7 +702,7 @@
 					theme_text_color: "Custom"
 					text_color: "#EEEEEE"
 					md_bg_color: "4471C4"
-					size_hint_x: 0.5
+					size_hint_x: 0.3
 					on_press: root.exec_navigate_main()
 
 		# footer layout

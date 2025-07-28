@@ -857,9 +857,9 @@ class ScreenMain(MDScreen):
                         MDLabel(text=f"{db_antrian[8, i]}", size_hint_x= 0.05),
                         MDLabel(text='-' if db_antrian[9, i] == None else f"{db_bahan_bakar[np.where(db_bahan_bakar == db_antrian[9, i])[0][0],1]}" , size_hint_x= 0.08),
                         MDLabel(text='-' if db_antrian[10, i] == None else f"{db_warna[np.where(db_warna == db_antrian[10, i])[0][0],1]}" , size_hint_x= 0.11),
-                        MDLabel(text='Lulus' if (int(db_antrian[10, i]) == 2) else 'Tidak Lulus' if (int(db_antrian[10, i]) == 1) else 'Belum Uji', size_hint_x= 0.08),
-                        MDLabel(text='Lulus' if (int(db_antrian[11, i]) == 2) else 'Tidak Lulus' if (int(db_antrian[11, i]) == 1) else 'Belum Uji', size_hint_x= 0.07),
+                        MDLabel(text='Lulus' if (int(db_antrian[11, i]) == 2) else 'Tidak Lulus' if (int(db_antrian[11, i]) == 1) else 'Belum Uji', size_hint_x= 0.08),
                         MDLabel(text='Lulus' if (int(db_antrian[12, i]) == 2) else 'Tidak Lulus' if (int(db_antrian[12, i]) == 1) else 'Belum Uji', size_hint_x= 0.07),
+                        MDLabel(text='Lulus' if (int(db_antrian[13, i]) == 2) else 'Tidak Lulus' if (int(db_antrian[13, i]) == 1) else 'Belum Uji', size_hint_x= 0.07),
 
                         ripple_behavior = True,
                         on_press = self.on_antrian_row_press,
@@ -1222,7 +1222,6 @@ class ScreenCalibration(MDScreen):
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
-
     def rel_calibrate_load_r_value2(self):
         global flag_conn_stat
         try:
@@ -1509,6 +1508,64 @@ class ScreenCalibration(MDScreen):
             toast_msg = f"error send rel_calibrate_brake_r_stop data to PLC Slave"
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")
+
+    def exec_motor_brake_on(self):
+        global flag_conn_stat
+        global flag_motor_brake
+        
+        flag_motor_brake = True
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_coil(3075, True, slave=1) #M3
+                MODBUS_CLIENT.close()
+        except Exception as e:
+            toast_msg = f"error send exec_motor_brake_on data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
+
+    def rel_motor_brake_on(self):
+        global flag_conn_stat
+        global flag_motor_brake
+
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_coil(3075, False, slave=1) #M3
+                MODBUS_CLIENT.close()
+        except Exception as e:
+            toast_msg = f"error send rel_motor_brake_on data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
+
+    def exec_motor_brake_off(self):
+        global flag_conn_stat
+        global flag_motor_brake
+
+        flag_motor_brake = False
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_coil(3076, True, slave=1) #M4
+                MODBUS_CLIENT.close()
+        except Exception as e:
+            toast_msg = f"error send exec_motor_brake_off data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
+
+    def rel_motor_brake_off(self):
+        global flag_conn_stat
+        global flag_motor_brake
+
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_coil(3076, False, slave=1) #M4
+                MODBUS_CLIENT.close()
+        except Exception as e:
+            toast_msg = f"error send rel_motor_brake_on data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
     def exec_navigate_main(self):
         try:
@@ -2126,17 +2183,29 @@ class ScreenHandbrakeMeter(MDScreen):
     def exec_motor_brake_on(self):
         global flag_conn_stat
         global flag_motor_brake
+        
+        flag_motor_brake = True
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_coil(3075, True, slave=1) #M3
+                MODBUS_CLIENT.close()
+        except Exception as e:
+            toast_msg = f"error send exec_motor_brake_on data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
-        if(not flag_motor_brake):
-            flag_motor_brake = True
+    def rel_motor_brake_on(self):
+        global flag_conn_stat
+        global flag_motor_brake
 
         try:
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_coil(3082, flag_motor_brake, slave=1) #M10
+                MODBUS_CLIENT.write_coil(3075, False, slave=1) #M3
                 MODBUS_CLIENT.close()
         except Exception as e:
-            toast_msg = f"error send exec_motor_brake_on data to PLC Slave"
+            toast_msg = f"error send rel_motor_brake_on data to PLC Slave"
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
@@ -2144,32 +2213,30 @@ class ScreenHandbrakeMeter(MDScreen):
         global flag_conn_stat
         global flag_motor_brake
 
-        if(flag_motor_brake):
-            flag_motor_brake = False
-
+        flag_motor_brake = False
         try:
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_coil(3083, not flag_motor_brake, slave=1) #M11
+                MODBUS_CLIENT.write_coil(3076, True, slave=1) #M4
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_motor_brake_off data to PLC Slave"
             toast(toast_msg)
-            Logger.error(f"{self.name}: {toast_msg}, {e}")
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
-    def exec_cylinder_stop(self):
+    def rel_motor_brake_off(self):
         global flag_conn_stat
+        global flag_motor_brake
 
         try:
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_coil(3082, False, slave=1) #M10
-                MODBUS_CLIENT.write_coil(3083, False, slave=1) #M11
+                MODBUS_CLIENT.write_coil(3076, False, slave=1) #M4
                 MODBUS_CLIENT.close()
         except Exception as e:
-            toast_msg = f"error send exec_cylinder_stop data to PLC Slave"
+            toast_msg = f"error send rel_motor_brake_on data to PLC Slave"
             toast(toast_msg)
-            Logger.error(f"{self.name}: {toast_msg}, {e}")   
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
     def exec_reload(self):
         global flag_play
@@ -2368,7 +2435,7 @@ class ScreenResume(MDScreen):
             sql = f"UPDATE {TB_DATA} SET load_flag = %s, load_l_value = %s, load_r_value = %s, load_total_value = %s, load_user = %s, load_post = %s WHERE noantrian = %s"
             sql_load_flag = (2 if dt_load_flag == "Lulus" else 1)
             dt_load_post = str(time.strftime("%Y/%m/%d %H:%M:%S", time.localtime()))
-            sql_val = (sql_load_flag, float(np.average(db_load_left_value)), float(np.average(db_load_right_value)), dt_load_total_value, dt_id_user, dt_no_antri)
+            sql_val = (sql_load_flag, float(np.average(db_load_left_value)), float(np.average(db_load_right_value)), dt_load_total_value, dt_id_user, dt_load_post, dt_no_antri)
             mycursor.execute(sql, sql_val)
             mydb.commit()
 
@@ -2376,7 +2443,7 @@ class ScreenResume(MDScreen):
             sql = f"UPDATE {TB_DATA} SET brake_flag = %s, brake_l_value = %s, brake_r_value = %s, brake_total_value = %s, brake_efficiency_value = %s, brake_difference_value = %s, load_user = %s, load_post = %s WHERE noantrian = %s"
             sql_brake_flag = (2 if dt_brake_flag == "Lulus" else 1)
             dt_brake_post = str(time.strftime("%Y/%m/%d %H:%M:%S", time.localtime()))
-            sql_val = (sql_brake_flag, float(np.average(db_brake_left_value)), float(np.average(db_brake_right_value)), dt_brake_total_value, dt_brake_efficiency_value, dt_brake_difference_value, dt_id_user, dt_no_antri)
+            sql_val = (sql_brake_flag, float(np.average(db_brake_left_value)), float(np.average(db_brake_right_value)), dt_brake_total_value, dt_brake_efficiency_value, dt_brake_difference_value, dt_id_user, dt_brake_post, dt_no_antri)
             mycursor.execute(sql, sql_val)
             mydb.commit()
 
@@ -2384,7 +2451,7 @@ class ScreenResume(MDScreen):
             sql = f"UPDATE {TB_DATA} SET handbrake_flag = %s, handbrake_l_value = %s, handbrake_r_value = %s, handbrake_total_value = %s, handbrake_efficiency_value = %s, handbrake_difference_value = %s, load_user = %s, load_post = %s WHERE noantrian = %s"
             sql_handbrake_flag = (2 if dt_handbrake_flag == "Lulus" else 1)
             dt_handbrake_post = str(time.strftime("%Y/%m/%d %H:%M:%S", time.localtime()))
-            sql_val = (sql_handbrake_flag, float(np.average(db_handbrake_left_value)), float(np.average(db_handbrake_right_value)), dt_handbrake_total_value, dt_handbrake_efficiency_value, dt_handbrake_difference_value, dt_id_user, dt_no_antri)
+            sql_val = (sql_handbrake_flag, float(np.average(db_handbrake_left_value)), float(np.average(db_handbrake_right_value)), dt_handbrake_total_value, dt_handbrake_efficiency_value, dt_handbrake_difference_value, dt_id_user, dt_handbrake_post, dt_no_antri)
             mycursor.execute(sql, sql_val)
             mydb.commit()
 

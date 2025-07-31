@@ -2482,21 +2482,15 @@ class ScreenResume(MDScreen):
                     "brake_total_s10_value = %s, brake_total_s11_value = %s, brake_total_s12_value = %s"
                 )
                 sql5 = (
-                    ", brake_efficiency_s1_value = %s, brake_efficiency_s2_value = %s, brake_efficiency_s3_value = %s, "
-                    "brake_efficiency_s4_value = %s, brake_efficiency_s5_value = %s, brake_efficiency_s6_value = %s, "
-                    "brake_efficiency_s7_value = %s, brake_efficiency_s8_value = %s, brake_efficiency_s9_value = %s, "
-                    "brake_efficiency_s10_value = %s, brake_efficiency_s11_value = %s, brake_efficiency_s12_value = %s"
-                )
-                sql6 = (
                     ", brake_difference_s1_value = %s, brake_difference_s2_value = %s, brake_difference_s3_value = %s, "
                     "brake_difference_s4_value = %s, brake_difference_s5_value = %s, brake_difference_s6_value = %s, "
                     "brake_difference_s7_value = %s, brake_difference_s8_value = %s, brake_difference_s9_value = %s, "
                     "brake_difference_s10_value = %s, brake_difference_s11_value = %s, brake_difference_s12_value = %s"
                 )
-                sql7 = ", brake_user = %s, brake_post = %s WHERE noantrian = %s"
-                sql = sql1 + sql2 + sql3 + sql4 + sql5 + sql6 + sql7
+                sql6 = ", brake_user = %s, brake_post = %s WHERE noantrian = %s"
+                sql = sql1 + sql2 + sql3 + sql4 + sql5 + sql6
 
-                sql_brake_flag = 2 if dt_brake_flag == "Lulus" else 1
+                sql_brake_flag = dt_brake_flag
                 dt_brake_post = time.strftime("%Y/%m/%d %H:%M:%S", time.localtime())
 
                 expected_len = 12
@@ -2558,21 +2552,15 @@ class ScreenResume(MDScreen):
                     "handbrake_total_s10_value = %s, handbrake_total_s11_value = %s, handbrake_total_s12_value = %s"
                 )
                 sql5 = (
-                    ", handbrake_efficiency_s1_value = %s, handbrake_efficiency_s2_value = %s, handbrake_efficiency_s3_value = %s, "
-                    "handbrake_efficiency_s4_value = %s, handbrake_efficiency_s5_value = %s, handbrake_efficiency_s6_value = %s, "
-                    "handbrake_efficiency_s7_value = %s, handbrake_efficiency_s8_value = %s, handbrake_efficiency_s9_value = %s, "
-                    "handbrake_efficiency_s10_value = %s, handbrake_efficiency_s11_value = %s, handbrake_efficiency_s12_value = %s"
-                )
-                sql6 = (
                     ", handbrake_difference_s1_value = %s, handbrake_difference_s2_value = %s, handbrake_difference_s3_value = %s, "
                     "handbrake_difference_s4_value = %s, handbrake_difference_s5_value = %s, handbrake_difference_s6_value = %s, "
                     "handbrake_difference_s7_value = %s, handbrake_difference_s8_value = %s, handbrake_difference_s9_value = %s, "
                     "handbrake_difference_s10_value = %s, handbrake_difference_s11_value = %s, handbrake_difference_s12_value = %s"
                 )
-                sql7 = ", handbrake_user = %s, handbrake_post = %s WHERE noantrian = %s"
-                sql = sql1 + sql2 + sql3 + sql4 + sql5 + sql6 + sql7
+                sql6 = ", handbrake_user = %s, handbrake_post = %s WHERE noantrian = %s"
+                sql = sql1 + sql2 + sql3 + sql4 + sql5 + sql6
 
-                sql_handbrake_flag = 2 if dt_handbrake_flag == "Lulus" else 1
+                sql_handbrake_flag = dt_handbrake_flag
                 dt_handbrake_post = time.strftime("%Y/%m/%d %H:%M:%S", time.localtime())
 
                 expected_len = 12
@@ -2663,7 +2651,7 @@ class ScreenResume(MDScreen):
             pdf.set_font('Arial', 'B', 24.0)
             pdf.cell(ln=1, h=5.0, w=0)
             pdf.cell(ln=1, h=15.0, align='C', w=0, txt="DINAS PERHUBUNGAN", border=0)
-            pdf.cell(ln=1, h=15.0, align='C', w=0, txt="UPTD PKB KAB. KUNINGAN", border=0)
+            pdf.cell(ln=1, h=15.0, align='C', w=0, txt="UPTD PKB KAB. PANDEGLANG", border=0)
             pdf.cell(ln=1, h=5.0, w=0)
             pdf.set_font('Arial', 'B', 14.0)
             pdf.cell(ln=0, h=10.0, align='L', w=0, txt=f"Tanggal: {print_datetime}", border=0)

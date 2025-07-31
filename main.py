@@ -109,8 +109,10 @@ MAX_BRAKE_DATA = int(config['setting']['MAX_BRAKE_DATA'])
 
 # system standard
 STANDARD_MAX_AXLE_LOAD = float(config['standard']['STANDARD_MAX_AXLE_LOAD']) # in kg
+STANDARD_MAX_DIFFERENCE_AXLE_LOAD = float(config['standard']['STANDARD_MAX_DIFFERENCE_AXLE_LOAD']) # %
 STANDARD_MAX_BRAKE = float(config['standard']['STANDARD_MAX_BRAKE']) # %
 STANDARD_MAX_DIFFERENCE_BRAKE = float(config['standard']['STANDARD_MAX_DIFFERENCE_BRAKE']) # %
+STANDARD_MIN_EFFICIENCY_BRAKE = float(config['standard']['STANDARD_MIN_EFFICIENCY_BRAKE']) # %
 STANDARD_MIN_EFFICIENCY_HANDBRAKE = float(config['standard']['STANDARD_MIN_EFFICIENCY_HANDBRAKE']) # %
 
 class ScreenHome(MDScreen):
@@ -657,17 +659,17 @@ class ScreenMain(MDScreen):
                 db_handbrake_left_value[dt_test_number] = db_handbrake_left_value[dt_test_number] if db_handbrake_left_value[dt_test_number] >= 0 and db_handbrake_left_value[dt_test_number] <= MAX_BRAKE_DATA else 0
                 db_handbrake_right_value[dt_test_number] = db_handbrake_right_value[dt_test_number] if db_handbrake_right_value[dt_test_number] >= 0 and db_handbrake_right_value[dt_test_number] <= MAX_BRAKE_DATA else 0
 
-                if(int(db_load_left_value) - int(db_load_right_value)) <= (0.1 * int(dt_load_total_value)):
+                if(np.abs(int(np.sum(db_load_left_value)) - int(np.sum(db_load_right_value))) <= ((STANDARD_MAX_DIFFERENCE_AXLE_LOAD)/100) * int(dt_load_total_value)):
                     db_load_flag[dt_test_number] = 2
                 else:
                     db_load_flag[dt_test_number] = 1
 
-                if(dt_brake_efficiency_value >= 50 and dt_brake_difference_value <= 8):
+                if(dt_brake_efficiency_value >= STANDARD_MIN_EFFICIENCY_BRAKE and dt_brake_difference_value <= STANDARD_MAX_DIFFERENCE_BRAKE):
                     db_brake_flag[dt_test_number] = 2            
                 else:
                     db_brake_flag[dt_test_number] = 1
                 
-                if(dt_handbrake_efficiency_value >= 12):
+                if(dt_handbrake_efficiency_value >= STANDARD_MIN_EFFICIENCY_HANDBRAKE):
                     db_handbrake_flag[dt_test_number] = 2
                 else:
                     db_handbrake_flag[dt_test_number] = 1
@@ -2278,17 +2280,17 @@ class ScreenResume(MDScreen):
             self.ids.lb_handbrake_total_sum.text = f'{int(dt_handbrake_total_value)} kg'
             self.ids.lb_handbrake_efficiency.text = f'{np.round(dt_handbrake_efficiency_value, 1)} %'
 
-            if(np.abs(int(np.sum(db_load_left_value)) - int(np.sum(db_load_right_value))) <= (0.1 * int(dt_load_total_value))):
+            if(np.abs(int(np.sum(db_load_left_value)) - int(np.sum(db_load_right_value))) <= ((STANDARD_MAX_DIFFERENCE_AXLE_LOAD)/100) * int(dt_load_total_value)):
                 dt_load_flag = 2
             else:
                 dt_load_flag = 1
 
-            if(dt_brake_efficiency_value >= 50 and dt_brake_difference_value <= 8):
+            if(dt_brake_efficiency_value >= STANDARD_MIN_EFFICIENCY_BRAKE and dt_brake_difference_value <= STANDARD_MAX_DIFFERENCE_BRAKE):
                 dt_brake_flag = 2            
             else:
                 dt_brake_flag = 1
             
-            if(dt_handbrake_efficiency_value >= 12):
+            if(dt_handbrake_efficiency_value >= STANDARD_MIN_EFFICIENCY_HANDBRAKE):
                 dt_handbrake_flag = 2
             else:
                 dt_handbrake_flag = 1

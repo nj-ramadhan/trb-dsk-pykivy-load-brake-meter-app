@@ -110,9 +110,11 @@ MAX_BRAKE_DATA = int(config['setting']['MAX_BRAKE_DATA'])
 # system standard
 STANDARD_MAX_AXLE_LOAD = float(config['standard']['STANDARD_MAX_AXLE_LOAD']) # in kg
 STANDARD_MAX_DIFFERENCE_AXLE_LOAD = float(config['standard']['STANDARD_MAX_DIFFERENCE_AXLE_LOAD']) # %
-STANDARD_MAX_BRAKE = float(config['standard']['STANDARD_MAX_BRAKE']) # %
+STANDARD_MAX_BRAKE = float(config['standard']['STANDARD_MAX_BRAKE']) # kg
+STANDARD_MAX_HANDBRAKE = float(config['standard']['STANDARD_MAX_HANDBRAKE']) # kg
 STANDARD_MAX_DIFFERENCE_BRAKE = float(config['standard']['STANDARD_MAX_DIFFERENCE_BRAKE']) # %
 STANDARD_MIN_EFFICIENCY_BRAKE = float(config['standard']['STANDARD_MIN_EFFICIENCY_BRAKE']) # %
+STANDARD_MAX_DIFFERENCE_HANDBRAKE = float(config['standard']['STANDARD_MAX_DIFFERENCE_HANDBRAKE']) # %
 STANDARD_MIN_EFFICIENCY_HANDBRAKE = float(config['standard']['STANDARD_MIN_EFFICIENCY_HANDBRAKE']) # %
 
 class ScreenHome(MDScreen):
@@ -441,7 +443,7 @@ class ScreenMain(MDScreen):
                 else:
                     screen_brake_meter.ids.lb_info.text = f"Ambang Batas Beban yang diperbolehkan adalah {STANDARD_MAX_AXLE_LOAD} kg.\nKekuatan Pengereman Kendaraan Anda Diluar Ambang Batas"                
 
-                if(db_handbrake_total_value[dt_test_number] <= STANDARD_MAX_BRAKE):
+                if(db_handbrake_total_value[dt_test_number] <= STANDARD_MAX_HANDBRAKE):
                     screen_handbrake_meter.ids.lb_info.text = f"Ambang Batas Beban yang diperbolehkan adalah {STANDARD_MAX_AXLE_LOAD} kg.\nKekuatan Pengereman Kendaraan Anda Dalam Range Ambang Batas"
                 else:
                     screen_handbrake_meter.ids.lb_info.text = f"Ambang Batas Beban yang diperbolehkan adalah {STANDARD_MAX_AXLE_LOAD} kg.\nKekuatan Pengereman Kendaraan Anda Diluar Ambang Batas"                
@@ -619,7 +621,8 @@ class ScreenMain(MDScreen):
 
     def regular_get_data(self, dt):
         global count_starting, count_get_data
-        global flag_play
+        global flag_play, flag_conn_stat, flag_motor_brake
+        global dt_load_flag, dt_brake_flag, dt_handbrake_flag
         global db_load_left_value, db_load_right_value, db_load_total_value, db_load_flag
         global db_brake_left_value, db_brake_right_value, db_brake_total_value, db_brake_difference_value, db_brake_flag
         global db_handbrake_left_value, db_handbrake_right_value, db_handbrake_total_value, db_handbrake_difference_value, db_handbrake_flag
@@ -659,30 +662,26 @@ class ScreenMain(MDScreen):
                 db_handbrake_left_value[dt_test_number] = db_handbrake_left_value[dt_test_number] if db_handbrake_left_value[dt_test_number] >= 0 and db_handbrake_left_value[dt_test_number] <= MAX_BRAKE_DATA else 0
                 db_handbrake_right_value[dt_test_number] = db_handbrake_right_value[dt_test_number] if db_handbrake_right_value[dt_test_number] >= 0 and db_handbrake_right_value[dt_test_number] <= MAX_BRAKE_DATA else 0
 
-                if(np.abs(int(np.sum(db_load_left_value)) - int(np.sum(db_load_right_value))) <= ((STANDARD_MAX_DIFFERENCE_AXLE_LOAD)/100) * int(dt_load_total_value)):
-                    db_load_flag[dt_test_number] = 2
-                else:
-                    db_load_flag[dt_test_number] = 1
-
-                if(dt_brake_efficiency_value >= STANDARD_MIN_EFFICIENCY_BRAKE and dt_brake_difference_value <= STANDARD_MAX_DIFFERENCE_BRAKE):
-                    db_brake_flag[dt_test_number] = 2            
-                else:
-                    db_brake_flag[dt_test_number] = 1
-                
-                if(dt_handbrake_efficiency_value >= STANDARD_MIN_EFFICIENCY_HANDBRAKE):
-                    db_handbrake_flag[dt_test_number] = 2
-                else:
-                    db_handbrake_flag[dt_test_number] = 1
-
             if self.screen_manager.current == 'screen_load_meter':
                 db_load_total_value[dt_test_number] = int(db_load_left_value[dt_test_number] + db_load_right_value[dt_test_number])
                 dt_load_total_value = int(np.sum(db_load_total_value))
+
+                # Load test result status
+                if(np.abs(int(np.sum(db_load_left_value)) - int(np.sum(db_load_right_value))) <= ((STANDARD_MAX_DIFFERENCE_AXLE_LOAD)/100) * int(dt_load_total_value)):
+                    db_load_flag[dt_test_number] = 2
+                    dt_load_flag = 2
+                else:
+                    db_load_flag[dt_test_number] = 1
+                    dt_load_flag = 1
+
                 Logger.info(f"{self.screen_manager.current}: DB Load Left = {db_load_left_value}, DB Load Right = {db_load_right_value}, DB Load Total = {db_load_total_value}")
                 Logger.info(f"{self.screen_manager.current}: DB Load Left = {db_load_left_value[dt_test_number]}, DB Load Right = {db_load_right_value[dt_test_number]}, DB Load Total = {db_load_total_value[dt_test_number]}")
 
             if self.screen_manager.current == 'screen_brake_meter':
                 # Initialize total for brake test
                 db_brake_total_value[dt_test_number] = int(db_brake_left_value[dt_test_number] + db_brake_right_value[dt_test_number])
+                db_load_total_value[dt_test_number] = int(db_load_left_value[dt_test_number] + db_load_right_value[dt_test_number])
+                dt_load_total_value = int(np.sum(db_load_total_value))
 
                 # Efficiency: (total brake / total load) * 100
                 if dt_load_total_value != 0:
@@ -715,6 +714,14 @@ class ScreenMain(MDScreen):
                 # Overall difference
                 dt_brake_difference_value = int(np.sum(db_brake_difference_value))
 
+                # Brake test result status
+                if(dt_brake_efficiency_value >= STANDARD_MIN_EFFICIENCY_BRAKE and dt_brake_difference_value <= STANDARD_MAX_DIFFERENCE_BRAKE):
+                    db_brake_flag[dt_test_number] = 2
+                    dt_brake_flag = 2      
+                else:
+                    db_brake_flag[dt_test_number] = 1
+                    dt_brake_flag = 1
+
                 # Logging
                 Logger.info(f"{self.screen_manager.current}: DB Brake Left = {db_brake_left_value}, "
                             f"DB Brake Right = {db_brake_right_value}, "
@@ -729,9 +736,9 @@ class ScreenMain(MDScreen):
                 
             if self.screen_manager.current == 'screen_handbrake_meter':
                 # Initialize total for handbrake test
-                db_handbrake_total_value[dt_test_number] = int(
-                    db_handbrake_left_value[dt_test_number] + db_handbrake_right_value[dt_test_number]
-                )
+                db_handbrake_total_value[dt_test_number] = int(db_handbrake_total_value[dt_test_number] + db_handbrake_total_value[dt_test_number])
+                db_load_total_value[dt_test_number] = int(db_load_left_value[dt_test_number] + db_load_right_value[dt_test_number])
+                dt_load_total_value = int(np.sum(db_load_total_value))
 
                 # Handbrake efficiency: use handbrake total and dt_jbb (assuming jbb = axle load or test standard)
                 if dt_jbb != 0 and dt_jbb is not None:
@@ -767,6 +774,14 @@ class ScreenMain(MDScreen):
                 # Sum of percentage differences? Be careful — summing % can be misleading
                 dt_handbrake_difference_value = int(np.sum(db_handbrake_difference_value))
 
+                # HandBrake test result status
+                if(dt_handbrake_efficiency_value >= STANDARD_MIN_EFFICIENCY_HANDBRAKE):
+                    db_handbrake_flag[dt_test_number] = 2
+                    dt_handbrake_flag = 2
+                else:
+                    db_handbrake_flag[dt_test_number] = 1
+                    dt_handbrake_flag = 1
+
                 # Logging
                 Logger.info(f"{self.screen_manager.current}: DB Handbrake Left = {db_handbrake_left_value}, "
                             f"DB Handbrake Right = {db_handbrake_right_value}, "
@@ -778,7 +793,7 @@ class ScreenMain(MDScreen):
                             f"Right = {db_handbrake_right_value[dt_test_number]}, "
                             f"Total = {db_handbrake_total_value[dt_test_number]}, "
                             f"Difference = {db_handbrake_difference_value[dt_test_number]}%")
-                
+
         except Exception as e:
             toast_msg = f'Gagal Mengambil Data dari PLC'
             toast(toast_msg)
@@ -2267,19 +2282,6 @@ class ScreenResume(MDScreen):
 
         self.exec_reload_table_detail()
         try:
-            self.ids.lb_load_left_sum.text = f'{int(np.sum(db_load_left_value))} kg'
-            self.ids.lb_load_right_sum.text = f'{int(np.sum(db_load_right_value))} kg'
-            self.ids.lb_load_total_sum.text = f'{int(dt_load_total_value)} kg'
-            self.ids.lb_brake_left_sum.text = f'{int(np.sum(db_brake_left_value))} kg'
-            self.ids.lb_brake_right_sum.text = f'{int(np.sum(db_brake_right_value))} kg'
-            self.ids.lb_brake_total_sum.text = f'{int(dt_brake_total_value)} kg'
-            self.ids.lb_brake_diff_sum.text = f'{np.round(dt_brake_difference_value, 1)} %'
-            self.ids.lb_brake_efficiency.text = f'{np.round(dt_brake_efficiency_value, 1)} %'
-            self.ids.lb_handbrake_left_sum.text = f'{int(np.sum(db_handbrake_left_value))} kg'
-            self.ids.lb_handbrake_right_sum.text = f'{int(np.sum(db_handbrake_right_value))} kg'
-            self.ids.lb_handbrake_total_sum.text = f'{int(dt_handbrake_total_value)} kg'
-            self.ids.lb_handbrake_efficiency.text = f'{np.round(dt_handbrake_efficiency_value, 1)} %'
-
             if(np.abs(int(np.sum(db_load_left_value)) - int(np.sum(db_load_right_value))) <= ((STANDARD_MAX_DIFFERENCE_AXLE_LOAD)/100) * int(dt_load_total_value)):
                 dt_load_flag = 2
             else:
@@ -2303,7 +2305,25 @@ class ScreenResume(MDScreen):
                 self.ids.lb_test_result.md_bg_color = colors['Red']['A200']
                 self.ids.lb_test_result.text_color = colors['Red']['A700']
                 self.ids.lb_test_result.text = f"TIDAK LULUS"
-                                
+
+            self.ids.lb_load_left_sum.text = f'{int(np.sum(db_load_left_value))} kg'
+            self.ids.lb_load_right_sum.text = f'{int(np.sum(db_load_right_value))} kg'
+            self.ids.lb_load_total_sum.text = f'{int(dt_load_total_value)} kg'
+            self.ids.lb_load_status.text = f'Liulus' if dt_load_flag == 2 else 'Tidak Lulus' if dt_load_flag == 1 else 'Belum Diuji'
+
+            self.ids.lb_brake_left_sum.text = f'{int(np.sum(db_brake_left_value))} kg'
+            self.ids.lb_brake_right_sum.text = f'{int(np.sum(db_brake_right_value))} kg'
+            self.ids.lb_brake_total_sum.text = f'{int(dt_brake_total_value)} kg'
+            self.ids.lb_brake_diff_sum.text = f'{np.round(dt_brake_difference_value, 1)} %'
+            self.ids.lb_brake_efficiency.text = f'{np.round(dt_brake_efficiency_value, 1)} %'
+            self.ids.lb_brake_status.text = f'Liulus' if dt_brake_flag == 2 else 'Tidak Lulus' if dt_brake_flag == 1 else 'Belum Diuji'
+
+            self.ids.lb_handbrake_left_sum.text = f'{int(np.sum(db_handbrake_left_value))} kg'
+            self.ids.lb_handbrake_right_sum.text = f'{int(np.sum(db_handbrake_right_value))} kg'
+            self.ids.lb_handbrake_total_sum.text = f'{int(dt_handbrake_total_value)} kg'
+            self.ids.lb_handbrake_efficiency.text = f'{np.round(dt_handbrake_efficiency_value, 1)} %'
+            self.ids.lb_handbrake_status.text = f'Liulus' if dt_handbrake_flag == 2 else 'Tidak Lulus' if dt_handbrake_flag == 1 else 'Belum Diuji'
+
         except Exception as e:
             toast_msg = f'Error Create Resume: {e}'
             Logger.error(f"{self.name}: {toast_msg}, {e}")   

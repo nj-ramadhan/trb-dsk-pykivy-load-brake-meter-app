@@ -2297,7 +2297,7 @@ class ScreenResume(MDScreen):
             else:
                 dt_handbrake_flag = 1
 
-            if(dt_load_flag == 2 and dt_brake_flag == 2 and dt_handbrake_flag == 2):
+            if(int(dt_load_flag) == 2 and int(dt_brake_flag) == 2 and int(dt_handbrake_flag) == 2):
                 self.ids.lb_test_result.md_bg_color = colors['Green']['200']
                 self.ids.lb_test_result.text_color = colors['Green']['700']
                 self.ids.lb_test_result.text = f"LULUS"
@@ -2309,20 +2309,20 @@ class ScreenResume(MDScreen):
             self.ids.lb_load_left_sum.text = f'{int(np.sum(db_load_left_value))} kg'
             self.ids.lb_load_right_sum.text = f'{int(np.sum(db_load_right_value))} kg'
             self.ids.lb_load_total_sum.text = f'{int(dt_load_total_value)} kg'
-            self.ids.lb_load_status.text = f'Liulus' if dt_load_flag == 2 else 'Tidak Lulus' if dt_load_flag == 1 else 'Belum Diuji'
+            self.ids.lb_load_status.text = f'Liulus' if int(dt_load_flag) == 2 else 'Tidak Lulus' if int(dt_load_flag) == 1 else 'Belum Diuji'
 
             self.ids.lb_brake_left_sum.text = f'{int(np.sum(db_brake_left_value))} kg'
             self.ids.lb_brake_right_sum.text = f'{int(np.sum(db_brake_right_value))} kg'
             self.ids.lb_brake_total_sum.text = f'{int(dt_brake_total_value)} kg'
             self.ids.lb_brake_diff_sum.text = f'{np.round(dt_brake_difference_value, 1)} %'
             self.ids.lb_brake_efficiency.text = f'{np.round(dt_brake_efficiency_value, 1)} %'
-            self.ids.lb_brake_status.text = f'Liulus' if dt_brake_flag == 2 else 'Tidak Lulus' if dt_brake_flag == 1 else 'Belum Diuji'
+            self.ids.lb_brake_status.text = f'Liulus' if int(dt_brake_flag) == 2 else 'Tidak Lulus' if int(dt_brake_flag) == 1 else 'Belum Diuji'
 
             self.ids.lb_handbrake_left_sum.text = f'{int(np.sum(db_handbrake_left_value))} kg'
             self.ids.lb_handbrake_right_sum.text = f'{int(np.sum(db_handbrake_right_value))} kg'
             self.ids.lb_handbrake_total_sum.text = f'{int(dt_handbrake_total_value)} kg'
             self.ids.lb_handbrake_efficiency.text = f'{np.round(dt_handbrake_efficiency_value, 1)} %'
-            self.ids.lb_handbrake_status.text = f'Liulus' if dt_handbrake_flag == 2 else 'Tidak Lulus' if dt_handbrake_flag == 1 else 'Belum Diuji'
+            self.ids.lb_handbrake_status.text = f'Liulus' if int(dt_handbrake_flag) == 2 else 'Tidak Lulus' if int(dt_handbrake_flag) == 1 else 'Belum Diuji'
 
         except Exception as e:
             toast_msg = f'Error Create Resume: {e}'
@@ -2668,8 +2668,9 @@ class ScreenResume(MDScreen):
             pdf = FPDF()
             pdf.add_page()
             pdf.set_xy(0, 2)
-            pdf.image("assets/images/logo-dishub.png", w=30.0, h=0, x=20)
-            pdf.image("assets/images/logo-pandeglang.png", w=30.0, h=0, x=110)            
+            pdf.image(f"assets/images/{IMG_LOGO_DISHUB}", w=30.0, h=0, x=20)
+            pdf.set_xy(0, 2)
+            pdf.image(f"assets/images/{IMG_LOGO_PEMKAB}", w=30.0, h=0, x=180)            
             pdf.set_font('Arial', 'B', 24.0)
             pdf.cell(ln=1, h=5.0, w=0)
             pdf.cell(ln=1, h=15.0, align='C', w=0, txt="DINAS PERHUBUNGAN", border=0)
@@ -2699,7 +2700,7 @@ class ScreenResume(MDScreen):
                     pdf.cell(ln=1, h=10.0, align='L', w=80, txt=f"{int(db_load_total_value[i])} kg")
                     pdf.cell(ln=1, h=10.0, align='L', w=80, txt=f"Lulus" if db_load_flag[i] == 2 else "Tidak Lulus" if db_load_flag[i] == 1 else "Belum Diuji")
             pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Nilai Axle Load Total : {int(dt_load_total_value)} kg")
-            pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Status Pengujian Axle Load: {'Lulus' if dt_load_flag == 2 else 'Tidak Lulus' if dt_load_flag == 1 else 'Belum Diuji'}")
+            pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Status Pengujian Axle Load: {'Lulus' if int(dt_load_flag) == 2 else 'Tidak Lulus' if int(dt_load_flag) == 1 else 'Belum Diuji'}")
             pdf.cell(ln=1, h=5.0, w=0)
 
             pdf.cell(ln=1, h=10.0, align='L', w=80, txt=f"REM UTAMA")
@@ -2718,7 +2719,7 @@ class ScreenResume(MDScreen):
                     pdf.cell(ln=1, h=10.0, align='L', w=80, txt=f"Lulus" if db_brake_flag[i] == 2 else "Tidak Lulus" if db_brake_flag[i] == 1 else "Belum Diuji")
             pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Nilai Rem Utama Total : {int(dt_brake_total_value)} kg")
             pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Nilai Efisiensi Rem Utama : {str(np.round(dt_brake_efficiency_value, 1)).replace('.', ',')} %")
-            pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Status Pengujian Rem Utama: {'Lulus' if dt_brake_flag == 2 else 'Tidak Lulus' if dt_brake_flag == 1 else 'Belum Diuji'}")
+            pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Status Pengujian Rem Utama: {'Lulus' if int(dt_brake_flag) == 2 else 'Tidak Lulus' if int(dt_brake_flag) == 1 else 'Belum Diuji'}")
             pdf.cell(ln=1, h=5.0, w=0)
 
             pdf.cell(ln=1, h=10.0, align='L', w=80, txt=f"REM PARKIR")
@@ -2735,7 +2736,7 @@ class ScreenResume(MDScreen):
                     pdf.cell(ln=1, h=10.0, align='L', w=80, txt=f"Lulus" if db_handbrake_flag[i] == 2 else "Tidak Lulus" if db_handbrake_flag[i] == 1 else "Belum Diuji")
             pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Nilai Rem Parkir Total : {int(dt_handbrake_total_value)} kg")
             pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Nilai Efisiensi Rem Parkir : {str(np.round(dt_handbrake_efficiency_value, 1)).replace('.', ',')} %")
-            pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Status Pengujian Rem Parkir: {'Lulus' if dt_handbrake_flag == 2 else 'Tidak Lulus' if dt_handbrake_flag == 1 else 'Belum Diuji'}")
+            pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Status Pengujian Rem Parkir: {'Lulus' if int(dt_handbrake_flag) == 2 else 'Tidak Lulus' if int(dt_handbrake_flag) == 1 else 'Belum Diuji'}")
 
             documents_dir = os.path.join(os.environ["USERPROFILE"], "Documents")
 
@@ -2803,7 +2804,7 @@ class ScreenResume(MDScreen):
                 if (db_load_total_value[i] > 0.0):
                     printer.textln(f"S{i+1} \t{db_load_left_value[i]} \t{db_load_right_value[i]} \t{db_load_total_value[i]}")
             printer.textln(f"Nilai Axle Load Total : {dt_load_total_value}")
-            printer.textln(f"Status Pengujian Axle Load : {'Lulus' if dt_load_flag == 2 else 'Tidak Lulus' if dt_load_flag == 1 else 'Belum Diuji'}")
+            printer.textln(f"Status Pengujian Axle Load : {'Lulus' if int(dt_load_flag) == 2 else 'Tidak Lulus' if int(dt_load_flag) == 1 else 'Belum Diuji'}")
             printer.textln("  ")
             printer.textln(f"REM UTAMA")
             printer.text(f"No. Sumbu \tKiri \tKanan \tTotal \tSelisih")
@@ -2812,7 +2813,7 @@ class ScreenResume(MDScreen):
                     printer.textln(f"S{i+1} \t{db_brake_left_value[i]} \t{db_brake_right_value[i]} \t{db_brake_total_value[i]} \t{db_brake_difference_value[i]}")
             printer.textln(f"Nilai Rem Utama Total : {dt_brake_total_value}")
             printer.textln(f"Nilai Efisiensi Rem Utama : {dt_brake_efficiency_value}")
-            printer.textln(f"Status Pengujian Rem : {'Lulus' if dt_brake_flag == 2 else 'Tidak Lulus' if dt_brake_flag == 1 else 'Belum Diuji'}")
+            printer.textln(f"Status Pengujian Rem : {'Lulus' if int(dt_brake_flag) == 2 else 'Tidak Lulus' if int(dt_brake_flag) == 1 else 'Belum Diuji'}")
             printer.textln("  ")            
             printer.textln(f"REM PARKIR")
             printer.text(f"No. Sumbu \tKiri \tKanan \tTotal")
@@ -2821,7 +2822,7 @@ class ScreenResume(MDScreen):
                     printer.textln(f"S{i+1} \t{db_handbrake_left_value[i]} \t{db_handbrake_right_value[i]} \t{db_handbrake_total_value[i]}")
             printer.textln(f"Nilai Rem Parkir Total : {dt_handbrake_total_value}")
             printer.textln(f"Nilai Efisiensi Rem Parkir : {dt_handbrake_efficiency_value}")
-            printer.textln(f"Status Pengujian Rem Parkir : {'Lulus' if dt_handbrake_flag == 2 else 'Tidak Lulus' if dt_handbrake_flag == 1 else 'Belum Diuji'}")
+            printer.textln(f"Status Pengujian Rem Parkir : {'Lulus' if int(dt_handbrake_flag) == 2 else 'Tidak Lulus' if int(dt_handbrake_flag) == 1 else 'Belum Diuji'}")
             printer.textln("  ")
             printer.textln("================================================================")
             printer.cut()

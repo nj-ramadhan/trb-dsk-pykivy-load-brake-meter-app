@@ -30,6 +30,7 @@ from kivymd.uix.screen import MDScreen
 from kivymd.uix.label import MDLabel
 from kivymd.uix.card import MDCard
 from kivymd.uix.textfield import MDTextField
+from kivy.metrics import dp
 from kivymd.toast import toast
 from kivymd.app import MDApp
 import numpy as np
@@ -69,14 +70,13 @@ DB_HOST = "127.0.0.1"
 DB_USER = "kuningan2025"
 DB_PASSWORD = "@kuningan2025"
 
-# DB_HOST = "156.67.217.60"
-# DB_USER = "pkbsorong2024!"
-# DB_PASSWORD = "@Sorongpkb2024"
-
 DB_NAME = "dishub"
 TB_DATA = "tb_cekident"
 TB_USER = "users"
 TB_MERK = "merk"
+TB_BAHAN_BAKAR = "bahanbakar"
+TB_WARNA = "warna"
+TB_DATA_MASTER = "identkendaraan"
 
 FTP_HOST = "127.0.0.1"
 FTP_USER = "kuningan2025"
@@ -109,8 +109,12 @@ MAX_BRAKE_DATA = int(config['setting']['MAX_BRAKE_DATA'])
 
 # system standard
 STANDARD_MAX_AXLE_LOAD = float(config['standard']['STANDARD_MAX_AXLE_LOAD']) # in kg
-STANDARD_MAX_BRAKE = float(config['standard']['STANDARD_MAX_BRAKE']) # %
+STANDARD_MAX_DIFFERENCE_AXLE_LOAD = float(config['standard']['STANDARD_MAX_DIFFERENCE_AXLE_LOAD']) # %
+STANDARD_MAX_BRAKE = float(config['standard']['STANDARD_MAX_BRAKE']) # kg
+STANDARD_MAX_HANDBRAKE = float(config['standard']['STANDARD_MAX_HANDBRAKE']) # kg
 STANDARD_MAX_DIFFERENCE_BRAKE = float(config['standard']['STANDARD_MAX_DIFFERENCE_BRAKE']) # %
+STANDARD_MIN_EFFICIENCY_BRAKE = float(config['standard']['STANDARD_MIN_EFFICIENCY_BRAKE']) # %
+STANDARD_MAX_DIFFERENCE_HANDBRAKE = float(config['standard']['STANDARD_MAX_DIFFERENCE_HANDBRAKE']) # %
 STANDARD_MIN_EFFICIENCY_HANDBRAKE = float(config['standard']['STANDARD_MIN_EFFICIENCY_HANDBRAKE']) # %
 
 class ScreenHome(MDScreen):
@@ -141,7 +145,7 @@ class ScreenHome(MDScreen):
         except Exception as e:
             toast_msg = f'Gagal Memperbaharui Tampilan Carousel'
             toast(toast_msg)                
-            Logger.error(toast_msg, e)  
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
     def exec_navigate_home(self):
         try:
@@ -150,7 +154,7 @@ class ScreenHome(MDScreen):
         except Exception as e:
             toast_msg = f'Terjadi kesalahan saat berpindah ke halaman Beranda'
             toast(toast_msg)
-            Logger.error(toast_msg, e)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")
 
     def exec_navigate_login(self):
         global dt_user
@@ -198,6 +202,7 @@ class ScreenLogin(MDScreen):
 
         except Exception as e:
             toast_msg = f'error Login: {e}'
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
     def exec_login(self):
         global mydb, db_users
@@ -276,50 +281,48 @@ class ScreenLogin(MDScreen):
 class ScreenMain(MDScreen):   
     def __init__(self, **kwargs):
         super(ScreenMain, self).__init__(**kwargs)
-        global flag_conn_stat, flag_play
+        global flag_conn_stat, flag_play, flag_motor_brake
         global count_starting, count_get_data
-        global db_load_left_value, db_load_right_value, db_load_total_value
-        global dt_load_total_value, dt_load_flag, dt_load_user, dt_load_post
-        global db_brake_left_value, db_brake_right_value, db_brake_total_value, db_brake_efficiency_value, db_brake_difference_value
-        global dt_brake_total_value, dt_brake_efficiency_value, dt_brake_difference_value, dt_brake_flag, dt_brake_user, dt_brake_post
-        global db_handbrake_left_value, db_handbrake_right_value, db_handbrake_total_value, db_handbrake_efficiency_value, db_handbrake_difference_value
-        global dt_handbrake_total_value, dt_handbrake_efficiency_value, dt_handbrake_difference_value, dt_handbrake_flag, dt_handbrake_user, dt_handbrake_post
-        global dt_user, dt_no_antrian, dt_no_pol, dt_no_uji, dt_nama, dt_jenis_kendaraan
-        global dt_test_number, dt_dash_pendaftaran, dt_dash_belum_uji, dt_dash_sudah_uji
-        global flag_cylinder
-
-        flag_conn_stat = flag_play = False
+        global dt_user, dt_foto_user, dt_no_antri, dt_no_pol, dt_no_uji, dt_sts_uji, dt_nama
+        global dt_merk, dt_type, dt_jns_kend, dt_jbb, dt_brt_ksg, dt_warna, dt_chasis, dt_no_mesin    
+        global dt_id_user    
+        global db_load_left_value, db_load_right_value, db_load_total_value, db_load_flag
+        global dt_load_total_value, dt_load_flag, dt_id_user
+        global db_brake_left_value, db_brake_right_value, db_brake_total_value, db_brake_difference_value, db_brake_flag
+        global dt_brake_total_value, dt_brake_efficiency_value, dt_brake_difference_value, dt_brake_flag
+        global db_handbrake_left_value, db_handbrake_right_value, db_handbrake_total_value, db_handbrake_difference_value, db_handbrake_flag
+        global dt_handbrake_total_value, dt_handbrake_efficiency_value, dt_handbrake_difference_value, dt_handbrake_flag
+        global dt_test_number, dt_dash_antri, dt_dash_belum_uji, dt_dash_sudah_uji
 
         count_starting = COUNT_STARTING
         count_get_data = COUNT_ACQUISITION
 
-        db_load_left_value = np.zeros(10, dtype=float)
-        db_load_right_value = np.zeros(10, dtype=float)
-        db_load_total_value = np.zeros(10, dtype=float)
+        flag_conn_stat = flag_play = flag_motor_brake = False
+        dt_user = dt_foto_user = dt_no_antri = dt_no_pol = dt_no_uji = dt_sts_uji = dt_nama = ""
+        dt_merk = dt_type = dt_jns_kend = dt_jbb = dt_brt_ksg = dt_warna = dt_chasis = dt_no_mesin = ""
+        dt_id_user = 1
+        dt_test_number = 0
+        dt_dash_antri = dt_dash_belum_uji = dt_dash_sudah_uji = 0
+
+        db_load_left_value = np.zeros(12, dtype=float)
+        db_load_right_value = np.zeros(12, dtype=float)
+        db_load_total_value = np.zeros(12, dtype=float)
+        db_load_flag = np.zeros(12, dtype=int)
         dt_load_total_value = dt_load_flag = 0
 
-        db_brake_left_value = np.zeros(10, dtype=float)
-        db_brake_right_value = np.zeros(10, dtype=float)
-        db_brake_total_value = np.zeros(10, dtype=float)
-        db_brake_efficiency_value = np.zeros(10, dtype=float)
-        db_brake_difference_value = np.zeros(10, dtype=float)
+        db_brake_left_value = np.zeros(12, dtype=float)
+        db_brake_right_value = np.zeros(12, dtype=float)
+        db_brake_total_value = np.zeros(12, dtype=float)
+        db_brake_difference_value = np.zeros(12, dtype=float)
+        db_brake_flag = np.zeros(12, dtype=int)
         dt_brake_total_value = dt_brake_efficiency_value = dt_brake_difference_value = dt_brake_flag = 0
 
-        db_handbrake_left_value = np.zeros(10, dtype=float)
-        db_handbrake_right_value = np.zeros(10, dtype=float)
-        db_handbrake_total_value = np.zeros(10, dtype=float)
-        db_handbrake_efficiency_value = np.zeros(10, dtype=float)
-        db_handbrake_difference_value = np.zeros(10, dtype=float)
+        db_handbrake_left_value = np.zeros(12, dtype=float)
+        db_handbrake_right_value = np.zeros(12, dtype=float)
+        db_handbrake_total_value = np.zeros(12, dtype=float)
+        db_handbrake_difference_value = np.zeros(12, dtype=float)
+        db_handbrake_flag = np.zeros(12, dtype=int)
         dt_handbrake_total_value = dt_handbrake_efficiency_value = dt_handbrake_difference_value = dt_handbrake_flag = 0
-
-        dt_load_user = dt_brake_user = dt_handbrake_user = 1
-        dt_load_post = dt_brake_post = dt_handbrake_post = str(time.strftime("%Y/%m/%d %H:%M:%S", time.localtime()))
-
-        dt_user = dt_no_antrian = dt_no_pol = dt_no_uji = dt_nama = dt_jenis_kendaraan = ""
-
-        dt_test_number = dt_dash_pendaftaran = dt_dash_belum_uji = dt_dash_sudah_uji = 0
-
-        flag_cylinder = False
 
         Clock.schedule_once(self.delayed_init, 1)
     
@@ -343,10 +346,10 @@ class ScreenMain(MDScreen):
     def regular_update_display(self, dt):
         global flag_conn_stat
         global count_starting, count_get_data
-        global dt_user, dt_no_antrian, dt_no_pol, dt_no_uji, dt_nama, dt_jenis_kendaraan
-        global dt_load_flag, db_load_left_value, db_load_right_value, db_load_total_value, dt_load_user, dt_load_post
-        global dt_brake_flag, db_brake_left_value, db_brake_right_value, db_brake_total_value, db_brake_efficiency_value, db_brake_difference_value, dt_brake_user, dt_brake_post
-        global dt_handbrake_flag, db_handbrake_left_value, db_handbrake_right_value, db_handbrake_total_value, db_handbrake_efficiency_value, db_handbrake_difference_value, dt_handbrake_user, dt_handbrake_post
+        global dt_user, dt_no_antri, dt_no_pol, dt_no_uji, dt_nama, dt_jns_kend
+        global dt_load_flag, db_load_left_value, db_load_right_value, db_load_total_value, db_load_flag, dt_id_user
+        global dt_brake_flag, db_brake_left_value, db_brake_right_value, db_brake_total_value, db_brake_difference_value, db_brake_flag
+        global dt_handbrake_flag, db_handbrake_left_value, db_handbrake_right_value, db_handbrake_total_value, db_handbrake_difference_value, db_handbrake_flag
         global dt_load_total_value, dt_brake_total_value, dt_brake_efficiency_value, dt_brake_difference_value, dt_handbrake_total_value, dt_handbrake_efficiency_value, dt_handbrake_difference_value
         global dt_test_number
         
@@ -355,6 +358,8 @@ class ScreenMain(MDScreen):
             screen_login = self.screen_manager.get_screen('screen_login')
             screen_menu = self.screen_manager.get_screen('screen_menu')
             screen_calibration = self.screen_manager.get_screen('screen_calibration')
+            screen_add_data = self.screen_manager.get_screen('screen_add_data')
+            screen_add_queue = self.screen_manager.get_screen('screen_add_queue')
 
             screen_load_meter = self.screen_manager.get_screen('screen_load_meter')
             screen_brake_meter = self.screen_manager.get_screen('screen_brake_meter')
@@ -369,6 +374,13 @@ class ScreenMain(MDScreen):
             screen_login.ids.lb_date.text = str(time.strftime("%d/%m/%Y", time.localtime()))
             screen_menu.ids.lb_time.text = str(time.strftime("%H:%M:%S", time.localtime()))
             screen_menu.ids.lb_date.text = str(time.strftime("%d/%m/%Y", time.localtime()))
+            screen_calibration.ids.lb_time.text = str(time.strftime("%H:%M:%S", time.localtime()))
+            screen_calibration.ids.lb_date.text = str(time.strftime("%d/%m/%Y", time.localtime()))
+            screen_add_data.ids.lb_time.text = str(time.strftime("%H:%M:%S", time.localtime()))
+            screen_add_data.ids.lb_date.text = str(time.strftime("%d/%m/%Y", time.localtime()))
+            screen_add_queue.ids.lb_time.text = str(time.strftime("%H:%M:%S", time.localtime()))
+            screen_add_queue.ids.lb_date.text = str(time.strftime("%d/%m/%Y", time.localtime()))
+
             screen_load_meter.ids.lb_time.text = str(time.strftime("%H:%M:%S", time.localtime()))
             screen_load_meter.ids.lb_date.text = str(time.strftime("%d/%m/%Y", time.localtime()))
             screen_brake_meter.ids.lb_time.text = str(time.strftime("%H:%M:%S", time.localtime()))
@@ -378,33 +390,9 @@ class ScreenMain(MDScreen):
             screen_resume.ids.lb_time.text = str(time.strftime("%H:%M:%S", time.localtime()))
             screen_resume.ids.lb_date.text = str(time.strftime("%d/%m/%Y", time.localtime()))
 
-            self.ids.lb_dash_pendaftaran.text = str(dt_dash_pendaftaran)
+            self.ids.lb_dash_antri.text = str(dt_dash_antri)
             self.ids.lb_dash_belum_uji.text = str(dt_dash_belum_uji)
             self.ids.lb_dash_sudah_uji.text = str(dt_dash_sudah_uji)
-
-            screen_menu.ids.lb_no_antrian.text = str(dt_no_antrian)
-            screen_menu.ids.lb_no_pol.text = str(dt_no_pol)
-            screen_menu.ids.lb_no_uji.text = str(dt_no_uji)
-            screen_menu.ids.lb_nama.text = str(dt_nama)
-            screen_menu.ids.lb_jenis_kendaraan.text = str(dt_jenis_kendaraan)
-
-            screen_load_meter.ids.lb_no_antrian.text = str(dt_no_antrian)
-            screen_load_meter.ids.lb_no_pol.text = str(dt_no_pol)
-            screen_load_meter.ids.lb_no_uji.text = str(dt_no_uji)
-            screen_load_meter.ids.lb_nama.text = str(dt_nama)
-            screen_load_meter.ids.lb_jenis_kendaraan.text = str(dt_jenis_kendaraan)
-
-            screen_brake_meter.ids.lb_no_antrian.text = str(dt_no_antrian)
-            screen_brake_meter.ids.lb_no_pol.text = str(dt_no_pol)
-            screen_brake_meter.ids.lb_no_uji.text = str(dt_no_uji)
-            screen_brake_meter.ids.lb_nama.text = str(dt_nama)
-            screen_brake_meter.ids.lb_jenis_kendaraan.text = str(dt_jenis_kendaraan)
-
-            screen_handbrake_meter.ids.lb_no_antrian.text = str(dt_no_antrian)
-            screen_handbrake_meter.ids.lb_no_pol.text = str(dt_no_pol)
-            screen_handbrake_meter.ids.lb_no_uji.text = str(dt_no_uji)
-            screen_handbrake_meter.ids.lb_nama.text = str(dt_nama)
-            screen_handbrake_meter.ids.lb_jenis_kendaraan.text = str(dt_jenis_kendaraan)
 
             screen_load_meter.ids.lb_load_l_val.text = str(int(db_load_left_value[dt_test_number]))
             screen_load_meter.ids.lb_load_r_val.text = str(int(db_load_right_value[dt_test_number]))
@@ -420,9 +408,9 @@ class ScreenMain(MDScreen):
                 screen_resume.ids.bt_save.md_bg_color = colors['Green']['200']
                 screen_resume.ids.bt_save.disabled = False
                 screen_load_meter.ids.bt_reload.md_bg_color = colors['Red']['A200']
-                screen_load_meter.ids.bt_reload.disabled = False
+                screen_load_meter.ids.bt_reload.disabled = False            
                 screen_brake_meter.ids.bt_reload.md_bg_color = colors['Red']['A200']
-                screen_brake_meter.ids.bt_reload.disabled = False
+                screen_brake_meter.ids.bt_reload.disabled = False              
                 screen_handbrake_meter.ids.bt_reload.md_bg_color = colors['Red']['A200']
                 screen_handbrake_meter.ids.bt_reload.disabled = False   
             else:
@@ -444,7 +432,7 @@ class ScreenMain(MDScreen):
                 screen_handbrake_meter.ids.lb_handbrake_l_val.text = str(int(db_handbrake_left_value[dt_test_number]))
                 screen_handbrake_meter.ids.lb_handbrake_r_val.text = str(int(db_handbrake_right_value[dt_test_number]))
                 screen_handbrake_meter.ids.lb_handbrake_total_val.text = str(int(db_handbrake_total_value[dt_test_number]))
-
+                    
                 if(db_load_total_value[dt_test_number] <= STANDARD_MAX_AXLE_LOAD):
                     screen_load_meter.ids.lb_info.text = f"Ambang Batas Beban yang diperbolehkan adalah {STANDARD_MAX_AXLE_LOAD} kg.\nBerat Roda Kendaraan Anda Dalam Range Ambang Batas"
                 else:
@@ -455,7 +443,7 @@ class ScreenMain(MDScreen):
                 else:
                     screen_brake_meter.ids.lb_info.text = f"Ambang Batas Beban yang diperbolehkan adalah {STANDARD_MAX_AXLE_LOAD} kg.\nKekuatan Pengereman Kendaraan Anda Diluar Ambang Batas"                
 
-                if(db_handbrake_total_value[dt_test_number] <= STANDARD_MAX_BRAKE):
+                if(db_handbrake_total_value[dt_test_number] <= STANDARD_MAX_HANDBRAKE):
                     screen_handbrake_meter.ids.lb_info.text = f"Ambang Batas Beban yang diperbolehkan adalah {STANDARD_MAX_AXLE_LOAD} kg.\nKekuatan Pengereman Kendaraan Anda Dalam Range Ambang Batas"
                 else:
                     screen_handbrake_meter.ids.lb_info.text = f"Ambang Batas Beban yang diperbolehkan adalah {STANDARD_MAX_AXLE_LOAD} kg.\nKekuatan Pengereman Kendaraan Anda Diluar Ambang Batas"                
@@ -501,11 +489,11 @@ class ScreenMain(MDScreen):
                 screen_handbrake_meter.ids.lb_test_result.md_bg_color = "#EEEEEE"
                 screen_handbrake_meter.ids.lb_test_result.text = ""
             
-            for i in range(10):
+            for i in range(12):
                 if(dt_test_number == i):
-                    screen_menu.ids[f'bt_S{i}'].md_bg_color = colors['Red']['A200']
+                    screen_menu.ids[f'bt_S{i+1}'].md_bg_color = colors['Red']['A200']
                 else:
-                    screen_menu.ids[f'bt_S{i}'].md_bg_color = colors['Green']['200']
+                    screen_menu.ids[f'bt_S{i+1}'].md_bg_color = colors['Green']['200']
 
             if(not flag_conn_stat):
                 self.ids.lb_comm.color = colors['Red']['A200']
@@ -516,6 +504,13 @@ class ScreenMain(MDScreen):
                 screen_login.ids.lb_comm.text = 'PLC Tidak Terhubung'
                 screen_menu.ids.lb_comm.color = colors['Red']['A200']
                 screen_menu.ids.lb_comm.text = 'PLC Tidak Terhubung'
+                screen_calibration.ids.lb_comm.color = colors['Red']['A200']
+                screen_calibration.ids.lb_comm.text = 'PLC Tidak Terhubung'
+                screen_add_data.ids.lb_comm.color = colors['Red']['A200']
+                screen_add_data.ids.lb_comm.text = 'PLC Tidak Terhubung'
+                screen_add_queue.ids.lb_comm.color = colors['Red']['A200']
+                screen_add_queue.ids.lb_comm.text = 'PLC Tidak Terhubung'
+
                 screen_load_meter.ids.lb_comm.color = colors['Red']['A200']
                 screen_load_meter.ids.lb_comm.text = 'PLC Tidak Terhubung'
                 screen_brake_meter.ids.lb_comm.color = colors['Red']['A200']
@@ -534,6 +529,13 @@ class ScreenMain(MDScreen):
                 screen_login.ids.lb_comm.text = 'PLC Terhubung'
                 screen_menu.ids.lb_comm.color = colors['Blue']['200']
                 screen_menu.ids.lb_comm.text = 'PLC Terhubung'
+                screen_calibration.ids.lb_comm.color = colors['Blue']['200']
+                screen_calibration.ids.lb_comm.text = 'PLC Terhubung'
+                screen_add_data.ids.lb_comm.color = colors['Blue']['200']
+                screen_add_data.ids.lb_comm.text = 'PLC Terhubung'
+                screen_add_queue.ids.lb_comm.color = colors['Blue']['200']
+                screen_add_queue.ids.lb_comm.text = 'PLC Terhubung'
+
                 screen_load_meter.ids.lb_comm.color = colors['Blue']['200']
                 screen_load_meter.ids.lb_comm.text = 'PLC Terhubung'
                 screen_brake_meter.ids.lb_comm.color = colors['Blue']['200']
@@ -566,12 +568,23 @@ class ScreenMain(MDScreen):
                 screen_calibration.ids.lb_brake_l_val.text = str(dt_brake_l_val)
                 screen_calibration.ids.lb_brake_r_val.text = str(dt_brake_r_val)
 
-            self.ids.bt_logout.disabled = False if dt_user != '' else True
+            self.ids.bt_calibrate.disabled = False if dt_user != '' else True
+            self.ids.bt_add_data.disabled = False if dt_user != '' else True
             self.ids.bt_add_queue.disabled = False if dt_user != '' else True
+            self.ids.bt_logout.disabled = False if dt_user != '' else True
 
-            self.ids.lb_operator.text = f'Login Sebagai: {dt_user}' if dt_user != '' else 'Silahkan Login'
-            screen_home.ids.lb_operator.text = f'Login Sebagai: {dt_user}' if dt_user != '' else 'Silahkan Login'
-            screen_login.ids.lb_operator.text = f'Login Sebagai: {dt_user}' if dt_user != '' else 'Silahkan Login'
+            self.ids.lb_operator.text = f'Login Sebagai: \n{dt_user}' if dt_user != '' else 'Silahkan Login'
+            screen_home.ids.lb_operator.text = f'Login Sebagai: \n{dt_user}' if dt_user != '' else 'Silahkan Login'
+            screen_login.ids.lb_operator.text = f'Login Sebagai: \n{dt_user}' if dt_user != '' else 'Silahkan Login'
+            screen_menu.ids.lb_operator.text = f'Login Sebagai: \n{dt_user}' if dt_user != '' else 'Silahkan Login'
+            screen_calibration.ids.lb_operator.text = f'Login Sebagai: \n{dt_user}' if dt_user != '' else 'Silahkan Login'
+            screen_add_data.ids.lb_operator.text = f'Login Sebagai: \n{dt_user}' if dt_user != '' else 'Silahkan Login'
+            screen_add_queue.ids.lb_operator.text = f'Login Sebagai: \n{dt_user}' if dt_user != '' else 'Silahkan Login'
+            
+            screen_load_meter.ids.lb_operator.text = f'Login Sebagai: \n{dt_user}' if dt_user != '' else 'Silahkan Login'
+            screen_brake_meter.ids.lb_operator.text = f'Login Sebagai: \n{dt_user}' if dt_user != '' else 'Silahkan Login'
+            screen_handbrake_meter.ids.lb_operator.text = f'Login Sebagai: \n{dt_user}' if dt_user != '' else 'Silahkan Login'
+            screen_resume.ids.lb_operator.text = f'Login Sebagai: \n{dt_user}' if dt_user != '' else 'Silahkan Login'
 
             if dt_user != '':
                 self.ids.img_user.source = f'https://{FTP_HOST}/sim_pkb/foto_user/{dt_foto_user}'
@@ -596,7 +609,7 @@ class ScreenMain(MDScreen):
             MODBUS_CLIENT.close()
             
         except Exception as e:
-            toast_msg = f'Gagal Memperbaharui Koneksi: {e}'
+            toast_msg = f'Gagal Memperbaharui Koneksi'
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")  
             flag_conn_stat = False
@@ -607,13 +620,12 @@ class ScreenMain(MDScreen):
         return val
 
     def regular_get_data(self, dt):
-        global flag_play
-        global dt_no_antrian
         global count_starting, count_get_data
-        global mydb
-        global db_load_left_value, db_load_right_value, db_load_total_value
-        global db_brake_left_value, db_brake_right_value, db_brake_total_value, db_brake_efficiency_value, db_brake_difference_value
-        global db_handbrake_left_value, db_handbrake_right_value, db_handbrake_total_value, db_handbrake_efficiency_value, db_handbrake_difference_value
+        global flag_play, flag_conn_stat, flag_motor_brake
+        global dt_load_flag, dt_brake_flag, dt_handbrake_flag
+        global db_load_left_value, db_load_right_value, db_load_total_value, db_load_flag
+        global db_brake_left_value, db_brake_right_value, db_brake_total_value, db_brake_difference_value, db_brake_flag
+        global db_handbrake_left_value, db_handbrake_right_value, db_handbrake_total_value, db_handbrake_difference_value, db_handbrake_flag
         global dt_load_total_value, dt_brake_total_value, dt_brake_efficiency_value, dt_brake_difference_value, dt_handbrake_total_value, dt_handbrake_efficiency_value, dt_handbrake_difference_value
         global dt_test_number
 
@@ -627,14 +639,6 @@ class ScreenMain(MDScreen):
             elif(count_get_data <= 0):
                 flag_play = False
                 Clock.unschedule(self.regular_get_data)
-
-            # Simulated data 
-            # db_load_left_value[dt_test_number] = np.round(np.random.randint(0, 10000) / 10, 2)  
-            # db_load_right_value[dt_test_number] = np.round(np.random.randint(0, 10000) / 10, 2)
-            # db_brake_left_value[dt_test_number] = np.round(np.random.randint(0, 10000) / 10, 2)
-            # db_brake_right_value[dt_test_number] = np.round(np.random.randint(0, 10000) / 10, 2)
-            # db_handbrake_left_value[dt_test_number] = np.round(np.random.randint(0, 10000) / 10, 2)
-            # db_handbrake_right_value[dt_test_number] = np.round(np.random.randint(0, 10000) / 10, 2)
             
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
@@ -644,102 +648,231 @@ class ScreenMain(MDScreen):
                 brake_r_registers = MODBUS_CLIENT.read_holding_registers(REGISTER_DATA_BRAKE_R, count=1, slave=1) #V1430
                 MODBUS_CLIENT.close()
 
+            if self.screen_manager.current == 'screen_load_meter':
                 db_load_left_value[dt_test_number] = int(self.unsigned_to_signed(load_l_registers.registers[0]))
                 db_load_right_value[dt_test_number] = int(self.unsigned_to_signed(load_r_registers.registers[0]))
-                db_brake_left_value[dt_test_number] = int(self.unsigned_to_signed(brake_l_registers.registers[0]))
-                db_brake_right_value[dt_test_number] = int(self.unsigned_to_signed(brake_r_registers.registers[0]))
-                db_handbrake_left_value[dt_test_number] = int(self.unsigned_to_signed(brake_l_registers.registers[0]))
-                db_handbrake_right_value[dt_test_number] = int(self.unsigned_to_signed(brake_r_registers.registers[0]))
 
                 db_load_left_value[dt_test_number] = db_load_left_value[dt_test_number] if db_load_left_value[dt_test_number] >= 0 and db_load_left_value[dt_test_number] <= MAX_LOAD_DATA else 0
                 db_load_right_value[dt_test_number] = db_load_right_value[dt_test_number] if db_load_right_value[dt_test_number] >= 0 and db_load_right_value[dt_test_number] <= MAX_LOAD_DATA else 0
+
+                db_load_total_value[dt_test_number] = int(db_load_left_value[dt_test_number] + db_load_right_value[dt_test_number])
+                dt_load_total_value = int(np.sum(db_load_total_value))
+
+                # Load test result status
+                if(np.abs(int(np.sum(db_load_left_value)) - int(np.sum(db_load_right_value))) <= ((STANDARD_MAX_DIFFERENCE_AXLE_LOAD)/100) * int(dt_load_total_value)):
+                    db_load_flag[dt_test_number] = 2
+                    dt_load_flag = 2
+                else:
+                    db_load_flag[dt_test_number] = 1
+                    dt_load_flag = 1
+
+                Logger.info(f"{self.screen_manager.current}: DB Load Left = {db_load_left_value}, DB Load Right = {db_load_right_value}, DB Load Total = {db_load_total_value}")
+                Logger.info(f"{self.screen_manager.current}: DB Load Left = {db_load_left_value[dt_test_number]}, DB Load Right = {db_load_right_value[dt_test_number]}, DB Load Total = {db_load_total_value[dt_test_number]}")
+                Logger.info(f"{self.screen_manager.current}: DB Load Flag = {db_load_flag}")
+
+            if self.screen_manager.current == 'screen_brake_meter':
+                db_brake_left_value[dt_test_number] = int(self.unsigned_to_signed(brake_l_registers.registers[0]))
+                db_brake_right_value[dt_test_number] = int(self.unsigned_to_signed(brake_r_registers.registers[0]))
+
                 db_brake_left_value[dt_test_number] = db_brake_left_value[dt_test_number] if db_brake_left_value[dt_test_number] >= 0 and db_brake_left_value[dt_test_number] <= MAX_BRAKE_DATA else 0
                 db_brake_right_value[dt_test_number] = db_brake_right_value[dt_test_number] if db_brake_right_value[dt_test_number] >= 0 and db_brake_right_value[dt_test_number] <= MAX_BRAKE_DATA else 0
+
+                # Initialize total for brake test
+                db_brake_total_value[dt_test_number] = int(db_brake_left_value[dt_test_number] + db_brake_right_value[dt_test_number])
+
+                # Efficiency: (total brake / total load) * 100
+                if dt_load_total_value > 0:
+                    dt_brake_efficiency_value = np.round(
+                        (db_brake_total_value[dt_test_number] / dt_load_total_value) * 100, 1
+                    )
+                else:
+                    dt_brake_efficiency_value = 0  # or np.nan, or None
+                    Logger.warning(f"{self.screen_manager.current}: dt_load_total_value is zero. Cannot calculate efficiency.")
+
+                # Brake difference: |left - right| / load * 100
+                if db_load_total_value[dt_test_number] > 0:
+                    db_brake_difference_value[dt_test_number] = np.round(
+                        (np.abs(db_brake_left_value[dt_test_number] - db_brake_right_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100, 1
+                    )
+                else:
+                    db_brake_difference_value[dt_test_number] = 0
+                    Logger.warning(f"{self.screen_manager.current}: db_load_total_value[{dt_test_number}] is zero. Cannot calculate brake difference.")
+
+                # Aggregate brake totals
+                dt_brake_total_value = int(np.sum(db_brake_total_value))
+
+                # Overall efficiency
+                if dt_load_total_value != 0:
+                    dt_brake_efficiency_value = np.round((dt_brake_total_value / dt_load_total_value) * 100, 1)
+                else:
+                    dt_brake_efficiency_value = 0.0
+                    Logger.warning(f"{self.screen_manager.current}: dt_load_total_value is zero. Cannot calculate total brake efficiency.")
+
+                # Overall difference
+                dt_brake_difference_value = int(np.sum(db_brake_difference_value))
+
+                # Brake test result status
+                if(db_brake_difference_value[dt_test_number] <= STANDARD_MAX_DIFFERENCE_BRAKE):
+                    db_brake_flag[dt_test_number] = 2
+                    dt_brake_flag = 2
+                else:
+                    db_brake_flag[dt_test_number] = 1
+                    dt_brake_flag = 1
+
+                # Logging
+                Logger.info(f"{self.screen_manager.current}: DB Brake Left = {db_brake_left_value}, "
+                            f"DB Brake Right = {db_brake_right_value}, "
+                            f"DB Brake Total = {db_brake_total_value}, "
+                            f"DB Brake Difference = {db_brake_difference_value}")
+
+                Logger.info(f"{self.screen_manager.current}: For test {dt_test_number}: "
+                            f"DB Brake Left = {db_brake_left_value[dt_test_number]}, "
+                            f"DB Brake Right = {db_brake_right_value[dt_test_number]}, "
+                            f"DB Brake Total = {db_brake_total_value[dt_test_number]}, "
+                            f"DB Brake Difference = {db_brake_difference_value[dt_test_number]}")
+                Logger.info(f"{self.screen_manager.current}: DB Brake Flag = {db_brake_flag}")
+
+            if self.screen_manager.current == 'screen_handbrake_meter':
+                db_handbrake_left_value[dt_test_number] = int(self.unsigned_to_signed(brake_l_registers.registers[0]))
+                db_handbrake_right_value[dt_test_number] = int(self.unsigned_to_signed(brake_r_registers.registers[0]))
+
                 db_handbrake_left_value[dt_test_number] = db_handbrake_left_value[dt_test_number] if db_handbrake_left_value[dt_test_number] >= 0 and db_handbrake_left_value[dt_test_number] <= MAX_BRAKE_DATA else 0
                 db_handbrake_right_value[dt_test_number] = db_handbrake_right_value[dt_test_number] if db_handbrake_right_value[dt_test_number] >= 0 and db_handbrake_right_value[dt_test_number] <= MAX_BRAKE_DATA else 0
 
-            if self.screen_manager.current == 'screen_load_meter':
-                # if(dt_test_number == 0 and db_load_right_value[dt_test_number] >= 60):
-                #     db_load_right_value[dt_test_number] = db_load_right_value[dt_test_number] - 60.0
-                db_load_total_value[dt_test_number] = int(db_load_left_value[dt_test_number] + db_load_right_value[dt_test_number])
-                dt_load_total_value = int(np.sum(db_load_total_value))
-                Logger.info(f"{self.screen_manager.current}: DB Load Left = {db_load_left_value}, DB Load Right = {db_load_right_value}, DB Load Total = {db_load_total_value}")
-                Logger.info(f"{self.screen_manager.current}: DB Load Left = {db_load_left_value[dt_test_number]}, DB Load Right = {db_load_right_value[dt_test_number]}, DB Load Total = {db_load_total_value[dt_test_number]}")
-
-            if self.screen_manager.current == 'screen_brake_meter':
-                db_brake_total_value[dt_test_number] = int(db_brake_left_value[dt_test_number] + db_brake_right_value[dt_test_number])
-                db_brake_efficiency_value[dt_test_number] = np.round((db_brake_total_value[dt_test_number] / dt_load_total_value) * 100, 1)
-                db_brake_difference_value[dt_test_number] = np.round((np.abs(db_brake_left_value[dt_test_number] - db_brake_right_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100, 1)
-                dt_brake_total_value = int(np.sum(db_brake_total_value))
-                dt_brake_efficiency_value = np.round((dt_brake_total_value / dt_load_total_value) * 100, 1)
-                dt_brake_difference_value = int(np.sum(db_brake_difference_value))
-                Logger.info(f"{self.screen_manager.current}: DB Brake Left = {db_brake_left_value}, DB Brake Right = {db_brake_right_value}, DB Brake Total = {db_brake_total_value}, DB Brake Efficiency = {db_brake_efficiency_value}, DB Brake Difference = {db_brake_difference_value}")
-                Logger.info(f"{self.screen_manager.current}: DB Brake Left = {db_brake_left_value[dt_test_number]}, DB Brake Right = {db_brake_right_value[dt_test_number]}, DB Brake Total = {db_brake_total_value[dt_test_number]}, DB Brake Efficiency = {db_brake_efficiency_value[dt_test_number]}, DB Brake Difference = {db_brake_difference_value[dt_test_number]}")
-
-            if self.screen_manager.current == 'screen_handbrake_meter':
+                # Initialize total for handbrake test
                 db_handbrake_total_value[dt_test_number] = int(db_handbrake_left_value[dt_test_number] + db_handbrake_right_value[dt_test_number])
-                db_handbrake_efficiency_value[dt_test_number] = np.round((db_brake_total_value[dt_test_number] / int(dt_jbb)) * 100, 1)
-                db_handbrake_difference_value[dt_test_number] = np.round((np.abs(db_handbrake_left_value[dt_test_number] - db_handbrake_right_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100, 1)
+
+                # Handbrake efficiency: use handbrake total and dt_jbb (assuming jbb = axle load or test standard)
+                if dt_jbb > 0:
+                    dt_handbrake_efficiency_value = np.round(
+                        (db_handbrake_total_value[dt_test_number] / float(dt_jbb)) * 100, 1
+                    )
+                else:
+                    dt_handbrake_efficiency_value = 0
+                    Logger.warning(f"{self.screen_manager.current}: dt_jbb is invalid ({dt_jbb}). Setting efficiency to 0.")
+
+                # Handbrake difference: |left - right| / load * 100
+                if db_load_total_value[dt_test_number] > 0:
+                    db_handbrake_difference_value[dt_test_number] = np.round(
+                        (np.abs(db_handbrake_left_value[dt_test_number] - db_handbrake_right_value[dt_test_number])
+                        / db_load_total_value[dt_test_number]) * 100, 1
+                    )
+                else:
+                    db_handbrake_difference_value[dt_test_number] = 0
+                    Logger.warning(f"{self.screen_manager.current}: db_load_total_value[{dt_test_number}] is zero. Setting difference to 0.")
+
+                # Aggregate handbrake totals
                 dt_handbrake_total_value = int(np.sum(db_handbrake_total_value))
-                dt_handbrake_efficiency_value = np.round((dt_handbrake_total_value / dt_load_total_value) * 100, 1)
+
+                # Overall handbrake efficiency
+                if dt_load_total_value != 0:
+                    dt_handbrake_efficiency_value = np.round(
+                        (dt_handbrake_total_value / dt_load_total_value) * 100, 1
+                    )
+                else:
+                    dt_handbrake_efficiency_value = 0
+                    Logger.warning(f"{self.screen_manager.current}: dt_load_total_value is zero. Overall efficiency set to 0.")
+
+                # Sum of percentage differences? Be careful — summing % can be misleading
                 dt_handbrake_difference_value = int(np.sum(db_handbrake_difference_value))
-                Logger.info(f"{self.screen_manager.current}: DB Handbrake Left = {db_handbrake_left_value}, DB Handbrake Right = {db_handbrake_right_value}, DB Handbrake Total = {db_handbrake_total_value}, DB Handbrake Efficiency = {db_handbrake_efficiency_value}, DB Handbrake Difference = {db_handbrake_difference_value}")
-                Logger.info(f"{self.screen_manager.current}: DB Handbrake Left = {db_handbrake_left_value[dt_test_number]}, DB Handbrake Right = {db_handbrake_right_value[dt_test_number]}, DB Handbrake Total = {db_handbrake_total_value[dt_test_number]}, DB Handbrake Efficiency = {db_handbrake_efficiency_value[dt_test_number]}, DB Handbrake Difference = {db_handbrake_difference_value[dt_test_number]}")
+
+                # HandBrake test result status
+                if(dt_handbrake_efficiency_value >= STANDARD_MIN_EFFICIENCY_HANDBRAKE):
+                    db_handbrake_flag[dt_test_number] = 2
+                    dt_handbrake_flag = 2
+                else:
+                    db_handbrake_flag[dt_test_number] = 1
+                    dt_handbrake_flag = 1
+
+                # Logging
+                Logger.info(f"{self.screen_manager.current}: DB Handbrake Left = {db_handbrake_left_value}, "
+                            f"DB Handbrake Right = {db_handbrake_right_value}, "
+                            f"DB Handbrake Total = {db_handbrake_total_value}, "
+                            f"DB Handbrake Difference = {db_handbrake_difference_value}")
+
+                Logger.info(f"{self.screen_manager.current}: Test {dt_test_number} - "
+                            f"Handbrake Left = {db_handbrake_left_value[dt_test_number]}, "
+                            f"Right = {db_handbrake_right_value[dt_test_number]}, "
+                            f"Total = {db_handbrake_total_value[dt_test_number]}, "
+                            f"Difference = {db_handbrake_difference_value[dt_test_number]}%")
+                Logger.info(f"{self.screen_manager.current}: DB Handbrake Flag = {db_handbrake_flag}")
 
         except Exception as e:
-            toast_msg = f'Gagal Mengambil Data: {e}'
-            Logger.error(f"{self.name}: {toast_msg}, {e}")  
+            toast_msg = f'Gagal Mengambil Data dari PLC'
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")
 
     def exec_reload_database(self):
         global mydb
         try:
             mydb = mysql.connector.connect(host = DB_HOST,user = DB_USER,password = DB_PASSWORD,database = DB_NAME)
         except Exception as e:
-            toast_msg = f'Gagal Menginisiasi Database: {e}'
+            toast_msg = f'Gagal Menginisiasi Database'
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
     def exec_reload_table(self):
         global mydb, db_antrian
-        global dt_dash_pendaftaran, dt_dash_belum_uji, dt_dash_sudah_uji
+        global db_merk, db_bahan_bakar, db_warna
+        global dt_dash_antri, dt_dash_belum_uji, dt_dash_sudah_uji
+        global window_size_x, window_size_y
 
         try:
             tb_antrian = mydb.cursor()
-            today = str(time.strftime("%Y-%M-%d", time.localtime()))
+            today = str(time.strftime("%Y-%m-%d", time.localtime()))
             delete_query = f"DELETE FROM {TB_DATA} WHERE DATE(tgl_daftar) != %s"
             tb_antrian.execute(delete_query, (today,))
             mydb.commit()
-            toast_msg = f'Success Delete Expired Database'
+            toast_msg = f'Berhasil menghapus data kemarin'
         except Exception as e:
-            toast_msg = f'Error Delete Expired Database: {e}'
+            toast_msg = f'Gagal menghapus data kemarin'
+            toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
         try:
+            tb_merk = mydb.cursor()
+            tb_merk.execute(f"SELECT ID, DESCRIPTION FROM {TB_MERK}")
+            result_tb_merk = tb_merk.fetchall()
+            mydb.commit()
+            db_merk = np.array(result_tb_merk)
+
+            tb_bahan_bakar = mydb.cursor()
+            tb_bahan_bakar.execute(f"SELECT ID, DESCRIPTION FROM {TB_BAHAN_BAKAR}")
+            result_tb_bahan_bakar = tb_bahan_bakar.fetchall()
+            mydb.commit()
+            db_bahan_bakar = np.array(result_tb_bahan_bakar)
+
+            tb_warna = mydb.cursor()
+            tb_warna.execute(f"SELECT id_warna, nama FROM {TB_WARNA}")
+            result_tb_warna = tb_warna.fetchall()
+            mydb.commit()
+            db_warna = np.array(result_tb_warna)
+
             tb_antrian = mydb.cursor()
-            tb_antrian.execute(f"SELECT noantrian, nopol, nouji, load_flag, brake_flag, handbrake_flag, user, merk, type, idjeniskendaraan, jbb, berat_kosong, warna FROM {TB_DATA}")
+            tb_antrian.execute(f"SELECT noantrian, nopol, nouji, statusuji, merk, type, idjeniskendaraan, jbb, berat_kosong, bahan_bakar, warna, load_flag, brake_flag, handbrake_flag FROM {TB_DATA}")
             result_tb_antrian = tb_antrian.fetchall()
             mydb.commit()
-            db_antrian = np.array(result_tb_antrian).T
-            db_pendaftaran = np.array(result_tb_antrian)
-            dt_dash_pendaftaran = db_pendaftaran[:,3].size
-            dt_dash_belum_uji = np.where(db_pendaftaran[:,3] == 0)[0].size
-            dt_dash_sudah_uji = np.where(db_pendaftaran[:,3] == 1)[0].size
-
-            # tb_merk = mydb.cursor()
-            # tb_merk.execute(f"SELECT ID, DESCRIPTION FROM {TB_MERK}")
-            # result_tb_merk = tb_merk.fetchall()
-            # mydb.commit()
-            # db_merk = np.array(result_tb_merk)
+            if result_tb_antrian is None:
+                toast('Data Tabel cekident kosong')
+                dt_dash_antri = dt_dash_belum_uji = dt_dash_sudah_uji = 0
+            else:
+                db_antrian = np.array(result_tb_antrian).T
+                db_pendaftaran = np.array(result_tb_antrian)
+                dt_dash_antri = db_pendaftaran[:,11].size
+                dt_dash_belum_uji = np.where(db_pendaftaran[:,11] == 0)[0].size
+                dt_dash_sudah_uji = np.where(db_pendaftaran[:,11] == 1)[0].size + np.where(db_pendaftaran[:,11] == 2)[0].size
         except Exception as e:
-            toast_msg = f'Error Fetch Database: {e}'
+            toast_msg = f'Gagal mengambil data antrian harian'
+            toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
         try:            
             layout_list = self.ids.layout_list
             layout_list.clear_widgets(children=None)
         except Exception as e:
-            toast_msg = f'Error Remove Widget: {e}'
-            Logger.error(f"{self.name}: {toast_msg}, {e}")  
+            toast_msg = f'Gagal menghapus widget tabel'
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")   
         
         try:           
             layout_list = self.ids.layout_list
@@ -747,78 +880,62 @@ class ScreenMain(MDScreen):
                 layout_list.add_widget(
                     MDCard(
                         MDLabel(text=f"{db_antrian[0, i]}", size_hint_x= 0.05),
-                        MDLabel(text=f"{db_antrian[1, i]}", size_hint_x= 0.08),
+                        MDLabel(text=f"{db_antrian[1, i]}", size_hint_x= 0.07),
                         MDLabel(text=f"{db_antrian[2, i]}", size_hint_x= 0.08),
-                        MDLabel(text='Lulus' if (int(db_antrian[3, i]) == 2) else 'Tidak Lulus' if (int(db_antrian[3, i]) == 1) else 'Belum Tes', size_hint_x= 0.07),
-                        MDLabel(text='Lulus' if (int(db_antrian[4, i]) == 2) else 'Tidak Lulus' if (int(db_antrian[4, i]) == 1) else 'Belum Tes', size_hint_x= 0.07),
-                        MDLabel(text='Lulus' if (int(db_antrian[5, i]) == 2) else 'Tidak Lulus' if (int(db_antrian[5, i]) == 1) else 'Belum Tes', size_hint_x= 0.07),
-                        MDLabel(text=f"{db_antrian[6, i]}", size_hint_x= 0.08),
-                        # MDLabel(text=f"{db_merk[np.where(db_merk == db_antrian[7, i])[0][0],1]}", size_hint_x= 0.08),
-                        MDLabel(text=f"{db_antrian[7, i]}", size_hint_x= 0.08),
+                        MDLabel(text='Berkala' if db_antrian[3, i] == 'B' else 'Uji Ulang' if (db_antrian[3, i]) == 'U' else 'Baru' if (db_antrian[3, i]) == 'BR' else 'Numpang Uji' if (db_antrian[3, i]) == 'NB' else 'Mutasi', size_hint_x= 0.07),
+                        MDLabel(text='-' if db_antrian[4, i] == None else f"{db_merk[np.where(db_merk == db_antrian[4, i])[0][0],1]}" , size_hint_x= 0.08),
+                        MDLabel(text=f"{db_antrian[5, i]}", size_hint_x= 0.07),
+                        MDLabel(text=f"{db_antrian[6, i]}", size_hint_x= 0.15),
+                        MDLabel(text=f"{db_antrian[7, i]}", size_hint_x= 0.05),
                         MDLabel(text=f"{db_antrian[8, i]}", size_hint_x= 0.05),
-                        MDLabel(text=f"{db_antrian[9, i]}", size_hint_x= 0.13),
-                        MDLabel(text=f"{db_antrian[10, i]}", size_hint_x= 0.05),
-                        MDLabel(text=f"{db_antrian[11, i]}", size_hint_x= 0.08),
-                        MDLabel(text=f"{db_antrian[12, i]}", size_hint_x= 0.08),
+                        MDLabel(text='-' if db_antrian[9, i] == None else f"{db_bahan_bakar[np.where(db_bahan_bakar == db_antrian[9, i])[0][0],1]}" , size_hint_x= 0.08),
+                        MDLabel(text='-' if db_antrian[10, i] == None else f"{db_warna[np.where(db_warna == db_antrian[10, i])[0][0],1]}" , size_hint_x= 0.11),
+                        MDLabel(text='Lulus' if (int(db_antrian[11, i]) == 2) else 'Tidak Lulus' if (int(db_antrian[11, i]) == 1) else 'Belum Diuji', size_hint_x= 0.08),
+                        MDLabel(text='Lulus' if (int(db_antrian[12, i]) == 2) else 'Tidak Lulus' if (int(db_antrian[12, i]) == 1) else 'Belum Diuji', size_hint_x= 0.07),
+                        MDLabel(text='Lulus' if (int(db_antrian[13, i]) == 2) else 'Tidak Lulus' if (int(db_antrian[13, i]) == 1) else 'Belum Diuji', size_hint_x= 0.07),
 
                         ripple_behavior = True,
                         on_press = self.on_antrian_row_press,
                         padding = 20,
                         id=f"card_antrian{i}",
                         size_hint_y=None,
-                        height="60dp",
+                        height=dp(int(60 * 800 / window_size_y)),
                         )
                     )
         except Exception as e:
-            toast_msg = f'Error Reload Table: {e}'
-            Logger.error(f"{self.name}: {toast_msg}, {e}")
+            toast_msg = f'Gagal reload tabel'
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")   
 
     def on_antrian_row_press(self, instance):
-        global dt_no_antrian, dt_no_pol, dt_no_uji, dt_nama, dt_load_flag, dt_brake_flag, dt_handbrake_flag
-        global dt_merk, dt_type, dt_jenis_kendaraan, dt_jbb, dt_berat_kosong, dt_warna
-        global db_antrian
+        global mydb, db_antrian, db_merk, db_bahan_bakar, db_warna
+        global dt_no_antri, dt_no_pol, dt_no_uji, dt_sts_uji
+        global dt_merk, dt_type, dt_jns_kend, dt_jbb, dt_brt_ksg, dt_bhn_bkr, dt_warna, dt_load_flag, dt_brake_flag, dt_handbrake_flag
+        global dt_id_user, dt_foto_user
 
         try:
             row = int(str(instance.id).replace("card_antrian",""))
-            dt_no_antrian           = f"{db_antrian[0, row]}"
-            dt_no_pol               = f"{db_antrian[1, row]}"
-            dt_no_uji               = f"{db_antrian[2, row]}"
-            dt_load_flag            = 'Lulus' if (int(db_antrian[3, row]) == 2) else 'Tidak Lulus' if (int(db_antrian[3, row]) == 1) else 'Belum Tes'
-            dt_brake_flag           = 'Lulus' if (int(db_antrian[4, row]) == 2) else 'Tidak Lulus' if (int(db_antrian[4, row]) == 1) else 'Belum Tes'
-            dt_handbrake_flag       = 'Lulus' if (int(db_antrian[5, row]) == 2) else 'Tidak Lulus' if (int(db_antrian[5, row]) == 1) else 'Belum Tes'
-            dt_nama                 = f"{db_antrian[6, row]}"
-            # dt_merk                 = f"{db_merk[np.where(db_merk == db_antrian[7, row])[0][0],1]}"
-            dt_merk                 = f"{db_antrian[7, row]}"
-            dt_type                 = f"{db_antrian[8, row]}"
-            dt_jenis_kendaraan      = f"{db_antrian[9, row]}"
-            dt_jbb                  = f"{db_antrian[10, row]}"
-            dt_berat_kosong         = f"{db_antrian[11, row]}"
-            dt_warna                = f"{db_antrian[12, row]}"
-                        
-            self.exec_start()
+            dt_no_antri             = db_antrian[0, row]
+            dt_no_pol               = db_antrian[1, row]
+            dt_no_uji               = db_antrian[2, row]
+            dt_sts_uji              = db_antrian[3, row]
+            dt_merk                 = db_antrian[4, row]
+            dt_type                 = db_antrian[5, row]
+            dt_jns_kend             = db_antrian[6, row]
+            dt_jbb                  = db_antrian[7, row]
+            dt_brt_ksg              = db_antrian[8, row]
+            dt_bhn_bkr              = db_antrian[9, row]
+            dt_warna                = db_antrian[10, row]
+            dt_load_flag            = db_antrian[11, row]
+            dt_brake_flag           = db_antrian[12, row]
+            dt_handbrake_flag       = db_antrian[13, row]
+
+            self.exec_navigate_menu()
 
         except Exception as e:
-            toast_msg = f'Error Execute Command from Table Row: {e}'
+            toast_msg = f'Gagal mengeksekusi perintah dari baris tabel'
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")  
-            
-    def exec_start(self):
-        global dt_load_flag, dt_brake_flag, dt_handbrake_flag, dt_no_antrian, dt_user
-        global flag_play
-        if (dt_user != ''):
-            if (dt_load_flag == 'Belum Tes' or dt_brake_flag == 'Belum Tes' or dt_handbrake_flag == 'Belum Tes'):
-                self.open_screen_menu()
-            else:
-                toast_msg = f'No. Antrian {dt_no_antrian} Sudah Tes'
-                toast(toast_msg)
-                Logger.info(f"{self.name}: {toast_msg}")
-        else:
-            toast_msg = f'Silahkan Login Untuk Melakukan Pengujian'
-            toast(toast_msg)
-            Logger.info(f"{self.name}: {toast_msg}")      
-
-    def open_screen_menu(self):
-        self.screen_manager.current = 'screen_menu'
 
     def exec_logout(self):
         global dt_user
@@ -850,6 +967,20 @@ class ScreenMain(MDScreen):
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
+    def exec_navigate_menu(self):
+        global dt_load_flag, dt_brake_flag, dt_handbrake_flag, dt_no_antri, dt_user
+
+        if (dt_user != ''):
+            if (int(dt_load_flag) == 0 or int(dt_brake_flag) == 0 or int(dt_handbrake_flag) == 0):
+                self.screen_manager.current = 'screen_menu'
+            else:
+                toast_msg = f'No. Antrian {dt_no_antri} Sudah Tes'
+                toast(toast_msg)
+                Logger.info(f"{self.name}: {toast_msg}")
+        else:
+            toast_msg = f'Silahkan Login Untuk Melakukan Pengujian'
+            toast(toast_msg)
+            Logger.info(f"{self.name}: {toast_msg}")      
 
     def exec_navigate_calibration(self):
         global dt_user
@@ -858,6 +989,16 @@ class ScreenMain(MDScreen):
 
         except Exception as e:
             toast_msg = f'Error Navigate to Calibration Screen: {e}'
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
+
+    def exec_navigate_add_data(self):
+        global dt_user
+        try:
+            self.screen_manager.current = 'screen_add_data'
+
+        except Exception as e:
+            toast_msg = f'Error Navigate to Add Data Screen: {e}'
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
@@ -1113,7 +1254,6 @@ class ScreenCalibration(MDScreen):
             toast_msg = f"error send exec_calibrate_load_r_value2 data to PLC Slave"
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")  
-
 
     def rel_calibrate_load_r_value2(self):
         global flag_conn_stat
@@ -1402,18 +1542,76 @@ class ScreenCalibration(MDScreen):
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")
 
+    def exec_motor_brake_on(self):
+        global flag_conn_stat
+        global flag_motor_brake
+        
+        flag_motor_brake = True
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_coil(3075, True, slave=1) #M3
+                MODBUS_CLIENT.close()
+        except Exception as e:
+            toast_msg = f"error send exec_motor_brake_on data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
+
+    def rel_motor_brake_on(self):
+        global flag_conn_stat
+        global flag_motor_brake
+
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_coil(3075, False, slave=1) #M3
+                MODBUS_CLIENT.close()
+        except Exception as e:
+            toast_msg = f"error send rel_motor_brake_on data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
+
+    def exec_motor_brake_off(self):
+        global flag_conn_stat
+        global flag_motor_brake
+
+        flag_motor_brake = False
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_coil(3076, True, slave=1) #M4
+                MODBUS_CLIENT.close()
+        except Exception as e:
+            toast_msg = f"error send exec_motor_brake_off data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
+
+    def rel_motor_brake_off(self):
+        global flag_conn_stat
+        global flag_motor_brake
+
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_coil(3076, False, slave=1) #M4
+                MODBUS_CLIENT.close()
+        except Exception as e:
+            toast_msg = f"error send rel_motor_brake_on data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
+
     def exec_navigate_main(self):
         try:
             self.screen_manager.current = 'screen_main'
 
         except Exception as e:
-            toast_msg = f'Error Navigate to Main Screen: {e}'
+            toast_msg = f'Terjadi kesalahan saat berpindah ke halaman Utama'
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
-class ScreenAddQueue(MDScreen):
+class ScreenAddData(MDScreen):
     def __init__(self, **kwargs):
-        super(ScreenAddQueue, self).__init__(**kwargs)
+        super(ScreenAddData, self).__init__(**kwargs)
         Clock.schedule_once(self.delayed_init, 1)
     
     def delayed_init(self, dt):
@@ -1442,35 +1640,258 @@ class ScreenAddQueue(MDScreen):
             Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
     def exec_register(self):
+        global mydb, db_users, db_merk, db_bahan_bakar, db_warna
+        global dt_id_user, dt_user, dt_foto_user
+        global dt_dash_antri
+        global dt_temp_no_uji, dt_temp_no_uji_new, dt_temp_no_wilayah, dt_temp_no_kendaraan, dt_temp_no_plat, dt_temp_no_pol
+        global dt_temp_nama, dt_temp_no_hp, dt_temp_alamat, dt_temp_id_izin, dt_temp_wilayah, dt_temp_provinsi, dt_temp_kabupaten_kota, dt_temp_kecamatan
+        global dt_temp_id_merk, dt_temp_id_subjenis, dt_temp_type, dt_temp_tahun_buat, dt_temp_silinder, dt_temp_warna, dt_temp_chasis, dt_temp_mesin, dt_temp_warna_plat
+        global dt_temp_bhn_bkr, dt_temp_jbb, dt_temp_brt_ksg, dt_temp_daya_motor, dt_temp_tgl_uji_terakhir, dt_temp_tgl_uji_habis, dt_temp_status_uji, dt_temp_status_penerbitan, dt_temp_jenis_kendaraan, dt_temp_kode_jenis_kendaraan, dt_temp_kode_wilayah
+
+        dt_tgl_baru_uji = str(time.strftime("%Y/%m/%d %H:%M:%S", time.localtime()))
+
         try:
-            # Get the last noantrian
             mycursor = mydb.cursor()
-            mycursor.execute(f"SELECT MAX(noantrian) FROM {TB_DATA}")
-            result = mycursor.fetchone()
-            last_noantrian = int(result[0]) if result[0] is not None else 0
-            noantrian = f"{last_noantrian + 1:04d}"
-
-            nopol = self.ids.tx_nopol.text
-            nouji = self.ids.tx_nouji.text
-            merk = self.ids.tx_merk.text
-            tipe = self.ids.tx_type.text
-            idjeniskendaraan = self.ids.tx_idjeniskendaraan.text
-            jbb = self.ids.tx_jbb.text
-            berat_kosong = self.ids.tx_berat_kosong.text
-            warna = self.ids.tx_warna.text
-
-            mycursor = mydb.cursor()
-            sql = f"INSERT INTO {TB_DATA} (noantrian, nopol, nouji, NEW_NOUJI, merk, type, idjeniskendaraan, jbb, berat_kosong, warna) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-            values = (noantrian, nopol, nouji, nouji, merk, tipe, idjeniskendaraan, jbb, berat_kosong, warna)
-            mycursor.execute(sql, values)
+            sql = f"INSERT INTO {TB_DATA_MASTER} (NOUJI, NEW_NOUJI, NOPOL, MERK_ID, TYPE, idjeniskendaraan, kd_jnskendaraan, WLY, SUBJENIS_ID, JBB, BERATKOSONG, BHN_BAKAR, WARNA_KEND, STATUSUJI, statuspenerbitan, PLAT, NOKDR, NOWIL, TGL_UJI_TERAKHIR) VALUES ('{dt_temp_no_uji}','{dt_temp_no_uji_new}','{dt_temp_no_pol}','{dt_temp_id_merk}','{dt_temp_type}','{dt_temp_jenis_kendaraan}','{dt_temp_kode_jenis_kendaraan}','{dt_temp_kode_wilayah}','{dt_temp_id_subjenis}','{dt_temp_jbb}','{dt_temp_brt_ksg}','{dt_temp_bhn_bkr}','{dt_temp_warna}','{dt_temp_status_uji}','{dt_temp_status_penerbitan}','{dt_temp_no_wilayah}','{dt_temp_no_kendaraan}','{dt_temp_no_plat}','{dt_tgl_baru_uji}')"
+            mycursor.execute(sql)
             mydb.commit()
 
             toast("Data berhasil didaftarkan")
             self.screen_manager.current = 'screen_main'
 
         except Exception as e:
-            toast_msg = f'Terjadi kesalahan saat mendaftar: {e}'
-            toast(f"Terjadi kesalahan saat mendaftar: {e}")
+            toast_msg = f'Terjadi kesalahan saat mendaftar'
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}") 
+
+class ScreenAddQueue(MDScreen):
+    def __init__(self, **kwargs):
+        super(ScreenAddQueue, self).__init__(**kwargs)
+        Clock.schedule_once(self.delayed_init, 1)
+    
+    def delayed_init(self, dt):
+        self.ids.lb_title.text = APP_TITLE
+        self.ids.lb_subtitle.text = APP_SUBTITLE
+        self.ids.img_pemkab.source = f'assets/images/{IMG_LOGO_PEMKAB}'
+        self.ids.img_dishub.source = f'assets/images/{IMG_LOGO_DISHUB}'
+        self.ids.lb_pemkab.text = LB_PEMKAB
+        self.ids.lb_dishub.text = LB_DISHUB
+        self.ids.lb_unit.text = LB_UNIT
+        self.ids.lb_unit_address.text = LB_UNIT_ADDRESS
+
+    def on_enter(self):
+        pass
+
+    def on_leave(self):
+        pass
+
+    def exec_cancel(self):
+        global dt_temp_no_uji, dt_temp_no_uji_new, dt_temp_no_wilayah, dt_temp_no_kendaraan, dt_temp_no_plat, dt_temp_no_pol
+        global dt_temp_nama, dt_temp_no_hp, dt_temp_alamat, dt_temp_id_izin, dt_temp_wilayah, dt_temp_provinsi, dt_temp_kabupaten_kota, dt_temp_kecamatan
+        global dt_temp_id_merk, dt_temp_id_subjenis, dt_temp_type, dt_temp_tahun_buat, dt_temp_silinder, dt_temp_warna, dt_temp_chasis, dt_temp_mesin, dt_temp_warna_plat
+        global dt_temp_bhn_bkr, dt_temp_jbb, dt_temp_daya_motor, dt_temp_tgl_uji_terakhir, dt_temp_tgl_uji_habis, dt_temp_status_uji, dt_temp_status_penerbitan, dt_temp_jenis_kendaraan, dt_temp_kode_jenis_kendaraan, dt_temp_kode_wilayah
+
+        try:
+            dt_temp_no_uji = dt_temp_no_uji_new = dt_temp_no_wilayah = dt_temp_no_kendaraan = dt_temp_no_plat = dt_temp_no_pol = ""
+            dt_temp_nama = dt_temp_no_hp = dt_temp_alamat = dt_temp_id_izin = dt_temp_wilayah = dt_temp_provinsi = dt_temp_kabupaten_kota = dt_temp_kecamatan = ""
+            dt_temp_id_merk = dt_temp_id_subjenis = dt_temp_type = dt_temp_tahun_buat = dt_temp_silinder = dt_temp_warna = dt_temp_chasis = dt_temp_mesin = dt_temp_warna_plat = ""
+            dt_temp_bhn_bkr = dt_temp_jbb = dt_temp_daya_motor = dt_temp_tgl_uji_terakhir = dt_temp_tgl_uji_habis = dt_temp_status_uji = dt_temp_status_penerbitan = dt_temp_jenis_kendaraan = dt_temp_kode_jenis_kendaraan = dt_temp_kode_wilayah = ""
+
+            self.ids.tx_nopol.text = "" 
+            self.ids.tx_nouji.text = "" 
+            self.ids.lb_temp_nama.text = self.ids.lb_temp_alamat.text = ""
+            self.ids.lb_temp_no_uji.text = self.ids.lb_temp_no_pol.text = self.ids.lb_temp_status_uji.text = self.ids.lb_temp_tgl_uji_terakhir.text = self.ids.lb_temp_tgl_uji_habis.text = ""
+            self.ids.lb_temp_merk.text = self.ids.lb_temp_type.text = self.ids.lb_temp_jenis_kendaraan.text = self.ids.lb_temp_warna.text = ""
+            self.ids.lb_temp_chasis.text = self.ids.lb_temp_mesin.text = self.ids.lb_temp_bahan_bakar.text = self.ids.lb_temp_jbb.text = ""
+            self.ids.bt_register.disabled = True
+
+            self.exec_navigate_main()
+            
+        except Exception as e:
+            toast_msg = f'Gagal Memuat Data'
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}") 
+
+    def exec_find(self):
+        global mydb, db_users, db_merk, db_bahan_bakar, db_warna
+        global dt_id_user, dt_user, dt_foto_user
+        global dt_temp_no_uji, dt_temp_no_uji_new, dt_temp_no_wilayah, dt_temp_no_kendaraan, dt_temp_no_plat, dt_temp_no_pol
+        global dt_temp_nama, dt_temp_no_hp, dt_temp_alamat, dt_temp_id_izin, dt_temp_wilayah, dt_temp_provinsi, dt_temp_kabupaten_kota, dt_temp_kecamatan
+        global dt_temp_id_merk, dt_temp_id_subjenis, dt_temp_type, dt_temp_tahun_buat, dt_temp_silinder, dt_temp_warna, dt_temp_chasis, dt_temp_mesin, dt_temp_warna_plat
+        global dt_temp_bhn_bkr, dt_temp_jbb, dt_temp_daya_motor, dt_temp_tgl_uji_terakhir, dt_temp_tgl_uji_habis, dt_temp_status_uji, dt_temp_status_penerbitan, dt_temp_jenis_kendaraan, dt_temp_kode_jenis_kendaraan, dt_temp_kode_wilayah
+
+        try:
+            dt_find_no_pol = self.ids.tx_nopol.text
+            dt_find_no_uji = self.ids.tx_nouji.text
+            self.exec_fetch_master_data(dt_find_no_pol, dt_find_no_uji)
+
+            self.ids.lb_temp_nama.text = f'{dt_temp_nama}'
+            self.ids.lb_temp_alamat.text = f'{dt_temp_alamat}'
+            self.ids.lb_temp_no_uji.text = f'{dt_temp_no_uji}'
+            self.ids.lb_temp_no_pol.text = f'{dt_temp_no_pol}'
+            self.ids.lb_temp_status_uji.text = 'Berkala' if dt_temp_status_uji == 'B' else 'Uji Ulang' if dt_temp_status_uji == 'U' else 'Baru' if dt_temp_status_uji == 'BR' else 'Numpang Uji' if dt_temp_status_uji == 'NB' else 'Mutasi'
+            self.ids.lb_temp_tgl_uji_terakhir.text = f'{dt_temp_tgl_uji_terakhir}'
+            self.ids.lb_temp_tgl_uji_habis.text = f'{dt_temp_tgl_uji_habis}'
+            self.ids.lb_temp_merk.text = '-' if dt_temp_id_merk == None else f"{db_merk[np.where(db_merk == dt_temp_id_merk)[0][0],1]}"
+            self.ids.lb_temp_type.text = f'{dt_temp_type}'
+            self.ids.lb_temp_jenis_kendaraan.text = f'{dt_temp_jenis_kendaraan}'
+            self.ids.lb_temp_warna.text = '-' if dt_temp_warna == None else f"{db_warna[np.where(db_warna == dt_temp_warna)[0][0],1]}"
+            self.ids.lb_temp_chasis.text = f'{dt_temp_chasis}'
+            self.ids.lb_temp_mesin.text = f'{dt_temp_mesin}'
+            self.ids.lb_temp_bahan_bakar.text = '-' if dt_temp_bhn_bkr == None else f"{db_bahan_bakar[np.where(db_bahan_bakar == dt_temp_bhn_bkr)[0][0],1]}"
+            self.ids.lb_temp_jbb.text = f'{dt_temp_jbb}'
+            self.ids.lb_temp_berat_kosong.text = f'{dt_temp_brt_ksg}'
+            self.ids.bt_register.disabled = False
+            
+        except Exception as e:
+            toast_msg = f'Gagal Menemukan Data, Silahkan Isi Nomor Uji atau Nomor Polisi dengan Benar'
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}") 
+
+    def exec_fetch_master_data(self, dt_find_no_pol, dt_find_no_uji):
+        global mydb, db_users, db_merk, db_bahan_bakar, db_warna
+        global dt_id_user, dt_user, dt_foto_user
+        global dt_temp_no_uji, dt_temp_no_uji_new, dt_temp_no_wilayah, dt_temp_no_kendaraan, dt_temp_no_plat, dt_temp_no_pol
+        global dt_temp_nama, dt_temp_no_hp, dt_temp_alamat, dt_temp_id_izin, dt_temp_wilayah, dt_temp_provinsi, dt_temp_kabupaten_kota, dt_temp_kecamatan
+        global dt_temp_id_merk, dt_temp_id_subjenis, dt_temp_type, dt_temp_tahun_buat, dt_temp_silinder, dt_temp_warna, dt_temp_chasis, dt_temp_mesin, dt_temp_warna_plat
+        global dt_temp_bhn_bkr, dt_temp_jbb, dt_temp_brt_ksg, dt_temp_daya_motor, dt_temp_tgl_uji_terakhir, dt_temp_tgl_uji_habis, dt_temp_status_uji, dt_temp_status_penerbitan, dt_temp_jenis_kendaraan, dt_temp_kode_jenis_kendaraan, dt_temp_kode_wilayah
+
+        try:
+            mycursor = mydb.cursor()
+            if dt_find_no_pol != "" and dt_find_no_uji == "":
+                mycursor.execute(f"SELECT NOUJI, NEW_NOUJI, NOWIL, NOKDR, PLAT, NOPOL, NAMA, NOHP, ALAMAT, ID_IZIN, WLY, PROP, KABKOT, KEC, MERK_ID, idjeniskendaraan, TYPE, TH_BUAT, SILINDER, WARNA_KEND, CHASIS, MESIN, WARNA_PLAT, BHN_BAKAR, JBB, BERATKOSONG, DAYAMOTOR, TGL_UJI_TERAKHIR, STATUSUJI, statuspenerbitan, idjeniskendaraan, kd_jnskendaraan, kodewilayah FROM {TB_DATA_MASTER} WHERE NOPOL = '{dt_find_no_pol}' ")
+            elif dt_find_no_uji != "":
+                mycursor.execute(f"SELECT NOUJI, NEW_NOUJI, NOWIL, NOKDR, PLAT, NOPOL, NAMA, NOHP, ALAMAT, ID_IZIN, WLY, PROP, KABKOT, KEC, MERK_ID, idjeniskendaraan, TYPE, TH_BUAT, SILINDER, WARNA_KEND, CHASIS, MESIN, WARNA_PLAT, BHN_BAKAR, JBB, BERATKOSONG, DAYAMOTOR, TGL_UJI_TERAKHIR, STATUSUJI, statuspenerbitan, idjeniskendaraan, kd_jnskendaraan, kodewilayah FROM {TB_DATA_MASTER} WHERE NOUJI = '{dt_find_no_uji}' ")
+            elif dt_find_no_uji == "" and dt_find_no_pol == "":
+                toast("Silahkan Isi Nomor Uji atau Nomor Polisi dengan Benar")
+            myresult = mycursor.fetchone()
+            mydb.commit()
+            db_master_data = np.array(myresult).T
+
+            if myresult is None:
+                toast('Data Tidak Ditemukan di Database, Silahkan Ajukan Pengujian Baru')
+                self.exec_cancel()
+            else:
+                dt_temp_no_uji = db_master_data[0]
+                dt_temp_no_uji_new = db_master_data[1]
+                dt_temp_no_wilayah = db_master_data[2]
+                dt_temp_no_kendaraan = db_master_data[3]
+                dt_temp_no_plat = db_master_data[4]
+                dt_temp_no_pol = db_master_data[5]
+                dt_temp_nama = db_master_data[6]
+                dt_temp_no_hp = db_master_data[7]
+                dt_temp_alamat = db_master_data[8]
+                dt_temp_id_izin = db_master_data[9]
+                dt_temp_wilayah = db_master_data[10]
+                dt_temp_provinsi = db_master_data[11]
+                dt_temp_kabupaten_kota = db_master_data[12]
+                dt_temp_kecamatan = db_master_data[13]
+                dt_temp_id_merk = db_master_data[14]
+                dt_temp_id_subjenis = db_master_data[15]
+                dt_temp_type = db_master_data[16]
+                dt_temp_tahun_buat = db_master_data[17]
+                dt_temp_silinder = db_master_data[18]
+                dt_temp_warna = db_master_data[19]
+                dt_temp_chasis = db_master_data[20]
+                dt_temp_mesin = db_master_data[21]
+                dt_temp_warna_plat = db_master_data[22]
+                dt_temp_bhn_bkr = db_master_data[23]
+                dt_temp_jbb = db_master_data[24]
+                dt_temp_brt_ksg = db_master_data[25]
+                dt_temp_daya_motor = db_master_data[26]
+                
+                dt_temp_status_uji = db_master_data[28]
+                dt_temp_status_penerbitan = db_master_data[29]
+                dt_temp_jenis_kendaraan = db_master_data[30]
+                dt_temp_kode_jenis_kendaraan = db_master_data[31]
+                dt_temp_kode_wilayah = db_master_data[32]
+
+                if(db_master_data[26] is not None):
+                    last_uji_date = db_master_data[27]
+                else:
+                    last_uji_date = datetime.datetime(1900, 1, 1)
+
+                if(last_uji_date.month <= 6):
+                    year_replaced = last_uji_date.year
+                    month_replaced = last_uji_date.month + 6
+                    day_replaced = last_uji_date.day
+                else:
+                    year_replaced = last_uji_date.year + 1
+                    month_replaced = last_uji_date.month - 6
+                    day_replaced = last_uji_date.day
+                
+                if(last_uji_date.day > 29):
+                    if month_replaced == 2:
+                        day_replaced = 29
+                    if month_replaced == 4 or month_replaced == 6 or month_replaced == 9 or month_replaced == 11:
+                        day_replaced = 30
+                    
+                dt_temp_tgl_uji_terakhir = str(last_uji_date.strftime('%d-%m-%Y'))
+                dt_temp_tgl_uji_habis = str(last_uji_date.replace(month=month_replaced, year=year_replaced, day=day_replaced).strftime('%d-%m-%Y'))
+                
+        except Exception as e:
+            toast_msg = f'Gagal Menemukan Data dari Database Master'
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}") 
+
+    def exec_register(self):
+        global mydb, db_users, db_merk, db_bahan_bakar, db_warna
+        global dt_id_user, dt_user, dt_foto_user
+        global dt_temp_no_uji, dt_temp_no_uji_new, dt_temp_no_wilayah, dt_temp_no_kendaraan, dt_temp_no_plat, dt_temp_no_pol
+        global dt_temp_nama, dt_temp_no_hp, dt_temp_alamat, dt_temp_id_izin, dt_temp_wilayah, dt_temp_provinsi, dt_temp_kabupaten_kota, dt_temp_kecamatan
+        global dt_temp_id_merk, dt_temp_id_subjenis, dt_temp_type, dt_temp_tahun_buat, dt_temp_silinder, dt_temp_warna, dt_temp_chasis, dt_temp_mesin, dt_temp_warna_plat
+        global dt_temp_bhn_bkr, dt_temp_jbb, dt_temp_brt_ksg, dt_temp_daya_motor, dt_temp_tgl_uji_terakhir, dt_temp_tgl_uji_habis, dt_temp_status_uji, dt_temp_status_penerbitan, dt_temp_jenis_kendaraan, dt_temp_kode_jenis_kendaraan, dt_temp_kode_wilayah
+
+        try:
+            mycursor = mydb.cursor()
+            mycursor.execute(f"SELECT MAX(noantrian) FROM {TB_DATA}")
+            result = mycursor.fetchone()
+            last_noantrian = int(result[0]) if result[0] is not None else 0
+            noantrian = f"{last_noantrian + 1:04d}"
+
+            mycursor = mydb.cursor()
+            sql = f"INSERT INTO {TB_DATA} (noantrian, nopol, nouji, NEW_NOUJI, merk, type, idjeniskendaraan, jbb, berat_kosong, warna) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+            values = (noantrian, dt_temp_no_pol, dt_temp_no_uji, dt_temp_no_uji_new, dt_temp_id_merk, dt_temp_type, dt_temp_id_subjenis, dt_temp_jbb, dt_temp_brt_ksg, dt_temp_warna)
+            mycursor.execute(sql, values)
+            mydb.commit()
+
+        except Exception as e:
+            toast_msg = f'Gagal menambah data antrian baru'
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}") 
+
+        self.exec_cancel()
+
+    def exec_navigate_home(self):
+        try:
+            self.screen_manager.current = 'screen_home'
+
+        except Exception as e:
+            toast_msg = f'Gagal Berpindah ke Halaman Awal'
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}") 
+
+    def exec_navigate_login(self):
+        global dt_user
+        try:
+            if (dt_user == ""):
+                self.screen_manager.current = 'screen_login'
+            else:
+                toast(f"Anda sudah login sebagai {dt_user}")
+
+        except Exception as e:
+            toast_msg = f'Gagal Berpindah ke Halaman Login'
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}") 
+
+    def exec_navigate_main(self):
+        try:
+            self.screen_manager.current = 'screen_main'
+
+        except Exception as e:
+            toast_msg = f'Gagal Berpindah ke Halaman Utama'
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}") 
 
 class ScreenMenu(MDScreen):        
     def __init__(self, **kwargs):
@@ -1487,52 +1908,36 @@ class ScreenMenu(MDScreen):
         self.ids.lb_unit.text = LB_UNIT
         self.ids.lb_unit_address.text = LB_UNIT_ADDRESS
 
+    def on_enter(self):
+        global db_merk, db_bahan_bakar, db_warna
+        global dt_no_antri, dt_no_pol, dt_no_uji, dt_sts_uji
+        global dt_merk, dt_type, dt_jns_kend, dt_jbb, dt_brt_ksg, dt_bhn_bkr, dt_warna, dt_load_flag, dt_brake_flag, dt_handbrake_flag
+
+        self.ids.lb_no_antri.text = str(dt_no_antri)
+        self.ids.lb_no_pol.text = str(dt_no_pol)
+        self.ids.lb_no_uji.text = str(dt_no_uji)
+        self.ids.lb_sts_uji.text = 'Berkala' if dt_sts_uji == 'B' else 'Uji Ulang' if dt_sts_uji == 'U' else 'Baru' if dt_sts_uji == 'BR' else 'Numpang Uji' if dt_sts_uji == 'NB' else 'Mutasi'
+        self.ids.lb_merk.text = '-' if dt_merk == None else f"{db_merk[np.where(db_merk == dt_merk)[0][0],1]}"
+        self.ids.lb_type.text = str(dt_type)
+        self.ids.lb_jns_kend.text = str(dt_jns_kend)
+        self.ids.lb_jbb.text = str(dt_jbb)
+        self.ids.lb_brt_ksg.text = str(dt_brt_ksg)
+        self.ids.lb_bhn_bkr.text = '-' if dt_bhn_bkr == None else f"{db_bahan_bakar[np.where(db_bahan_bakar == dt_bhn_bkr)[0][0],1]}"
+        self.ids.lb_warna.text = '-' if dt_warna == None else f"{db_warna[np.where(db_warna == dt_warna)[0][0],1]}"
+
     def exec_select_axle(self, number):
         global dt_test_number
 
         dt_test_number = number - 1
 
     def exec_start_load(self):
-        global flag_play
-        global count_starting, count_get_data
-
-        screen_main = self.screen_manager.get_screen('screen_main')
-
-        count_starting = COUNT_STARTING
-        count_get_data = COUNT_ACQUISITION
-
-        if(not flag_play):
-            Clock.schedule_interval(screen_main.regular_get_data, GET_DATA_INTERVAL)
-            self.open_screen_load_meter()
-            flag_play = True
+        self.open_screen_load_meter()
 
     def exec_start_brake(self):
-        global flag_play
-        global count_starting, count_get_data
-
-        screen_main = self.screen_manager.get_screen('screen_main')
-
-        count_starting = COUNT_STARTING
-        count_get_data = COUNT_ACQUISITION
-
-        if(not flag_play):
-            Clock.schedule_interval(screen_main.regular_get_data, GET_DATA_INTERVAL)
-            self.open_screen_brake_meter()
-            flag_play = True
+        self.open_screen_brake_meter()
 
     def exec_start_handbrake(self):
-        global flag_play
-        global count_starting, count_get_data
-
-        screen_main = self.screen_manager.get_screen('screen_main')
-
-        count_starting = COUNT_STARTING
-        count_get_data = COUNT_ACQUISITION
-
-        if(not flag_play):
-            Clock.schedule_interval(screen_main.regular_get_data, GET_DATA_INTERVAL)
-            self.open_screen_handbrake_meter()
-            flag_play = True
+        self.open_screen_handbrake_meter()
 
     def exec_navigate_main(self):
         try:
@@ -1569,6 +1974,24 @@ class ScreenLoadMeter(MDScreen):
         self.ids.lb_dishub.text = LB_DISHUB
         self.ids.lb_unit.text = LB_UNIT
         self.ids.lb_unit_address.text = LB_UNIT_ADDRESS
+
+    def on_enter(self):
+        global db_merk, db_bahan_bakar, db_warna
+        global dt_no_antri, dt_no_pol, dt_no_uji, dt_sts_uji
+        global dt_merk, dt_type, dt_jns_kend, dt_jbb, dt_brt_ksg, dt_bhn_bkr, dt_warna, dt_load_flag, dt_brake_flag, dt_handbrake_flag
+
+        self.ids.lb_no_antri.text = str(dt_no_antri)
+        self.ids.lb_no_pol.text = str(dt_no_pol)
+        self.ids.lb_no_uji.text = str(dt_no_uji)
+        self.ids.lb_sts_uji.text = 'Berkala' if dt_sts_uji == 'B' else 'Uji Ulang' if dt_sts_uji == 'U' else 'Baru' if dt_sts_uji == 'BR' else 'Numpang Uji' if dt_sts_uji == 'NB' else 'Mutasi'
+        self.ids.lb_merk.text = '-' if dt_merk == None else f"{db_merk[np.where(db_merk == dt_merk)[0][0],1]}"
+        self.ids.lb_type.text = str(dt_type)
+        self.ids.lb_jns_kend.text = str(dt_jns_kend)
+        self.ids.lb_jbb.text = str(dt_jbb)
+        self.ids.lb_brt_ksg.text = str(dt_brt_ksg)
+        self.ids.lb_bhn_bkr.text = '-' if dt_bhn_bkr == None else f"{db_bahan_bakar[np.where(db_bahan_bakar == dt_bhn_bkr)[0][0],1]}"
+        self.ids.lb_warna.text = '-' if dt_warna == None else f"{db_warna[np.where(db_warna == dt_warna)[0][0],1]}"
+        self.exec_reload()
 
     def exec_reload(self):
         global flag_play
@@ -1613,53 +2036,80 @@ class ScreenBrakeMeter(MDScreen):
         self.ids.lb_unit.text = LB_UNIT
         self.ids.lb_unit_address.text = LB_UNIT_ADDRESS
 
-    def exec_cylinder_up(self):
+    def on_enter(self):
+        global db_merk, db_bahan_bakar, db_warna
+        global dt_no_antri, dt_no_pol, dt_no_uji, dt_sts_uji
+        global dt_merk, dt_type, dt_jns_kend, dt_jbb, dt_brt_ksg, dt_bhn_bkr, dt_warna, dt_load_flag, dt_brake_flag, dt_handbrake_flag
+
+        self.ids.lb_no_antri.text = str(dt_no_antri)
+        self.ids.lb_no_pol.text = str(dt_no_pol)
+        self.ids.lb_no_uji.text = str(dt_no_uji)
+        self.ids.lb_sts_uji.text = 'Berkala' if dt_sts_uji == 'B' else 'Uji Ulang' if dt_sts_uji == 'U' else 'Baru' if dt_sts_uji == 'BR' else 'Numpang Uji' if dt_sts_uji == 'NB' else 'Mutasi'
+        self.ids.lb_merk.text = '-' if dt_merk == None else f"{db_merk[np.where(db_merk == dt_merk)[0][0],1]}"
+        self.ids.lb_type.text = str(dt_type)
+        self.ids.lb_jns_kend.text = str(dt_jns_kend)
+        self.ids.lb_jbb.text = str(dt_jbb)
+        self.ids.lb_brt_ksg.text = str(dt_brt_ksg)
+        self.ids.lb_bhn_bkr.text = '-' if dt_bhn_bkr == None else f"{db_bahan_bakar[np.where(db_bahan_bakar == dt_bhn_bkr)[0][0],1]}"
+        self.ids.lb_warna.text = '-' if dt_warna == None else f"{db_warna[np.where(db_warna == dt_warna)[0][0],1]}"
+
+    def exec_motor_brake_on(self):
         global flag_conn_stat
-        global flag_cylinder
-
-        if(not flag_cylinder):
-            flag_cylinder = True
-
+        global flag_motor_brake
+        
+        flag_motor_brake = True
         try:
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_coil(3082, flag_cylinder, slave=1) #M10
+                MODBUS_CLIENT.write_coil(3075, True, slave=1) #M3
                 MODBUS_CLIENT.close()
         except Exception as e:
-            toast_msg = f"error send exec_cylinder_up data to PLC Slave"
+            toast_msg = f"error send exec_motor_brake_on data to PLC Slave"
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
-    def exec_cylinder_down(self):
+    def rel_motor_brake_on(self):
         global flag_conn_stat
-        global flag_cylinder
-
-        if(flag_cylinder):
-            flag_cylinder = False
+        global flag_motor_brake
 
         try:
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_coil(3083, not flag_cylinder, slave=1) #M11
+                MODBUS_CLIENT.write_coil(3075, False, slave=1) #M3
                 MODBUS_CLIENT.close()
         except Exception as e:
-            toast_msg = f"error send exec_cylinder_down data to PLC Slave"
+            toast_msg = f"error send rel_motor_brake_on data to PLC Slave"
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
-    def exec_cylinder_stop(self):
+    def exec_motor_brake_off(self):
         global flag_conn_stat
+        global flag_motor_brake
+
+        flag_motor_brake = False
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_coil(3076, True, slave=1) #M4
+                MODBUS_CLIENT.close()
+        except Exception as e:
+            toast_msg = f"error send exec_motor_brake_off data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
+
+    def rel_motor_brake_off(self):
+        global flag_conn_stat
+        global flag_motor_brake
 
         try:
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_coil(3082, False, slave=1) #M10
-                MODBUS_CLIENT.write_coil(3083, False, slave=1) #M11
+                MODBUS_CLIENT.write_coil(3076, False, slave=1) #M4
                 MODBUS_CLIENT.close()
         except Exception as e:
-            toast_msg = f"error send exec_cylinder_stop data to PLC Slave"
-            toast(toast_msg)  
-            Logger.error(f"{self.name}: {toast_msg}, {e}")   
+            toast_msg = f"error send rel_motor_brake_on data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
     def exec_reload(self):
         global flag_play
@@ -1704,53 +2154,80 @@ class ScreenHandbrakeMeter(MDScreen):
         self.ids.lb_unit.text = LB_UNIT
         self.ids.lb_unit_address.text = LB_UNIT_ADDRESS
 
-    def exec_cylinder_up(self):
+    def on_enter(self):
+        global db_merk, db_bahan_bakar, db_warna
+        global dt_no_antri, dt_no_pol, dt_no_uji, dt_sts_uji
+        global dt_merk, dt_type, dt_jns_kend, dt_jbb, dt_brt_ksg, dt_bhn_bkr, dt_warna, dt_load_flag, dt_brake_flag, dt_handbrake_flag
+
+        self.ids.lb_no_antri.text = str(dt_no_antri)
+        self.ids.lb_no_pol.text = str(dt_no_pol)
+        self.ids.lb_no_uji.text = str(dt_no_uji)
+        self.ids.lb_sts_uji.text = 'Berkala' if dt_sts_uji == 'B' else 'Uji Ulang' if dt_sts_uji == 'U' else 'Baru' if dt_sts_uji == 'BR' else 'Numpang Uji' if dt_sts_uji == 'NB' else 'Mutasi'
+        self.ids.lb_merk.text = '-' if dt_merk == None else f"{db_merk[np.where(db_merk == dt_merk)[0][0],1]}"
+        self.ids.lb_type.text = str(dt_type)
+        self.ids.lb_jns_kend.text = str(dt_jns_kend)
+        self.ids.lb_jbb.text = str(dt_jbb)
+        self.ids.lb_brt_ksg.text = str(dt_brt_ksg)
+        self.ids.lb_bhn_bkr.text = '-' if dt_bhn_bkr == None else f"{db_bahan_bakar[np.where(db_bahan_bakar == dt_bhn_bkr)[0][0],1]}"
+        self.ids.lb_warna.text = '-' if dt_warna == None else f"{db_warna[np.where(db_warna == dt_warna)[0][0],1]}"
+
+    def exec_motor_brake_on(self):
         global flag_conn_stat
-        global flag_cylinder
-
-        if(not flag_cylinder):
-            flag_cylinder = True
-
+        global flag_motor_brake
+        
+        flag_motor_brake = True
         try:
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_coil(3082, flag_cylinder, slave=1) #M10
+                MODBUS_CLIENT.write_coil(3075, True, slave=1) #M3
                 MODBUS_CLIENT.close()
         except Exception as e:
-            toast_msg = f"error send exec_cylinder_up data to PLC Slave"
+            toast_msg = f"error send exec_motor_brake_on data to PLC Slave"
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
-    def exec_cylinder_down(self):
+    def rel_motor_brake_on(self):
         global flag_conn_stat
-        global flag_cylinder
-
-        if(flag_cylinder):
-            flag_cylinder = False
+        global flag_motor_brake
 
         try:
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_coil(3083, not flag_cylinder, slave=1) #M11
+                MODBUS_CLIENT.write_coil(3075, False, slave=1) #M3
                 MODBUS_CLIENT.close()
         except Exception as e:
-            toast_msg = f"error send exec_cylinder_down data to PLC Slave"
+            toast_msg = f"error send rel_motor_brake_on data to PLC Slave"
             toast(toast_msg)
-            Logger.error(f"{self.name}: {toast_msg}, {e}")
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
-    def exec_cylinder_stop(self):
+    def exec_motor_brake_off(self):
         global flag_conn_stat
+        global flag_motor_brake
+
+        flag_motor_brake = False
+        try:
+            if flag_conn_stat:
+                MODBUS_CLIENT.connect()
+                MODBUS_CLIENT.write_coil(3076, True, slave=1) #M4
+                MODBUS_CLIENT.close()
+        except Exception as e:
+            toast_msg = f"error send exec_motor_brake_off data to PLC Slave"
+            toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
+
+    def rel_motor_brake_off(self):
+        global flag_conn_stat
+        global flag_motor_brake
 
         try:
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_coil(3082, False, slave=1) #M10
-                MODBUS_CLIENT.write_coil(3083, False, slave=1) #M11
+                MODBUS_CLIENT.write_coil(3076, False, slave=1) #M4
                 MODBUS_CLIENT.close()
         except Exception as e:
-            toast_msg = f"error send exec_cylinder_stop data to PLC Slave"
+            toast_msg = f"error send rel_motor_brake_on data to PLC Slave"
             toast(toast_msg)
-            Logger.error(f"{self.name}: {toast_msg}, {e}")   
+            Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
     def exec_reload(self):
         global flag_play
@@ -1796,44 +2273,28 @@ class ScreenResume(MDScreen):
         self.ids.lb_unit_address.text = LB_UNIT_ADDRESS
 
     def on_enter(self):
-        global dt_user, dt_no_antrian, dt_no_pol, dt_no_uji, dt_nama, dt_jenis_kendaraan
-        global dt_load_flag, db_load_left_value, db_load_right_value, db_load_total_value, dt_load_user, dt_load_post
-        global dt_brake_flag, db_brake_left_value, db_brake_right_value, db_brake_total_value, db_brake_efficiency_value, db_brake_difference_value, dt_brake_user, dt_brake_post
-        global dt_handbrake_flag, db_handbrake_left_value, db_handbrake_right_value, db_handbrake_total_value, db_handbrake_efficiency_value, db_handbrake_difference_value, dt_handbrake_user, dt_handbrake_post
+        global db_merk, db_bahan_bakar, db_warna
+        global dt_user, dt_no_antri, dt_no_pol, dt_no_uji, dt_nama, dt_jns_kend
+        global dt_load_flag, db_load_left_value, db_load_right_value, db_load_total_value, db_load_flag, dt_id_user
+        global dt_brake_flag, db_brake_left_value, db_brake_right_value, db_brake_total_value, db_brake_difference_value, db_brake_flag
+        global dt_handbrake_flag, db_handbrake_left_value, db_handbrake_right_value, db_handbrake_total_value, db_handbrake_difference_value, db_handbrake_flag
         global dt_load_total_value, dt_brake_total_value, dt_brake_efficiency_value, dt_brake_difference_value, dt_handbrake_total_value, dt_handbrake_efficiency_value, dt_handbrake_difference_value
         global dt_test_number
 
         self.exec_reload_table_detail()
         try:
-            self.ids.lb_load_left_sum.text = f'{int(np.sum(db_load_left_value))} kg'
-            self.ids.lb_load_right_sum.text = f'{int(np.sum(db_load_right_value))} kg'
-            self.ids.lb_load_total_sum.text = f'{int(dt_load_total_value)} kg'
-            self.ids.lb_brake_left_sum.text = f'{int(np.sum(db_brake_left_value))} kg'
-            self.ids.lb_brake_right_sum.text = f'{int(np.sum(db_brake_right_value))} kg'
-            self.ids.lb_brake_total_sum.text = f'{int(dt_brake_total_value)} kg'
-            self.ids.lb_brake_diff_sum.text = f'{np.round(dt_brake_difference_value, 1)} %'
-            self.ids.lb_brake_efficiency.text = f'{np.round(dt_brake_efficiency_value, 1)} %'
-            self.ids.lb_handbrake_left_sum.text = f'{int(np.sum(db_handbrake_left_value))} kg'
-            self.ids.lb_handbrake_right_sum.text = f'{int(np.sum(db_handbrake_right_value))} kg'
-            self.ids.lb_handbrake_total_sum.text = f'{int(dt_handbrake_total_value)} kg'
-            self.ids.lb_handbrake_efficiency.text = f'{np.round(dt_handbrake_efficiency_value, 1)} %'
-
-            if(np.abs(int(np.sum(db_load_left_value)) - int(np.sum(db_load_right_value))) <= (0.1 * int(dt_load_total_value))):
-                dt_load_flag = "Lulus"  
+            if(dt_brake_efficiency_value >= STANDARD_MIN_EFFICIENCY_BRAKE):
+                dt_brake_flag = 2            
             else:
-                dt_load_flag = "Tidak Lulus"
-
-            if(dt_brake_efficiency_value >= 50 and dt_brake_difference_value <= 8):
-                dt_brake_flag = "Lulus"             
-            else:
-                dt_brake_flag = "Tidak Lulus"
+                dt_brake_flag = 1
             
-            if(dt_handbrake_efficiency_value >= 12):
-                dt_handbrake_flag = "Lulus"
+            if(dt_handbrake_efficiency_value >= STANDARD_MIN_EFFICIENCY_HANDBRAKE):
+                dt_handbrake_flag = 2
             else:
-                dt_handbrake_flag = "Tidak Lulus"
+                dt_handbrake_flag = 1
 
-            if(dt_load_flag == "Lulus" and dt_brake_flag == "Lulus" and dt_handbrake_flag == "Lulus"):
+            dt_brake_resume_flag = all(x == 2 for x in db_brake_flag if x != 0)
+            if(dt_brake_resume_flag and int(dt_brake_flag) == 2 and int(dt_handbrake_flag) == 2):
                 self.ids.lb_test_result.md_bg_color = colors['Green']['200']
                 self.ids.lb_test_result.text_color = colors['Green']['700']
                 self.ids.lb_test_result.text = f"LULUS"
@@ -1841,17 +2302,35 @@ class ScreenResume(MDScreen):
                 self.ids.lb_test_result.md_bg_color = colors['Red']['A200']
                 self.ids.lb_test_result.text_color = colors['Red']['A700']
                 self.ids.lb_test_result.text = f"TIDAK LULUS"
-                                
+
+            self.ids.lb_load_left_sum.text = f'{int(np.sum(db_load_left_value))} kg'
+            self.ids.lb_load_right_sum.text = f'{int(np.sum(db_load_right_value))} kg'
+            self.ids.lb_load_total_sum.text = f'{int(dt_load_total_value)} kg'
+
+            self.ids.lb_brake_left_sum.text = f'{int(np.sum(db_brake_left_value))} kg'
+            self.ids.lb_brake_right_sum.text = f'{int(np.sum(db_brake_right_value))} kg'
+            self.ids.lb_brake_total_sum.text = f'{int(dt_brake_total_value)} kg'
+            self.ids.lb_brake_efficiency.text = f'{np.round(dt_brake_efficiency_value, 1)} %'
+            self.ids.lb_brake_status.text = f'Lulus' if int(dt_brake_flag) == 2 else 'Tidak Lulus' if int(dt_brake_flag) == 1 else 'Belum Diuji'
+
+            self.ids.lb_handbrake_left_sum.text = f'{int(np.sum(db_handbrake_left_value))} kg'
+            self.ids.lb_handbrake_right_sum.text = f'{int(np.sum(db_handbrake_right_value))} kg'
+            self.ids.lb_handbrake_total_sum.text = f'{int(dt_handbrake_total_value)} kg'
+            self.ids.lb_handbrake_efficiency.text = f'{np.round(dt_handbrake_efficiency_value, 1)} %'
+            self.ids.lb_handbrake_status.text = f'Lulus' if int(dt_handbrake_flag) == 2 else 'Tidak Lulus' if int(dt_handbrake_flag) == 1 else 'Belum Diuji'
+
+            Logger.info(f"Status: Load:{dt_load_flag}, Brake:{dt_brake_flag}, Handbrake{dt_handbrake_flag}")
+
         except Exception as e:
             toast_msg = f'Error Create Resume: {e}'
             Logger.error(f"{self.name}: {toast_msg}, {e}")   
 
 
     def exec_reload_table_detail(self):
-        global dt_user, dt_no_antrian, dt_no_pol, dt_no_uji, dt_nama, dt_jenis_kendaraan
-        global dt_load_flag, db_load_left_value, db_load_right_value, db_load_total_value, dt_load_user, dt_load_post
-        global dt_brake_flag, db_brake_left_value, db_brake_right_value, db_brake_total_value, db_brake_efficiency_value, db_brake_difference_value, dt_brake_user, dt_brake_post
-        global dt_handbrake_flag, db_handbrake_left_value, db_handbrake_right_value, db_handbrake_total_value, db_handbrake_efficiency_value, db_handbrake_difference_value, dt_handbrake_user, dt_handbrake_post
+        global dt_user, dt_no_antri, dt_no_pol, dt_no_uji, dt_nama, dt_jns_kend
+        global dt_load_flag, db_load_left_value, db_load_right_value, db_load_total_value, dt_id_user
+        global dt_brake_flag, db_brake_left_value, db_brake_right_value, db_brake_total_value, db_brake_difference_value, db_brake_flag
+        global dt_handbrake_flag, db_handbrake_left_value, db_handbrake_right_value, db_handbrake_total_value, db_handbrake_difference_value, db_handbrake_flag
         global dt_load_total_value, dt_brake_total_value, dt_brake_efficiency_value, dt_brake_difference_value, dt_handbrake_total_value, dt_handbrake_efficiency_value, dt_handbrake_difference_value
         global dt_test_number
 
@@ -1872,13 +2351,13 @@ class ScreenResume(MDScreen):
                 if (db_load_total_value[i] > 0.0):
                     layout_list_load.add_widget(
                         MDCard(
-                            MDLabel(text=f"Sumbu {i+1}", size_hint_x= 0.25),
-                            MDLabel(text=f"{db_load_left_value[i]}", size_hint_x= 0.25),
-                            MDLabel(text=f"{db_load_right_value[i]}", size_hint_x= 0.25),
-                            MDLabel(text=f"{db_load_total_value[i]}", size_hint_x= 0.25),
+                            MDLabel(text=f"Sumbu {i+1}", size_hint_x= 0.2),
+                            MDLabel(text=f"{db_load_left_value[i]}", size_hint_x= 0.2),
+                            MDLabel(text=f"{db_load_right_value[i]}", size_hint_x= 0.2),
+                            MDLabel(text=f"{db_load_total_value[i]}", size_hint_x= 0.2),
                             padding = 20,
                             size_hint_y=None,
-                            height="40dp",                          
+                            height=dp(int(60 * 800 / window_size_y)),                          
                             )
                         )
         except Exception as e:
@@ -1891,14 +2370,15 @@ class ScreenResume(MDScreen):
                 if (db_brake_total_value[i] > 0.0):
                     layout_list_brake.add_widget(
                         MDCard(
-                            MDLabel(text=f"Sumbu {i+1}", size_hint_x= 0.25),
-                            MDLabel(text=f"{db_brake_left_value[i]}", size_hint_x= 0.1875),
-                            MDLabel(text=f"{db_brake_right_value[i]}", size_hint_x= 0.1875),
-                            MDLabel(text=f"{db_brake_total_value[i]}", size_hint_x= 0.1875),
-                            MDLabel(text=f"{db_brake_difference_value[i]}", size_hint_x= 0.1875),
+                            MDLabel(text=f"Sumbu {i+1}", size_hint_x= 0.16),
+                            MDLabel(text=f"{db_brake_left_value[i]}", size_hint_x= 0.16),
+                            MDLabel(text=f"{db_brake_right_value[i]}", size_hint_x= 0.16),
+                            MDLabel(text=f"{db_brake_total_value[i]}", size_hint_x= 0.16),
+                            MDLabel(text=f"{db_brake_difference_value[i]}", size_hint_x= 0.16),
+                            MDLabel(text=f"Lulus" if int(db_brake_flag[i]) == 2 else "Tidak Lulus" if int(db_brake_flag[i]) == 1 else "Belum Diuji", size_hint_x= 0.16),
                             padding = 20,
                             size_hint_y=None,
-                            height="40dp",
+                            height=dp(int(60 * 800 / window_size_y)),
                             )
                         )
         except Exception as e:
@@ -1911,13 +2391,13 @@ class ScreenResume(MDScreen):
                 if (db_handbrake_total_value[i] > 0.0):
                     layout_list_handbrake.add_widget(
                         MDCard(
-                            MDLabel(text=f"Sumbu {i+1}", size_hint_x= 0.25),
-                            MDLabel(text=f"{db_handbrake_left_value[i]}", size_hint_x= 0.25),
-                            MDLabel(text=f"{db_handbrake_right_value[i]}", size_hint_x= 0.25),
-                            MDLabel(text=f"{db_handbrake_total_value[i]}", size_hint_x= 0.25),
+                            MDLabel(text=f"Sumbu {i+1}", size_hint_x= 0.2),
+                            MDLabel(text=f"{db_handbrake_left_value[i]}", size_hint_x= 0.2),
+                            MDLabel(text=f"{db_handbrake_right_value[i]}", size_hint_x= 0.2),
+                            MDLabel(text=f"{db_handbrake_total_value[i]}", size_hint_x= 0.2),
                             padding = 20,
                             size_hint_y=None,
-                            height="40dp",
+                            height=dp(int(60 * 800 / window_size_y)),
                             )
                         )
         except Exception as e:
@@ -1937,36 +2417,187 @@ class ScreenResume(MDScreen):
         global flag_play
         global count_starting, count_get_data
         global mydb, db_antrian
-        global db_load_left_value, db_load_right_value, db_load_total_value
-        global db_brake_left_value, db_brake_right_value, db_brake_total_value, db_brake_efficiency_value, db_brake_difference_value
-        global db_handbrake_left_value, db_handbrake_right_value, db_handbrake_total_value, db_handbrake_efficiency_value, db_handbrake_difference_value
+        global db_load_left_value, db_load_right_value, db_load_total_value, db_load_flag, dt_id_user, dt_no_antri
+        global db_brake_left_value, db_brake_right_value, db_brake_total_value, db_brake_difference_value, db_brake_flag
+        global db_handbrake_left_value, db_handbrake_right_value, db_handbrake_total_value, db_handbrake_difference_value, db_handbrake_flag
         global dt_load_total_value, dt_brake_total_value, dt_brake_efficiency_value, dt_brake_difference_value, dt_handbrake_total_value, dt_handbrake_efficiency_value, dt_handbrake_difference_value
         global dt_test_number
 
         try:
-            mycursor = mydb.cursor()
-            sql = f"UPDATE {TB_DATA} SET load_flag = %s, load_l_value = %s, load_r_value = %s, load_total_value = %s, load_user = %s, load_post = %s WHERE noantrian = %s"
-            sql_load_flag = (2 if dt_load_flag == "Lulus" else 1)
-            dt_load_post = str(time.strftime("%Y/%m/%d %H:%M:%S", time.localtime()))
-            sql_val = (sql_load_flag, float(np.average(db_load_left_value)), float(np.average(db_load_right_value)), dt_load_total_value, dt_load_user, dt_load_post, dt_no_antrian)
-            mycursor.execute(sql, sql_val)
-            mydb.commit()
+            try:
+                mycursor = mydb.cursor()
+                # Build SQL query safely
+                sql1 = f"UPDATE {TB_DATA} SET load_flag = %s"
+                sql2 = (", load_l_s1_value = %s, load_l_s2_value = %s, load_l_s3_value = %s, "
+                        "load_l_s4_value = %s, load_l_s5_value = %s, load_l_s6_value = %s, "
+                        "load_l_s7_value = %s, load_l_s8_value = %s, load_l_s9_value = %s, "
+                        "load_l_s10_value = %s, load_l_s11_value = %s, load_l_s12_value = %s")
+                sql3 = (", load_r_s1_value = %s, load_r_s2_value = %s, load_r_s3_value = %s, "
+                        "load_r_s4_value = %s, load_r_s5_value = %s, load_r_s6_value = %s, "
+                        "load_r_s7_value = %s, load_r_s8_value = %s, load_r_s9_value = %s, "
+                        "load_r_s10_value = %s, load_r_s11_value = %s, load_r_s12_value = %s")
+                sql4 = ", load_total_value = %s, load_user = %s, load_post = %s WHERE noantrian = %s"
+                sql = sql1 + sql2 + sql3 + sql4
 
-            mycursor = mydb.cursor()
-            sql = f"UPDATE {TB_DATA} SET brake_flag = %s, brake_l_value = %s, brake_r_value = %s, brake_total_value = %s, brake_efficiency_value = %s, brake_difference_value = %s, load_user = %s, load_post = %s WHERE noantrian = %s"
-            sql_brake_flag = (2 if dt_brake_flag == "Lulus" else 1)
-            dt_brake_post = str(time.strftime("%Y/%m/%d %H:%M:%S", time.localtime()))
-            sql_val = (sql_brake_flag, float(np.average(db_brake_left_value)), float(np.average(db_brake_right_value)), dt_brake_total_value, dt_brake_efficiency_value, dt_brake_difference_value, dt_load_user, dt_brake_post, dt_no_antrian)
-            mycursor.execute(sql, sql_val)
-            mydb.commit()
+                # Prepare values
+                sql_load_flag = dt_load_flag
+                dt_load_post = time.strftime("%Y/%m/%d %H:%M:%S", time.localtime())
 
-            mycursor = mydb.cursor()
-            sql = f"UPDATE {TB_DATA} SET handbrake_flag = %s, handbrake_l_value = %s, handbrake_r_value = %s, handbrake_total_value = %s, handbrake_efficiency_value = %s, handbrake_difference_value = %s, load_user = %s, load_post = %s WHERE noantrian = %s"
-            sql_handbrake_flag = (2 if dt_handbrake_flag == "Lulus" else 1)
-            dt_handbrake_post = str(time.strftime("%Y/%m/%d %H:%M:%S", time.localtime()))
-            sql_val = (sql_handbrake_flag, float(np.average(db_handbrake_left_value)), float(np.average(db_handbrake_right_value)), dt_handbrake_total_value, dt_handbrake_efficiency_value, dt_handbrake_difference_value, dt_load_user, dt_handbrake_post, dt_no_antrian)
-            mycursor.execute(sql, sql_val)
-            mydb.commit()
+                # Ensure these are tuples/lists of length 12
+                assert len(db_load_left_value) == 12, "db_load_left_value must have 12 elements"
+                assert len(db_load_right_value) == 12, "db_load_right_value must have 12 elements"
+
+                # Build parameter tuple
+                sql_val = (
+                    sql_load_flag,                         # 1
+                    *db_load_left_value,                   # 12
+                    *db_load_right_value,                  # 12
+                    dt_load_total_value,                   # 1
+                    dt_id_user,                            # 1
+                    dt_load_post,                          # 1
+                    dt_no_antri                            # 1
+                )
+
+                # Total parameters: 1 + 12 + 12 + 1 + 1 + 1 + 1 = 29
+                expected_params = 29
+                if len(sql_val) != expected_params:
+                    Logger.error(f"SQL Value count mismatch: expected {expected_params}, got {len(sql_val)}")
+                else:
+                    mycursor.execute(sql, sql_val)
+                    mydb.commit()
+                    Logger.info(f"Successfully updated load data for noantrian={dt_no_antri}")
+            except Exception as e:
+                toast_msg = f'Error Save Load Data'
+                toast(toast_msg)
+                Logger.error(f"{self.name}: {toast_msg}, {e}")  
+
+            try:
+                mycursor = mydb.cursor()
+                # Build SQL query safely
+                sql1 = f"UPDATE {TB_DATA} SET brake_flag = %s"
+                sql2 = (
+                    ", brake_l_s1_value = %s, brake_l_s2_value = %s, brake_l_s3_value = %s, "
+                    "brake_l_s4_value = %s, brake_l_s5_value = %s, brake_l_s6_value = %s, "
+                    "brake_l_s7_value = %s, brake_l_s8_value = %s, brake_l_s9_value = %s, "
+                    "brake_l_s10_value = %s, brake_l_s11_value = %s, brake_l_s12_value = %s"
+                )
+                sql3 = (
+                    ", brake_r_s1_value = %s, brake_r_s2_value = %s, brake_r_s3_value = %s, "
+                    "brake_r_s4_value = %s, brake_r_s5_value = %s, brake_r_s6_value = %s, "
+                    "brake_r_s7_value = %s, brake_r_s8_value = %s, brake_r_s9_value = %s, "
+                    "brake_r_s10_value = %s, brake_r_s11_value = %s, brake_r_s12_value = %s"
+                )
+                sql4 = (
+                    ", brake_difference_s1_value = %s, brake_difference_s2_value = %s, brake_difference_s3_value = %s, "
+                    "brake_difference_s4_value = %s, brake_difference_s5_value = %s, brake_difference_s6_value = %s, "
+                    "brake_difference_s7_value = %s, brake_difference_s8_value = %s, brake_difference_s9_value = %s, "
+                    "brake_difference_s10_value = %s, brake_difference_s11_value = %s, brake_difference_s12_value = %s"
+                )
+                sql5 = ", brake_total_value = %s, brake_efficiency_value = %s, brake_user = %s, brake_post = %s WHERE noantrian = %s"
+                sql = sql1 + sql2 + sql3 + sql4 + sql5
+
+                sql_brake_flag = dt_brake_flag
+                dt_brake_post = time.strftime("%Y/%m/%d %H:%M:%S", time.localtime())
+
+                expected_len = 12
+                arrays = {
+                    'db_brake_left_value': db_brake_left_value,
+                    'db_brake_right_value': db_brake_right_value,
+                    'db_brake_difference_value': db_brake_difference_value,
+                }
+
+                for name, arr in arrays.items():
+                    if not isinstance(arr, (list, tuple)) or len(arr) != expected_len:
+                        Logger.error(f"{self.screen_manager.current}: {name} must be a list/tuple of 12 values. Got: {arr}")
+                        raise ValueError(f"{name} must have exactly 12 elements")
+
+                sql_val = (
+                    sql_brake_flag,                        # 1
+                    *db_brake_left_value,                 # 12
+                    *db_brake_right_value,                # 12
+                    *db_brake_difference_value,           # 12
+                    dt_brake_total_value,                 # 1
+                    dt_brake_efficiency_value,            # 1
+                    dt_id_user,                           # 1
+                    dt_brake_post,                        # 1
+                    dt_no_antri                           # 1
+                )
+
+                expected_params = 42 # brake_flag + 5 arrays ×12 + user/post/noantri
+                if len(sql_val) != expected_params:
+                    Logger.error(f"SQL Value count mismatch: expected {expected_params}, got {len(sql_val)}")
+                else:
+                    mycursor.execute(sql, sql_val)
+                    mydb.commit()
+                    Logger.info(f"Successfully updated load data for noantrian={dt_no_antri}")
+            except Exception as e:
+                toast_msg = f'Error Save Brake Data'
+                toast(toast_msg)
+                Logger.error(f"{self.name}: {toast_msg}, {e}")  
+
+            try:
+                mycursor = mydb.cursor()
+                # Build SQL query safely
+                sql1 = f"UPDATE {TB_DATA} SET handbrake_flag = %s"
+                sql2 = (
+                    ", handbrake_l_s1_value = %s, handbrake_l_s2_value = %s, handbrake_l_s3_value = %s, "
+                    "handbrake_l_s4_value = %s, handbrake_l_s5_value = %s, handbrake_l_s6_value = %s, "
+                    "handbrake_l_s7_value = %s, handbrake_l_s8_value = %s, handbrake_l_s9_value = %s, "
+                    "handbrake_l_s10_value = %s, handbrake_l_s11_value = %s, handbrake_l_s12_value = %s"
+                )
+                sql3 = (
+                    ", handbrake_r_s1_value = %s, handbrake_r_s2_value = %s, handbrake_r_s3_value = %s, "
+                    "handbrake_r_s4_value = %s, handbrake_r_s5_value = %s, handbrake_r_s6_value = %s, "
+                    "handbrake_r_s7_value = %s, handbrake_r_s8_value = %s, handbrake_r_s9_value = %s, "
+                    "handbrake_r_s10_value = %s, handbrake_r_s11_value = %s, handbrake_r_s12_value = %s"
+                )
+                sql4 = (
+                    ", handbrake_difference_s1_value = %s, handbrake_difference_s2_value = %s, handbrake_difference_s3_value = %s, "
+                    "handbrake_difference_s4_value = %s, handbrake_difference_s5_value = %s, handbrake_difference_s6_value = %s, "
+                    "handbrake_difference_s7_value = %s, handbrake_difference_s8_value = %s, handbrake_difference_s9_value = %s, "
+                    "handbrake_difference_s10_value = %s, handbrake_difference_s11_value = %s, handbrake_difference_s12_value = %s"
+                )
+                sql6 = ", handbrake_total_value = %s, handbrake_efficiency_value = %s, handbrake_user = %s, handbrake_post = %s WHERE noantrian = %s"
+                sql = sql1 + sql2 + sql3 + sql4 + sql5 + sql6
+
+                sql_handbrake_flag = dt_handbrake_flag
+                dt_handbrake_post = time.strftime("%Y/%m/%d %H:%M:%S", time.localtime())
+
+                expected_len = 12
+                arrays = {
+                    'db_handbrake_left_value': db_handbrake_left_value,
+                    'db_handbrake_right_value': db_handbrake_right_value,
+                    'db_handbrake_difference_value': db_handbrake_difference_value,
+                }
+
+                for name, arr in arrays.items():
+                    if not isinstance(arr, (list, tuple)) or len(arr) != expected_len:
+                        Logger.error(f"{self.screen_manager.current}: {name} must be a list/tuple of 12 values. Got: {arr}")
+                        raise ValueError(f"{name} must have exactly 12 elements")
+
+                sql_val = (
+                    sql_handbrake_flag,                         # 1
+                    *db_handbrake_left_value,                   # 12
+                    *db_handbrake_right_value,                  # 12
+                    *db_handbrake_difference_value,             # 12
+                    dt_handbrake_total_value,                   # 1
+                    dt_handbrake_efficiency_value,              # 1
+                    dt_id_user,                                 # 1
+                    dt_handbrake_post,                          # 1
+                    dt_no_antri                                 # 1
+                )
+
+                expected_params = 42  # handbrake_flag + 5 arrays ×12 + user/post/noantri
+                if len(sql_val) != expected_params:
+                    Logger.error(f"SQL Value count mismatch: expected {expected_params}, got {len(sql_val)}")
+                else:
+                    mycursor.execute(sql, sql_val)
+                    mydb.commit()
+                    Logger.info(f"Successfully updated load data for noantrian={dt_no_antri}")
+            except Exception as e:
+                toast_msg = f'Error Save Handbrake Data'
+                toast(toast_msg)
+                Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
             self.exec_print()
 
@@ -1980,19 +2611,17 @@ class ScreenResume(MDScreen):
     def exec_print(self):
         try:
             global dt_load_flag, dt_brake_flag, dt_handbrake_flag
-            tb_status = mydb.cursor()
-            tb_status.execute(f"SELECT load_flag, brake_flag, handbrake_flag FROM {TB_DATA} WHERE noantrian = '{dt_no_antrian}'")
-            result_tb_status = tb_status.fetchone()
-            mydb.commit()
-            db_status = np.array(result_tb_status).T
-            dt_load_flag            = int(db_status[0])
-            dt_brake_flag           = int(db_status[1])
-            dt_handbrake_flag       = int(db_status[2])
+            # tb_status = mydb.cursor()
+            # tb_status.execute(f"SELECT load_flag, brake_flag, handbrake_flag FROM {TB_DATA} WHERE noantrian = '{dt_no_antri}'")
+            # result_tb_status = tb_status.fetchone()
+            # mydb.commit()
+            # db_status = np.array(result_tb_status).T
+            # dt_load_flag            = int(db_status[0])
+            # dt_brake_flag           = int(db_status[1])
+            # dt_handbrake_flag       = int(db_status[2])
             
             self.exec_print_thermal()
             self.exec_print_pdf()
-
-            self.ids.bt_print.disabled = True
 
         except Exception as e:
             toast_msg = f'Gagal Mencetak Hasil Uji'
@@ -2003,83 +2632,98 @@ class ScreenResume(MDScreen):
         global flag_play
         global count_starting, count_get_data
         global mydb, db_antrian
-        global dt_no_antrian, dt_no_pol, dt_no_uji, dt_nama, dt_jenis_kendaraan
+        global dt_no_antri, dt_no_pol, dt_no_uji, dt_nama, dt_jns_kend
         global dt_load_flag, dt_brake_flag, dt_handbrake_flag
-        global db_load_left_value, db_load_right_value, db_load_total_value
-        global db_brake_left_value, db_brake_right_value, db_brake_total_value, db_brake_efficiency_value, db_brake_difference_value
-        global db_handbrake_left_value, db_handbrake_right_value, db_handbrake_total_value, db_handbrake_efficiency_value, db_handbrake_difference_value
+        global db_load_left_value, db_load_right_value, db_load_total_value, db_load_flag
+        global db_brake_left_value, db_brake_right_value, db_brake_total_value, db_brake_difference_value, db_brake_flag
+        global db_handbrake_left_value, db_handbrake_right_value, db_handbrake_total_value, db_handbrake_difference_value, db_handbrake_flag
         global dt_load_total_value, dt_brake_total_value, dt_brake_efficiency_value, dt_brake_difference_value, dt_handbrake_total_value, dt_handbrake_efficiency_value, dt_handbrake_difference_value
 
         try:
             print_datetime = str(time.strftime("%Y/%m/%d %H:%M:%S", time.localtime()))
-            pdf = FPDF()
+            pdf = FPDF(format=(200, 600), unit='mm')
             pdf.add_page()
             pdf.set_xy(0, 2)
-            pdf.image("assets/images/logo-dishub.png", w=30.0, h=0, x=90)
-            pdf.set_font('Arial', 'B', 24.0)
+            pdf.image(f"assets/images/{IMG_LOGO_DISHUB}", w=30.0, h=0, x=20)
+            pdf.set_xy(0, 2)
+            pdf.image(f"assets/images/{IMG_LOGO_PEMKAB}", w=30.0, h=0, x=160)            
+            pdf.set_font('Arial', 'B', 26.0)
             pdf.cell(ln=1, h=5.0, w=0)
             pdf.cell(ln=1, h=15.0, align='C', w=0, txt="DINAS PERHUBUNGAN", border=0)
             pdf.cell(ln=1, h=15.0, align='C', w=0, txt="UPTD PKB KAB. KUNINGAN", border=0)
             pdf.cell(ln=1, h=5.0, w=0)
-            pdf.set_font('Arial', 'B', 14.0)
-            pdf.cell(ln=0, h=10.0, align='L', w=0, txt=f"Tanggal: {print_datetime}", border=0)
-            pdf.cell(ln=1, h=10.0, align='R', w=0, txt=f"No Reg Kend: {dt_no_pol}", border=0)
-            pdf.cell(ln=0, h=10.0, align='L', w=0, txt=f"No Antrian: {dt_no_antrian}", border=0)
+            pdf.set_font('Arial', 'B', 21.0)
+            pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Tanggal: {print_datetime}", border=0)
+            pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"No Reg Kend: {dt_no_pol}", border=0)
+            pdf.cell(ln=0, h=10.0, align='L', w=0, txt=f"No Antrian: {dt_no_antri}", border=0)
             pdf.cell(ln=1, h=10.0, align='R', w=0, txt=f"No Uji: {dt_no_uji}", border=0)
-            pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Jenis Kendaraan: {dt_jenis_kendaraan}", border=0)
-            pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Nama: {dt_nama}", border=0)
+            pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Jenis Kendaraan: {dt_jns_kend}", border=0)
             pdf.cell(ln=0, h=10.0, align='L', w=0, txt=f"JBB: {dt_jbb}", border=0)
-            pdf.cell(ln=1, h=10.0, align='R', w=0, txt=f"Berat Kosong: {float(dt_berat_kosong)}", border=0)
+            pdf.cell(ln=1, h=10.0, align='R', w=0, txt=f"Berat Kosong: {float(dt_brt_ksg)}", border=0)
             pdf.cell(ln=1, h=10.0, w=0)
-            pdf.set_font('Arial', '', 14.0)
+            pdf.set_font('Arial', '', 21.0)
             pdf.cell(ln=1, h=10.0, align='L', w=80, txt=f"AXLE LOAD")
-            pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"No. Sumbu")
-            pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"Kiri")
-            pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"Kanan")
-            pdf.cell(ln=1, h=10.0, align='L', w=80, txt=f"Total")
+            pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"Sumbu No.")
+            pdf.cell(ln=0, h=10.0, align='L', w=40, txt=f"Kiri")
+            pdf.cell(ln=0, h=10.0, align='L', w=40, txt=f"Kanan")
+            pdf.cell(ln=1, h=10.0, align='L', w=40, txt=f"Total")
             for i in range(10):
                 if (db_load_total_value[i] > 0):
-                    pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"S{i+1}")
-                    pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"{int(db_load_left_value[i])} kg")
-                    pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"{int(db_load_right_value[i])} kg")
-                    pdf.cell(ln=1, h=10.0, align='L', w=80, txt=f"{int(db_load_total_value[i])} kg")
-            pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Nilai Axle Load Total : {int(dt_load_total_value)} kg")
-            pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Status Pengujian Axle Load: {'Lulus' if dt_load_flag == 2 else 'Tidak Lulus' if dt_load_flag == 1 else 'Belum Diuji'}")
+                    pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"Sumbu {i+1}")
+                    pdf.cell(ln=0, h=10.0, align='L', w=40, txt=f"{int(db_load_left_value[i])} kg")
+                    pdf.cell(ln=0, h=10.0, align='L', w=40, txt=f"{int(db_load_right_value[i])} kg")
+                    pdf.cell(ln=1, h=10.0, align='L', w=40, txt=f"{int(db_load_total_value[i])} kg")
+            pdf.cell(ln=0, h=10.0, align='L', w=160, txt=f"Total :")
+            pdf.cell(ln=1, h=10.0, align='L', w=40, txt=f"{int(dt_load_total_value)} kg")
             pdf.cell(ln=1, h=5.0, w=0)
 
             pdf.cell(ln=1, h=10.0, align='L', w=80, txt=f"REM UTAMA")
-            pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"No. Sumbu")
-            pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"Kiri")
-            pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"Kanan")
-            pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"Total")
-            pdf.cell(ln=1, h=10.0, align='L', w=80, txt=f"Selisih")
+            pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"Sumbu No.")
+            pdf.cell(ln=0, h=10.0, align='L', w=40, txt=f"Kiri")
+            pdf.cell(ln=0, h=10.0, align='L', w=40, txt=f"Kanan")
+            pdf.cell(ln=1, h=10.0, align='L', w=40, txt=f"Selisih")
             for i in range(10):
-                if (db_load_total_value[i] > 0):
-                    pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"S{i+1}")
-                    pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"{int(db_brake_left_value[i])} kg")
-                    pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"{int(db_brake_right_value[i])} kg")
-                    pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"{int(db_brake_total_value[i])} kg")
-                    pdf.cell(ln=1, h=10.0, align='L', w=80, txt=f"{int(db_brake_difference_value[i])} kg")
-            pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Nilai Rem Utama Total : {int(dt_brake_total_value)} kg")
-            pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Nilai Efisiensi Rem Utama : {str(np.round(dt_brake_efficiency_value, 1)).replace('.', ',')} %")
-            pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Status Pengujian Rem Utama: {'Lulus' if dt_brake_flag == 2 else 'Tidak Lulus' if dt_brake_flag == 1 else 'Belum Diuji'}")
-            pdf.cell(ln=1, h=5.0, w=0)
+                if (db_brake_total_value[i] > 0):
+                    pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"Sumbu {i+1}")
+                    pdf.cell(ln=0, h=10.0, align='L', w=40, txt=f"{int(db_brake_left_value[i])} kg")
+                    pdf.cell(ln=0, h=10.0, align='L', w=40, txt=f"{int(db_brake_right_value[i])} kg")
+                    pdf.cell(ln=1, h=10.0, align='L', w=40, txt=f"{int(db_brake_difference_value[i])} %")
+            pdf.cell(ln=0, h=10.0, align='L', w=160, txt=f"Total :")
+            pdf.cell(ln=1, h=10.0, align='L', w=40, txt=f"{int(dt_brake_total_value)} kg")
+            pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Efisiensi : {str(np.round(dt_brake_efficiency_value, 1)).replace('.', ',')} %")
+            pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"Status Pengujian :")
+            str_brake_result = f'Lulus' if int(dt_brake_flag) == 2 else 'Tidak Lulus' if int(dt_brake_flag) == 1 else 'Belum Diuji'
+            Logger.info(f"Status Brake: {str_brake_result}, Brake Flag: {dt_brake_flag}")
+            pdf.cell(ln=1, h=10.0, align='R', w=30, txt=f"{str_brake_result}")
+            pdf.cell(ln=1, h=5.0, w=0) 
 
             pdf.cell(ln=1, h=10.0, align='L', w=80, txt=f"REM PARKIR")
-            pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"No. Sumbu")
-            pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"Kiri")
-            pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"Kanan")
-            pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"Total")
+            pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"Sumbu No.")
+            pdf.cell(ln=0, h=10.0, align='L', w=40, txt=f"Kiri")
+            pdf.cell(ln=1, h=10.0, align='L', w=40, txt=f"Kanan")
             for i in range(10):
-                if (db_load_total_value[i] > 0):
-                    pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"S{i+1}")
-                    pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"{int(db_handbrake_left_value[i])} kg")
-                    pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"{int(db_handbrake_right_value[i])} kg")
-                    pdf.cell(ln=1, h=10.0, align='L', w=80, txt=f"{int(db_handbrake_total_value[i])} kg")
+                if (db_handbrake_total_value[i] > 0):
+                    pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"Sumbu {i+1}")
+                    pdf.cell(ln=0, h=10.0, align='L', w=40, txt=f"{int(db_handbrake_left_value[i])} kg")
+                    pdf.cell(ln=0, h=10.0, align='L', w=40, txt=f"{int(db_handbrake_right_value[i])} kg")
+            pdf.cell(ln=0, h=10.0, align='L', w=160, txt=f"Total :")
+            pdf.cell(ln=1, h=10.0, align='L', w=40, txt=f"{int(dt_handbrake_total_value)} kg")
+            pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Efisiensi : {str(np.round(dt_handbrake_efficiency_value, 1)).replace('.', ',')} %")
+            pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"Status Pengujian :")
+            str_handbrake_result = f'Lulus' if int(dt_handbrake_flag) == 2 else 'Tidak Lulus' if int(dt_handbrake_flag) == 1 else 'Belum Diuji'
+            Logger.info(f"Status Handbrake: {str_handbrake_result}, Handbrake Flag: {dt_handbrake_flag}")
+            pdf.cell(ln=1, h=10.0, align='R', w=30, txt=f"{str_handbrake_result}")
+            pdf.cell(ln=1, h=5.0, w=0)
 
-            pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Nilai Rem Parkir Total : {int(dt_handbrake_total_value)} kg")
-            pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Nilai Efisiensi Rem Parkir : {str(np.round(dt_handbrake_efficiency_value, 1)).replace('.', ',')} %")
-            pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Status Pengujian Rem Parkir: {'Lulus' if dt_handbrake_flag == 2 else 'Tidak Lulus' if dt_handbrake_flag == 1 else 'Belum Diuji'}")
+            pdf.cell(ln=1, h=10.0, align='C', w=0, txt=f"Resume Hasil Pengujian")
+            pdf.set_font('Arial', 'B', 26.0)
+
+            dt_brake_resume_flag = all(x == 2 for x in db_brake_flag if x != 0)
+            if(dt_brake_resume_flag and int(dt_brake_flag) == 2 and int(dt_handbrake_flag) == 2):
+                str_resume_result = f"LULUS"
+            else:
+                str_resume_result = f"TIDAK LULUS"
+            pdf.cell(ln=1, h=10.0, align='C', w=0, txt=f"{str_resume_result}")
 
             documents_dir = os.path.join(os.environ["USERPROFILE"], "Documents")
 
@@ -2092,7 +2736,7 @@ class ScreenResume(MDScreen):
             else:
                 toast(f"Folder already exists: {date_folder_path}")
 
-            pdf_filename = f"Hasil_Uji_No_{dt_no_antrian}.pdf"
+            pdf_filename = f"Hasil_Uji_No_{dt_no_antri}.pdf"
             pdf_path = os.path.join(date_folder_path, pdf_filename)
 
             pdf.output(pdf_path, 'F')
@@ -2108,11 +2752,11 @@ class ScreenResume(MDScreen):
         global flag_play
         global count_starting, count_get_data
         global mydb, db_antrian
-        global dt_no_antrian, dt_no_pol, dt_no_uji, dt_nama, dt_jenis_kendaraan
+        global dt_no_antri, dt_no_pol, dt_no_uji, dt_nama, dt_jns_kend
         global dt_load_flag, dt_brake_flag, dt_handbrake_flag
-        global db_load_left_value, db_load_right_value, db_load_total_value
-        global db_brake_left_value, db_brake_right_value, db_brake_total_value, db_brake_efficiency_value, db_brake_difference_value
-        global db_handbrake_left_value, db_handbrake_right_value, db_handbrake_total_value, db_handbrake_efficiency_value, db_handbrake_difference_value
+        global db_load_left_value, db_load_right_value, db_load_total_value, db_load_flag
+        global db_brake_left_value, db_brake_right_value, db_brake_total_value, db_brake_difference_value, db_brake_flag
+        global db_handbrake_left_value, db_handbrake_right_value, db_handbrake_total_value, db_handbrake_difference_value, db_handbrake_flag
         global dt_load_total_value, dt_brake_total_value, dt_brake_efficiency_value, dt_brake_difference_value, dt_handbrake_total_value, dt_handbrake_efficiency_value, dt_handbrake_difference_value
 
         try:
@@ -2127,16 +2771,16 @@ class ScreenResume(MDScreen):
             print_datetime = str(time.strftime("%d %B %Y %H:%M:%S", time.localtime()))
             
             printer.image("assets/images/logo-dishub.png")
+            printer.image("assets/images/logo-pandeglang.png")
             printer.textln(" \n ")
             printer.textln("VEHICLE INSPECTION INTEGRATION SYSTEM")
             printer.textln("AXLE LOAD & BRAKE")
             printer.textln("================================================================")
-            printer.text(f"No Antrian: {dt_no_antrian}\t")
+            printer.text(f"No Antrian: {dt_no_antri}\t")
             printer.text(f"No Reg: {dt_no_pol}\t")
             printer.textln(f"No Uji: {dt_no_uji}")
             printer.textln("  ")
-            printer.text(f"Nama: {dt_nama}\t")
-            printer.textln(f"Jenis Kendaraan: {dt_jenis_kendaraan}")
+            printer.textln(f"Jenis Kendaraan: {dt_jns_kend}")
             printer.textln("  ")
             printer.textln(f"Tanggal: {print_datetime}")
             printer.textln("  ")
@@ -2146,7 +2790,7 @@ class ScreenResume(MDScreen):
                 if (db_load_total_value[i] > 0.0):
                     printer.textln(f"S{i+1} \t{db_load_left_value[i]} \t{db_load_right_value[i]} \t{db_load_total_value[i]}")
             printer.textln(f"Nilai Axle Load Total : {dt_load_total_value}")
-            printer.textln(f"Status Pengujian Axle Load : {'Lulus' if dt_load_flag == 2 else 'Tidak Lulus' if dt_load_flag == 1 else 'Belum Diuji'}")
+            printer.textln(f"Status Pengujian Axle Load : {'Lulus' if int(dt_load_flag) == 2 else 'Tidak Lulus' if int(dt_load_flag) == 1 else 'Belum Diuji'}")
             printer.textln("  ")
             printer.textln(f"REM UTAMA")
             printer.text(f"No. Sumbu \tKiri \tKanan \tTotal \tSelisih")
@@ -2155,7 +2799,7 @@ class ScreenResume(MDScreen):
                     printer.textln(f"S{i+1} \t{db_brake_left_value[i]} \t{db_brake_right_value[i]} \t{db_brake_total_value[i]} \t{db_brake_difference_value[i]}")
             printer.textln(f"Nilai Rem Utama Total : {dt_brake_total_value}")
             printer.textln(f"Nilai Efisiensi Rem Utama : {dt_brake_efficiency_value}")
-            printer.textln(f"Status Pengujian Rem : {'Lulus' if dt_brake_flag == 2 else 'Tidak Lulus' if dt_brake_flag == 1 else 'Belum Diuji'}")
+            printer.textln(f"Status Pengujian Rem : {'Lulus' if int(dt_brake_flag) == 2 else 'Tidak Lulus' if int(dt_brake_flag) == 1 else 'Belum Diuji'}")
             printer.textln("  ")            
             printer.textln(f"REM PARKIR")
             printer.text(f"No. Sumbu \tKiri \tKanan \tTotal")
@@ -2164,7 +2808,7 @@ class ScreenResume(MDScreen):
                     printer.textln(f"S{i+1} \t{db_handbrake_left_value[i]} \t{db_handbrake_right_value[i]} \t{db_handbrake_total_value[i]}")
             printer.textln(f"Nilai Rem Parkir Total : {dt_handbrake_total_value}")
             printer.textln(f"Nilai Efisiensi Rem Parkir : {dt_handbrake_efficiency_value}")
-            printer.textln(f"Status Pengujian Rem Parkir : {'Lulus' if dt_handbrake_flag == 2 else 'Tidak Lulus' if dt_handbrake_flag == 1 else 'Belum Diuji'}")
+            printer.textln(f"Status Pengujian Rem Parkir : {'Lulus' if int(dt_handbrake_flag) == 2 else 'Tidak Lulus' if int(dt_handbrake_flag) == 1 else 'Belum Diuji'}")
             printer.textln("  ")
             printer.textln("================================================================")
             printer.cut()
@@ -2193,11 +2837,14 @@ class LoadBrakeMeterApp(MDApp):
         Window.bind(on_resize=self.on_window_resize)
 
     def build(self):
+        global window_size_x, window_size_y
         self.theme_cls.colors = colors
         self.theme_cls.primary_palette = "Gray"
         self.theme_cls.accent_palette = "Blue"
         self.theme_cls.theme_style = "Light"
         self.icon = 'assets/images/logo-load-app.png'
+        window_size_y = Window.size[0]
+        window_size_x = Window.size[1]
         self.set_dynamic_fonts(Window.size)
 
         LabelBase.register(

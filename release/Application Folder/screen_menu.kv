@@ -116,9 +116,8 @@
 								halign: "left"
 								valign: "middle"
 								font_style: 'H6'
-
 							MDLabel:
-								id: lb_no_antrian
+								id: lb_no_antri
 								halign: "left"
 								valign: "middle"
 								font_style: 'H6'
@@ -126,11 +125,10 @@
 						MDBoxLayout:
 							orientation: "horizontal"
 							MDLabel:
-								text: "No. Pol"
+								text: "No. Polisi"
 								halign: "left"
 								valign: "middle"
 								font_style: 'H6'
-
 							MDLabel:
 								id: lb_no_pol
 								halign: "left"
@@ -144,7 +142,6 @@
 								halign: "left"
 								valign: "middle"
 								font_style: 'H6'
-
 							MDLabel:
 								id: lb_no_uji
 								halign: "left"
@@ -154,13 +151,38 @@
 						MDBoxLayout:
 							orientation: "horizontal"
 							MDLabel:
-								text: "Nama"
+								text: "Status Uji"
+								halign: "left"
+								valign: "middle"
+								font_style: 'H6'
+							MDLabel:
+								id: lb_sts_uji
 								halign: "left"
 								valign: "middle"
 								font_style: 'H6'
 
+						MDBoxLayout:
+							orientation: "horizontal"
 							MDLabel:
-								id: lb_nama
+								text: "Merk"
+								halign: "left"
+								valign: "middle"
+								font_style: 'H6'
+							MDLabel:
+								id: lb_merk
+								halign: "left"
+								valign: "middle"
+								font_style: 'H6'
+
+						MDBoxLayout:
+							orientation: "horizontal"
+							MDLabel:
+								text: "Type"
+								halign: "left"
+								valign: "middle"
+								font_style: 'H6'
+							MDLabel:
+								id: lb_type
 								halign: "left"
 								valign: "middle"
 								font_style: 'H6'
@@ -172,9 +194,60 @@
 								halign: "left"
 								valign: "middle"
 								font_style: 'H6'
-
 							MDLabel:
-								id: lb_jenis_kendaraan
+								id: lb_jns_kend
+								halign: "left"
+								valign: "middle"
+								font_style: 'H6'
+
+						MDBoxLayout:
+							orientation: "horizontal"
+							MDLabel:
+								text: "JBB"
+								halign: "left"
+								valign: "middle"
+								font_style: 'H6'
+							MDLabel:
+								id: lb_jbb
+								halign: "left"
+								valign: "middle"
+								font_style: 'H6'
+								
+						MDBoxLayout:
+							orientation: "horizontal"
+							MDLabel:
+								text: "Berat Kosong"
+								halign: "left"
+								valign: "middle"
+								font_style: 'H6'
+							MDLabel:
+								id: lb_brt_ksg
+								halign: "left"
+								valign: "middle"
+								font_style: 'H6'
+
+						MDBoxLayout:
+							orientation: "horizontal"
+							MDLabel:
+								text: "Bahan Bakar"
+								halign: "left"
+								valign: "middle"
+								font_style: 'H6'
+							MDLabel:
+								id: lb_bhn_bkr
+								halign: "left"
+								valign: "middle"
+								font_style: 'H6'
+
+						MDBoxLayout:
+							orientation: "horizontal"
+							MDLabel:
+								text: "Warna"
+								halign: "left"
+								valign: "middle"
+								font_style: 'H6'
+							MDLabel:
+								id: lb_warna
 								halign: "left"
 								valign: "middle"
 								font_style: 'H6'
@@ -213,54 +286,64 @@
 							padding: 40, 0
 
 							MDRectangleFlatIconButton:
-								id: bt_S0
+								id: bt_S1
 								text: "S1"
 								icon: "arrow-right"
 								theme_text_color: "Custom"
 								text_color: "#EEEEEE"
 								md_bg_color: "4471C4"
-								size_hint: 1, 0.2
+								size_hint: 1, 0.16
 								on_press: root.exec_select_axle(1)
 
 							MDRectangleFlatIconButton:
-								id: bt_S1
+								id: bt_S2
 								text: "S2"
 								icon: "arrow-right"
 								theme_text_color: "Custom"
 								text_color: "#EEEEEE"
 								md_bg_color: "4471C4"
-								size_hint: 1, 0.21
+								size_hint: 1, 0.16
 								on_press: root.exec_select_axle(2)
 
 							MDRectangleFlatIconButton:
-								id: bt_S2
+								id: bt_S3
 								text: "S3"
 								icon: "arrow-right"
 								theme_text_color: "Custom"
 								text_color: "#EEEEEE"
 								md_bg_color: "4471C4"
-								size_hint: 1, 0.2
+								size_hint: 1, 0.16
 								on_press: root.exec_select_axle(3)
 
 							MDRectangleFlatIconButton:
-								id: bt_S3
+								id: bt_S4
 								text: "S4"
 								icon: "arrow-right"
 								theme_text_color: "Custom"
 								text_color: "#EEEEEE"
 								md_bg_color: "4471C4"
-								size_hint: 1, 0.2
+								size_hint: 1, 0.16
 								on_press: root.exec_select_axle(4)
 
 							MDRectangleFlatIconButton:
-								id: bt_S4
+								id: bt_S5
 								text: "S5"
 								icon: "arrow-right"
 								theme_text_color: "Custom"
 								text_color: "#EEEEEE"
 								md_bg_color: "4471C4"
-								size_hint: 1, 0.2
+								size_hint: 1, 0.16
 								on_press: root.exec_select_axle(5)
+
+							MDRectangleFlatIconButton:
+								id: bt_S6
+								text: "S6"
+								icon: "arrow-right"
+								theme_text_color: "Custom"
+								text_color: "#EEEEEE"
+								md_bg_color: "4471C4"
+								size_hint: 1, 0.16
+								on_press: root.exec_select_axle(6)
 
 						MDBoxLayout:
 							orientation: "vertical"
@@ -322,54 +405,64 @@
 							padding: 40, 0
 
 							MDRectangleFlatIconButton:
-								id: bt_S5
-								text: "S6"
-								icon: "arrow-right"
-								theme_text_color: "Custom"
-								text_color: "#EEEEEE"
-								md_bg_color: "4471C4"
-								size_hint: 1, 0.2
-								on_press: root.exec_select_axle(6)
-
-							MDRectangleFlatIconButton:
-								id: bt_S6
+								id: bt_S7
 								text: "S7"
 								icon: "arrow-right"
 								theme_text_color: "Custom"
 								text_color: "#EEEEEE"
 								md_bg_color: "4471C4"
-								size_hint: 1, 0.2
+								size_hint: 1, 0.16
 								on_press: root.exec_select_axle(7)
 
 							MDRectangleFlatIconButton:
-								id: bt_S7
+								id: bt_S8
 								text: "S8"
 								icon: "arrow-right"
 								theme_text_color: "Custom"
 								text_color: "#EEEEEE"
 								md_bg_color: "4471C4"
-								size_hint: 1, 0.2
+								size_hint: 1, 0.16
 								on_press: root.exec_select_axle(8)
 
 							MDRectangleFlatIconButton:
-								id: bt_S8
+								id: bt_S9
 								text: "S9"
 								icon: "arrow-right"
 								theme_text_color: "Custom"
 								text_color: "#EEEEEE"
 								md_bg_color: "4471C4"
-								size_hint: 1, 0.2
+								size_hint: 1, 0.16
 								on_press: root.exec_select_axle(9)
 
 							MDRectangleFlatIconButton:
-								id: bt_S9
+								id: bt_S10
 								text: "S10"
 								icon: "arrow-right"
 								theme_text_color: "Custom"
 								text_color: "#EEEEEE"
 								md_bg_color: "4471C4"
-								size_hint: 1, 0.2
+								size_hint: 1, 0.16
 								on_press: root.exec_select_axle(10)
+
+							MDRectangleFlatIconButton:
+								id: bt_S11
+								text: "S11"
+								icon: "arrow-right"
+								theme_text_color: "Custom"
+								text_color: "#EEEEEE"
+								md_bg_color: "4471C4"
+								size_hint: 1, 0.16
+								on_press: root.exec_select_axle(11)
+
+							MDRectangleFlatIconButton:
+								id: bt_S12
+								text: "S12"
+								icon: "arrow-right"
+								theme_text_color: "Custom"
+								text_color: "#EEEEEE"
+								md_bg_color: "4471C4"
+								size_hint: 1, 0.16
+								on_press: root.exec_select_axle(12)
 
 					MDBoxLayout:
 						orientation: "horizontal"

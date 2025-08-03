@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "VIIMS - Axle Load & Brake Meter Application - Kuningan"
-#define MyAppVersion "1.14.250717"
+#define MyAppVersion "1.15.250803"
 #define MyAppPublisher "PT. Tiga Ratu Berkarya"
 #define MyAppExeName "TRB-VIIMS-LoadBrakeMeterApp-Kuningan.exe"
 #define MyAppAssocName "VIIMS - Axle Load & Brake Meter Files - Kuningan"
@@ -12,7 +12,7 @@
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application. Do not use the same AppId value in installers for other applications.
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
-AppId={{06CF7662-6BB0-4515-A341-B5174119B82A}}
+AppId={{D4BDA8AC-B1EB-4DE6-9534-DE2DDEF18B9F}}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 ;AppVerName={#MyAppName} {#MyAppVersion}

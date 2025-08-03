@@ -5,6 +5,7 @@
 #:include screen_login.kv
 #:include screen_main.kv
 #:include screen_menu.kv
+#:include screen_add_data.kv
 #:include screen_add_queue.kv
 #:include screen_calibration.kv
 #:include screen_load_meter.kv
@@ -35,6 +36,11 @@
     ScreenMenu:
         id: screen_menu
         name: 'screen_menu'
+        screen_manager: screen_manager
+
+    ScreenAddData:
+        id: screen_add_data
+        name: 'screen_add_data'
         screen_manager: screen_manager
 
     ScreenAddQueue:

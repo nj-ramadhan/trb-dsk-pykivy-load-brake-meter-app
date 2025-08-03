@@ -2705,7 +2705,7 @@ class ScreenResume(MDScreen):
                 if (db_handbrake_total_value[i] > 0):
                     pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"Sumbu {i+1}")
                     pdf.cell(ln=0, h=10.0, align='L', w=40, txt=f"{int(db_handbrake_left_value[i])} kg")
-                    pdf.cell(ln=0, h=10.0, align='L', w=40, txt=f"{int(db_handbrake_right_value[i])} kg")
+                    pdf.cell(ln=1, h=10.0, align='L', w=40, txt=f"{int(db_handbrake_right_value[i])} kg")
             pdf.cell(ln=0, h=10.0, align='L', w=160, txt=f"Total :")
             pdf.cell(ln=1, h=10.0, align='L', w=40, txt=f"{int(dt_handbrake_total_value)} kg")
             pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Efisiensi : {str(np.round(dt_handbrake_efficiency_value, 1)).replace('.', ',')} %")

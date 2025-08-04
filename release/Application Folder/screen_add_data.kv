@@ -177,9 +177,42 @@
 						spacing: 100
 						size_hint_y: 0.15
 
-                        MDTextField:
-                            id: tx_merk
-                            hint_text: "Merk"
+						MDTextField:
+							id: tx_nama
+							font_size: '30sp'
+							font_name: "Recharge"
+							font_name_hint_text:'Recharge'
+							icon_left: "account"
+							hint_text: "Nama"
+							text_color_focus: "#4471C4"
+							hint_text_color_focus: "#4471C4"
+							line_color_focus: "#4471C4"	
+							icon_left_color_focus: "#4471C4"				
+							mode: "rectangle"
+
+						MDTextField:
+							id: tx_alamat
+							font_size: '30sp'
+							font_name: "Recharge"
+							font_name_hint_text:'Recharge'
+							icon_left: "account"
+							hint_text: "Alamat"
+							text_color_focus: "#4471C4"
+							hint_text_color_focus: "#4471C4"
+							line_color_focus: "#4471C4"	
+							icon_left_color_focus: "#4471C4"				
+							mode: "rectangle"
+
+					MDBoxLayout:
+						orientation: "horizontal"
+						spacing: 100
+						size_hint_y: 0.15
+
+						MDTextField:
+							id: drop_merk
+							hint_text: "Pilih Merk"
+							mode: "rectangle"
+							on_focus: if self.focus: root.menu_merk.open() if root.menu_merk else None
 							font_size: '30sp'
 							font_name: "Recharge"
 							font_name_hint_text:'Recharge'
@@ -188,7 +221,7 @@
 							hint_text_color_focus: "#4471C4"
 							line_color_focus: "#4471C4"	
 							icon_left_color_focus: "#4471C4"				
-							mode: "rectangle"
+
 
                         MDTextField:
                             id: tx_type
@@ -209,8 +242,40 @@
 						size_hint_y: 0.15
 
                         MDTextField:
-                            id: tx_idjeniskendaraan
-                            hint_text: "ID Jenis Kendaraan"
+                            id: tx_jeniskendaraan
+                            hint_text: "Jenis Kendaraan"
+							font_size: '30sp'
+							font_name: "Recharge"
+							font_name_hint_text:'Recharge'
+							icon_left: "car"
+							text_color_focus: "#4471C4"
+							hint_text_color_focus: "#4471C4"
+							line_color_focus: "#4471C4"	
+							icon_left_color_focus: "#4471C4"				
+							mode: "rectangle"
+
+						MDTextField:
+							id: drop_bahan_bakar
+							hint_text: "Pilih Bahan Bakar"
+							mode: "rectangle"
+							on_focus: if self.focus: root.menu_bahan_bakar.open() if root.menu_bahan_bakar else None
+							font_size: '30sp'
+							font_name: "Recharge"
+							font_name_hint_text:'Recharge'
+							icon_left: "car"
+							text_color_focus: "#4471C4"
+							hint_text_color_focus: "#4471C4"
+							line_color_focus: "#4471C4"	
+							icon_left_color_focus: "#4471C4"				
+
+					MDBoxLayout:
+						orientation: "horizontal"
+						spacing: 100
+						size_hint_y: 0.15
+						
+                        MDTextField:
+                            id: tx_beratkosong
+                            hint_text: "Berat Kosong"
 							font_size: '30sp'
 							font_name: "Recharge"
 							font_name_hint_text:'Recharge'
@@ -234,14 +299,11 @@
 							icon_left_color_focus: "#4471C4"				
 							mode: "rectangle"
 
-					MDBoxLayout:
-						orientation: "horizontal"
-						spacing: 100
-						size_hint_y: 0.15
-						
-                        MDTextField:
-                            id: tx_berat_kosong
-                            hint_text: "Berat Kosong"
+						MDTextField:
+							id: drop_warna
+							hint_text: "Pilih Warna"
+							mode: "rectangle"
+							on_focus: if self.focus: root.menu_warna.open() if root.menu_warna else None
 							font_size: '30sp'
 							font_name: "Recharge"
 							font_name_hint_text:'Recharge'
@@ -249,21 +311,7 @@
 							text_color_focus: "#4471C4"
 							hint_text_color_focus: "#4471C4"
 							line_color_focus: "#4471C4"	
-							icon_left_color_focus: "#4471C4"				
-							mode: "rectangle"
-
-                        MDTextField:
-                            id: tx_warna
-                            hint_text: "Warna"
-							font_size: '30sp'
-							font_name: "Recharge"
-							font_name_hint_text:'Recharge'
-							icon_left: "car"
-							text_color_focus: "#4471C4"
-							hint_text_color_focus: "#4471C4"
-							line_color_focus: "#4471C4"	
-							icon_left_color_focus: "#4471C4"				
-							mode: "rectangle"
+							icon_left_color_focus: "#4471C4"
 
 					MDBoxLayout:
 						orientation: "horizontal"

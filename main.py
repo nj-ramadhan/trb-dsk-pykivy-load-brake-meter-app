@@ -1739,8 +1739,33 @@ class ScreenAddData(MDScreen):
     def exec_register(self):
         try:
             dt_temp_no_uji = self.ids.tx_nouji.text.strip()
-            dt_temp_no_uji_new = self.ids.tx_nouji.text.strip()
             dt_temp_no_pol = self.ids.tx_nopol.text.strip()
+
+            if not dt_temp_no_uji or not dt_temp_no_pol:
+                toast("Nomor Uji dan Nomor Regristasi tidak boleh kosong!")
+                return
+
+            mycursor = mydb.cursor()
+
+            check_nouji_sql = f"SELECT COUNT(*) FROM {TB_DATA_MASTER} WHERE NOUJI = %s"
+            mycursor.execute(check_nouji_sql, (dt_temp_no_uji,))
+            result_nouji = mycursor.fetchone()
+            
+            if result_nouji and result_nouji[0] > 0:
+                toast("Nomor Uji ini sudah terdaftar!")
+                Logger.warning(f"{self.name}: Upaya menambahkan duplikat NOUJI: {dt_temp_no_uji}")
+                return 
+
+            check_nopol_sql = f"SELECT COUNT(*) FROM {TB_DATA_MASTER} WHERE NOPOL = %s"
+            mycursor.execute(check_nopol_sql, (dt_temp_no_pol,))
+            result_nopol = mycursor.fetchone()
+
+            if result_nopol and result_nopol[0] > 0:
+                toast("Nomor Polisi ini sudah terdaftar!")
+                Logger.warning(f"{self.name}: Upaya menambahkan duplikat NOPOL: {dt_temp_no_pol}")
+                return 
+
+            dt_temp_no_uji_new = self.ids.tx_nouji.text.strip()
             dt_temp_nama = self.ids.tx_nama.text.strip()
             dt_temp_alamat = self.ids.tx_alamat.text.strip()
             dt_temp_type = self.ids.tx_type.text.strip()

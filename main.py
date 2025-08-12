@@ -30,6 +30,7 @@ from kivymd.uix.screen import MDScreen
 from kivymd.uix.label import MDLabel
 from kivymd.uix.card import MDCard
 from kivymd.uix.textfield import MDTextField
+from kivymd.uix.menu import MDDropdownMenu
 from kivy.metrics import dp
 from kivymd.toast import toast
 from kivymd.app import MDApp
@@ -569,8 +570,8 @@ class ScreenMain(MDScreen):
                 screen_calibration.ids.lb_brake_r_val.text = str(dt_brake_r_val)
 
             self.ids.bt_calibrate.disabled = False if dt_user != '' else True
-            self.ids.bt_add_data.disabled = False if dt_user != '' else True
-            self.ids.bt_add_queue.disabled = False if dt_user != '' else True
+            # self.ids.bt_add_data.disabled = False if dt_user != '' else True
+            # self.ids.bt_add_queue.disabled = False if dt_user != '' else True
             self.ids.bt_logout.disabled = False if dt_user != '' else True
 
             self.ids.lb_operator.text = f'Login Sebagai: \n{dt_user}' if dt_user != '' else 'Silahkan Login'
@@ -1621,43 +1622,240 @@ class ScreenAddData(MDScreen):
         self.ids.lb_unit.text = LB_UNIT
         self.ids.lb_unit_address.text = LB_UNIT_ADDRESS
 
-    def on_enter(self):
-        pass
-
-    def on_leave(self):
-        pass
-
     def exec_cancel(self):
-        try:
+        try:           
+            self.ids.tx_nouji.text = ""
+            self.ids.tx_nopol.text = ""
+            self.ids.drop_merk.text = ""
+            self.ids.tx_alamat.text = ""
+            self.ids.tx_nama.text = ""
+            self.ids.tx_type.text = ""
+            self.ids.tx_jeniskendaraan.text = ""
+            self.ids.drop_bahan_bakar.text = ""
+            self.ids.tx_beratkosong.text = ""
+            self.ids.tx_jbb.text = ""
+            self.ids.drop_warna.text = ""
             self.screen_manager.current = 'screen_main'
-
         except Exception as e:
             toast_msg = f'Terjadi kesalahan saat berpindah ke halaman Utama'
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
-    def exec_register(self):
-        global mydb, db_users, db_merk, db_bahan_bakar, db_warna
-        global dt_id_user, dt_user, dt_foto_user
-        global dt_dash_antri
-        global dt_temp_no_uji, dt_temp_no_uji_new, dt_temp_no_wilayah, dt_temp_no_kendaraan, dt_temp_no_plat, dt_temp_no_pol
-        global dt_temp_nama, dt_temp_no_hp, dt_temp_alamat, dt_temp_id_izin, dt_temp_wilayah, dt_temp_provinsi, dt_temp_kabupaten_kota, dt_temp_kecamatan
-        global dt_temp_id_merk, dt_temp_id_subjenis, dt_temp_type, dt_temp_tahun_buat, dt_temp_silinder, dt_temp_warna, dt_temp_chasis, dt_temp_mesin, dt_temp_warna_plat
-        global dt_temp_bhn_bkr, dt_temp_jbb, dt_temp_brt_ksg, dt_temp_daya_motor, dt_temp_tgl_uji_terakhir, dt_temp_tgl_uji_habis, dt_temp_status_uji, dt_temp_status_penerbitan, dt_temp_jenis_kendaraan, dt_temp_kode_jenis_kendaraan, dt_temp_kode_wilayah
+    def on_enter(self):
+        """Called when screen is entered — safe to initialize dropdowns here."""
+        Clock.schedule_once(self.load_dropdowns, 0.1)  # Small delay to ensure UI is loaded
 
-        dt_tgl_baru_uji = str(time.strftime("%Y/%m/%d %H:%M:%S", time.localtime()))
+    def on_leave(self):
+        """Clean up menus to avoid memory leaks or errors."""
+        if hasattr(self, 'menu_merk') and self.menu_merk:
+            self.menu_merk.dismiss()
+            self.menu_merk = None
+        if hasattr(self, 'menu_bahan_bakar') and self.menu_bahan_bakar:
+            self.menu_bahan_bakar.dismiss()
+            self.menu_bahan_bakar = None
+        if hasattr(self, 'menu_warna') and self.menu_warna:
+            self.menu_warna.dismiss()
+            self.menu_warna = None
 
+    def load_dropdowns(self, dt=None):
+        """Initialize dropdown menus for Merk, Bahan Bakar, Warna."""
         try:
+            # --- Merk Dropdown ---
+            tb_merk = mydb.cursor()
+            tb_merk.execute(f"SELECT ID, DESCRIPTION FROM {TB_MERK}")
+            result_tb_merk = tb_merk.fetchall()
+            if result_tb_merk:
+                self.merk_items = [
+                    {
+                        "viewclass": "OneLineListItem",
+                        "text": row[1],
+                        "on_release": lambda x=row[1], id=row[0]: self.set_merk(x, id),
+                    } for row in result_tb_merk
+                ]
+                self.menu_merk = MDDropdownMenu(
+                    caller=self.ids.drop_merk,
+                    items=self.merk_items,
+                    width_mult=4,  # You can adjust this
+                )
+            else:
+                self.menu_merk = None
+
+            # --- Bahan Bakar Dropdown ---
+            tb_bahan_bakar = mydb.cursor()
+            tb_bahan_bakar.execute(f"SELECT ID, DESCRIPTION FROM {TB_BAHAN_BAKAR}")
+            result_tb_bahan_bakar = tb_bahan_bakar.fetchall()
+            if result_tb_bahan_bakar:
+                self.bahan_bakar_items = [
+                    {
+                        "viewclass": "OneLineListItem",
+                        "text": row[1],
+                        "on_release": lambda x=row[1], id=row[0]: self.set_bahan_bakar(x, id),
+                    } for row in result_tb_bahan_bakar
+                ]
+                self.menu_bahan_bakar = MDDropdownMenu(
+                    caller=self.ids.drop_bahan_bakar,
+                    items=self.bahan_bakar_items,
+                    width_mult=4,
+                )
+            else:
+                self.menu_bahan_bakar = None
+
+            # --- Warna Dropdown ---
+            tb_warna = mydb.cursor()
+            tb_warna.execute(f"SELECT id_warna, nama FROM {TB_WARNA}")
+            result_tb_warna = tb_warna.fetchall()
+            if result_tb_warna:
+                self.warna_items = [
+                    {
+                        "viewclass": "OneLineListItem",
+                        "text": row[1],
+                        "on_release": lambda x=row[1], id=row[0]: self.set_warna(x, id),
+                    } for row in result_tb_warna
+                ]
+                self.menu_warna = MDDropdownMenu(
+                    caller=self.ids.drop_warna,
+                    items=self.warna_items,
+                    width_mult=4,
+                )
+            else:
+                self.menu_warna = None
+
+        except Exception as e:
+            toast(f"Error loading dropdowns: {str(e)}")
+            Logger.error(f"ScreenAddData: Failed to load dropdowns - {e}")
+
+    # Set functions for dropdown selection
+    def set_merk(self, text_item, id_item):
+        self.ids.drop_merk.text = text_item
+        self.ids.drop_merk.merk_id = id_item
+        if self.menu_merk:
+            self.menu_merk.dismiss()
+
+    def set_bahan_bakar(self, text_item, id_item):
+        self.ids.drop_bahan_bakar.text = text_item
+        self.ids.drop_bahan_bakar.bahan_bakar_id = id_item
+        if self.menu_bahan_bakar:
+            self.menu_bahan_bakar.dismiss()
+
+    def set_warna(self, text_item, id_item):
+        self.ids.drop_warna.text = text_item
+        self.ids.drop_warna.warna_id = id_item
+        if self.menu_warna:
+            self.menu_warna.dismiss()
+        
+    def exec_register(self):
+        try:
+            dt_temp_no_uji = self.ids.tx_nouji.text.strip()
+            dt_temp_no_pol = self.ids.tx_nopol.text.strip()
+
+            if not dt_temp_no_uji or not dt_temp_no_pol:
+                toast("Nomor Uji dan Nomor Regristasi tidak boleh kosong!")
+                return
+
             mycursor = mydb.cursor()
-            sql = f"INSERT INTO {TB_DATA_MASTER} (NOUJI, NEW_NOUJI, NOPOL, MERK_ID, TYPE, idjeniskendaraan, kd_jnskendaraan, WLY, SUBJENIS_ID, JBB, BERATKOSONG, BHN_BAKAR, WARNA_KEND, STATUSUJI, statuspenerbitan, PLAT, NOKDR, NOWIL, TGL_UJI_TERAKHIR) VALUES ('{dt_temp_no_uji}','{dt_temp_no_uji_new}','{dt_temp_no_pol}','{dt_temp_id_merk}','{dt_temp_type}','{dt_temp_jenis_kendaraan}','{dt_temp_kode_jenis_kendaraan}','{dt_temp_kode_wilayah}','{dt_temp_id_subjenis}','{dt_temp_jbb}','{dt_temp_brt_ksg}','{dt_temp_bhn_bkr}','{dt_temp_warna}','{dt_temp_status_uji}','{dt_temp_status_penerbitan}','{dt_temp_no_wilayah}','{dt_temp_no_kendaraan}','{dt_temp_no_plat}','{dt_tgl_baru_uji}')"
-            mycursor.execute(sql)
+
+            check_nouji_sql = f"SELECT COUNT(*) FROM {TB_DATA_MASTER} WHERE NOUJI = %s"
+            mycursor.execute(check_nouji_sql, (dt_temp_no_uji,))
+            result_nouji = mycursor.fetchone()
+            
+            if result_nouji and result_nouji[0] > 0:
+                toast("Nomor Uji ini sudah terdaftar!")
+                Logger.warning(f"{self.name}: Upaya menambahkan duplikat NOUJI: {dt_temp_no_uji}")
+                return 
+
+            check_nopol_sql = f"SELECT COUNT(*) FROM {TB_DATA_MASTER} WHERE NOPOL = %s"
+            mycursor.execute(check_nopol_sql, (dt_temp_no_pol,))
+            result_nopol = mycursor.fetchone()
+
+            if result_nopol and result_nopol[0] > 0:
+                toast("Nomor Polisi ini sudah terdaftar!")
+                Logger.warning(f"{self.name}: Upaya menambahkan duplikat NOPOL: {dt_temp_no_pol}")
+                return 
+
+            dt_temp_no_uji_new = self.ids.tx_nouji.text.strip()
+            dt_temp_nama = self.ids.tx_nama.text.strip()
+            dt_temp_alamat = self.ids.tx_alamat.text.strip()
+            dt_temp_type = self.ids.tx_type.text.strip()
+            dt_temp_jenis_kendaraan = self.ids.tx_jeniskendaraan.text.strip()
+            dt_temp_jbb = self.ids.tx_jbb.text.strip()
+            dt_temp_brt_ksg = self.ids.tx_beratkosong.text.strip()
+            dt_temp_tgl_uji_terakhir = str(time.strftime("%Y/%m/%d %H:%M:%S", time.localtime()))
+
+            # self.ids.lb_temp_nama.text = f'{dt_temp_nama}'
+            # self.ids.lb_temp_alamat.text = f'{dt_temp_alamat}'
+            # self.ids.lb_temp_no_uji.text = f'{dt_temp_no_uji}'
+            # self.ids.lb_temp_no_pol.text = f'{dt_temp_no_pol}'
+            # self.ids.lb_temp_status_uji.text = 'Berkala' if dt_temp_status_uji == 'B' else 'Uji Ulang' if dt_temp_status_uji == 'U' else 'Baru' if dt_temp_status_uji == 'BR' else 'Numpang Uji' if dt_temp_status_uji == 'NB' else 'Mutasi'
+            # self.ids.lb_temp_tgl_uji_terakhir.text = f'{dt_temp_tgl_uji_terakhir}'
+            # self.ids.lb_temp_tgl_uji_habis.text = f'{dt_temp_tgl_uji_habis}'
+            # self.ids.lb_temp_merk.text = '-' if dt_temp_id_merk == None else f"{db_merk[np.where(db_merk == dt_temp_id_merk)[0][0],1]}"
+            # self.ids.lb_temp_type.text = f'{dt_temp_type}'
+            # self.ids.lb_temp_jenis_kendaraan.text = f'{dt_temp_jenis_kendaraan}'
+            # self.ids.lb_temp_warna.text = '-' if dt_temp_warna == None else f"{db_warna[np.where(db_warna == dt_temp_warna)[0][0],1]}"
+            # self.ids.lb_temp_chasis.text = f'{dt_temp_chasis}'
+            # self.ids.lb_temp_mesin.text = f'{dt_temp_mesin}'
+            # self.ids.lb_temp_bahan_bakar.text = '-' if dt_temp_bhn_bkr == None else f"{db_bahan_bakar[np.where(db_bahan_bakar == dt_temp_bhn_bkr)[0][0],1]}"
+            # self.ids.lb_temp_jbb.text = f'{dt_temp_jbb}'
+            # self.ids.lb_temp_berat_kosong.text = f'{dt_temp_brt_ksg}'
+
+            # Validate dropdowns have values selected
+            if not hasattr(self.ids.drop_merk, 'merk_id'):
+                toast("Pilih Merk!")
+                return
+            if not hasattr(self.ids.drop_bahan_bakar, 'bahan_bakar_id'):
+                toast("Pilih Bahan Bakar!")
+                return
+            if not hasattr(self.ids.drop_warna, 'warna_id'):
+                toast("Pilih Warna!")
+                return
+
+            dt_temp_id_merk = self.ids.drop_merk.merk_id
+            dt_temp_bhn_bkr = self.ids.drop_bahan_bakar.bahan_bakar_id
+            dt_temp_warna = self.ids.drop_warna.warna_id
+
+            # Insert into database
+            mycursor = mydb.cursor()
+            sql = f"""
+                INSERT INTO {TB_DATA_MASTER} 
+                (NOUJI, NEW_NOUJI, NOPOL, NAMA, ALAMAT, MERK_ID, TYPE, idjeniskendaraan, BHN_BAKAR, JBB, BERATKOSONG, WARNA_KEND, TGL_UJI_PERDANA, TGL_UJI_TERAKHIR) 
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """
+            values = (
+                dt_temp_no_uji,
+                dt_temp_no_uji_new,
+                dt_temp_no_pol,
+                dt_temp_nama,
+                dt_temp_alamat,
+                dt_temp_id_merk,
+                dt_temp_type,
+                dt_temp_jenis_kendaraan,
+                dt_temp_bhn_bkr,
+                dt_temp_jbb,
+                dt_temp_brt_ksg,
+                dt_temp_warna,
+                dt_temp_tgl_uji_terakhir,
+                dt_temp_tgl_uji_terakhir
+            )
+            mycursor.execute(sql, values)
             mydb.commit()
 
             toast("Data berhasil didaftarkan")
             self.screen_manager.current = 'screen_main'
+            self.ids.tx_nouji.text = ""
+            self.ids.tx_nopol.text = ""
+            self.ids.drop_merk.text = ""
+            self.ids.tx_alamat.text = ""
+            self.ids.tx_nama.text = ""
+            self.ids.tx_type.text = ""
+            self.ids.tx_jeniskendaraan.text = ""
+            self.ids.drop_bahan_bakar.text = ""
+            self.ids.tx_beratkosong.text = ""
+            self.ids.tx_jbb.text = ""
+            self.ids.drop_warna.text = ""
+            self.screen_manager.current = 'screen_main'
 
         except Exception as e:
-            toast_msg = f'Terjadi kesalahan saat mendaftar'
+            toast_msg = f'Terjadi kesalahan saat mendaftarkan data'
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}") 
 

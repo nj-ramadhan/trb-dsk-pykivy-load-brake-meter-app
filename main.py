@@ -2826,7 +2826,7 @@ class ScreenResume(MDScreen):
             pdf.set_font('Arial', 'B', 26.0)
             pdf.cell(ln=1, h=5.0, w=0)
             pdf.cell(ln=1, h=15.0, align='C', w=0, txt="DINAS PERHUBUNGAN", border=0)
-            pdf.cell(ln=1, h=15.0, align='C', w=0, txt="UPTD PKB KAB. KUNINGAN", border=0)
+            pdf.cell(ln=1, h=15.0, align='C', w=0, txt="UPTD PKB KAB. PANDEGLANG", border=0)
             pdf.cell(ln=1, h=5.0, w=0)
             pdf.set_font('Arial', 'B', 21.0)
             pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Tanggal: {print_datetime}", border=0)

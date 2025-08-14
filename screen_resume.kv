@@ -108,350 +108,109 @@
 					padding:20
 					spacing:20
 
-					MDLabel:
-						text: "AXLE LOAD"
-						halign: "left"
-						valign: "middle"
-						font_style: 'H6'
-						size_hint_y: 0.05
+					MDBoxLayout:
+						orientation: "vertical"
+						size_hint_y: 0.47	
+
+						MDLabel:
+							text: "AXLE LOAD"
+							halign: "left"
+							valign: "middle"
+							font_style: 'H6'
+							size_hint_y: 0.05
+
+						MDBoxLayout:
+							orientation: "horizontal"
+							size_hint_y: 0.05
+							MDLabel:
+								text: "Sumbu No."
+								halign: "left"
+								valign: "middle"
+								font_style: 'H6'
+								size_hint_x: 0.3
+
+							MDLabel:
+								text: "Axle Kiri"
+								halign: "left"
+								valign: "middle"
+								font_style: 'H6'
+								size_hint_x: 0.23
+							
+							MDLabel:
+								text: "Axle Kanan"
+								halign: "left"
+								valign: "middle"
+								font_style: 'H6'	
+								size_hint_x: 0.23			
+
+							MDLabel:
+								text: "Total"
+								halign: "left"
+								valign: "middle"
+								font_style: 'H6'
+								size_hint_x: 0.23
+
+						MDScrollView:
+							id: layout_scroll_load
+							size_hint_y: 0.3
+							scroll_timeout:100
+							MDList:
+								id: layout_list_load
+
+						MDBoxLayout:
+							orientation: "horizontal"
+							md_bg_color: "#FFFFFF"
+							size_hint_y: 0.05
+							MDLabel:
+								text: "Total Axle Load"
+								halign: "left"
+								valign: "middle"
+								font_style: 'H6'
+								size_hint_x: 0.3
+
+							MDLabel:
+								id: lb_load_left_sum
+								halign: "left"
+								valign: "middle"
+								font_style: 'H6'
+								size_hint_x: 0.23
+
+							MDLabel:
+								id: lb_load_right_sum
+								halign: "left"
+								valign: "middle"
+								font_style: 'H6'
+								size_hint_x: 0.23
+
+							MDLabel:
+								id: lb_load_total_sum
+								halign: "left"
+								valign: "middle"
+								font_style: 'H6'
+								size_hint_x: 0.23
 
 					MDBoxLayout:
-						orientation: "horizontal"
-						size_hint_y: 0.05
-						MDLabel:
-							text: "Sumbu No."
-							halign: "left"
-							valign: "middle"
-							font_style: 'H6'
-							size_hint_x: 0.2
-
-						MDLabel:
-							text: "Axle Kiri"
-							halign: "left"
-							valign: "middle"
-							font_style: 'H6'
-							size_hint_x: 0.2
-						
-						MDLabel:
-							text: "Axle Kanan"
-							halign: "left"
-							valign: "middle"
-							font_style: 'H6'	
-							size_hint_x: 0.2			
-
-						MDLabel:
-							text: "Total"
-							halign: "left"
-							valign: "middle"
-							font_style: 'H6'
-							size_hint_x: 0.2
-
-						MDLabel:
-							text: "Status"
-							halign: "left"
-							valign: "middle"
-							font_style: 'H6'
-							size_hint_x: 0.2
-
-					MDScrollView:
-						id: layout_scroll_load
-						size_hint_y: 0.3
-						scroll_timeout:100
-						MDList:
-							id: layout_list_load
+						orientation: "vertical"
+						size_hint_y: 0.06
 
 					MDBoxLayout:
-						orientation: "horizontal"
-						md_bg_color: "#FFFFFF"
-						size_hint_y: 0.05
-						MDLabel:
-							text: "Total"
-							halign: "left"
-							valign: "middle"
-							font_style: 'H6'
-							size_hint_x: 0.2
-
-						MDLabel:
-							id: lb_load_left_sum
-							halign: "left"
-							valign: "middle"
-							font_style: 'H6'
-							size_hint_x: 0.2
-
-						MDLabel:
-							id: lb_load_right_sum
-							halign: "left"
-							valign: "middle"
-							font_style: 'H6'
-							size_hint_x: 0.2
-
-						MDLabel:
-							id: lb_load_total_sum
-							halign: "left"
-							valign: "middle"
-							font_style: 'H6'
-							size_hint_x: 0.2
-
-						MDLabel:
-							id: lb_load_status
-							halign: "left"
-							valign: "middle"
-							font_style: 'H6'	
-							size_hint_x: 0.2
-
-					MDLabel:
-						text: "REM PARKIR"
-						halign: "left"
-						valign: "middle"
-						font_style: 'H6'
-						size_hint_y: 0.05
-
-					MDBoxLayout:
-						orientation: "horizontal"
-						size_hint_y: 0.05
-						MDLabel:
-							text: "Sumbu No."
-							halign: "left"
-							valign: "middle"
-							font_style: 'H6'
-							size_hint_x: 0.2
-
-						MDLabel:
-							text: "Rem Kiri"
-							halign: "left"
-							valign: "middle"
-							font_style: 'H6'
-							size_hint_x: 0.2			
-
-						MDLabel:
-							text: "Rem Kanan"
-							halign: "left"
-							valign: "middle"
-							font_style: 'H6'
-							size_hint_x: 0.2
-
-						MDLabel:
-							text: "Total"
-							halign: "left"
-							valign: "middle"
-							font_style: 'H6'
-							size_hint_x: 0.2
-
-						MDLabel:
-							text: "Status"
-							halign: "left"
-							valign: "middle"
-							font_style: 'H6'
-							size_hint_x: 0.2
-
-					MDScrollView:
-						id: layout_scroll_handbrake
-						size_hint_y: 0.3
-						scroll_timeout:100
-						MDList:
-							id: layout_list_handbrake
-
-					MDBoxLayout:
-						orientation: "horizontal"
-						md_bg_color: "#FFFFFF"
-						size_hint_y: 0.05
-						MDLabel:
-							text: "Total Gaya Rem Parkir"
-							halign: "left"
-							valign: "middle"
-							font_style: 'H6'
-							size_hint_x: 0.2
-
-						MDLabel:
-							id: lb_handbrake_left_sum
-							halign: "left"
-							valign: "middle"
-							font_style: 'H6'
-							size_hint_x: 0.2
-
-						MDLabel:
-							id: lb_handbrake_right_sum
-							halign: "left"
-							valign: "middle"
-							font_style: 'H6'
-							size_hint_x: 0.2
-
-						MDLabel:
-							id: lb_handbrake_total_sum
-							halign: "left"
-							valign: "middle"
-							font_style: 'H6'	
-							size_hint_x: 0.2	
-
-						MDLabel:
-							id: lb_handbrake_status
-							halign: "left"
-							valign: "middle"
-							font_style: 'H6'	
-							size_hint_x: 0.2
-
-					MDBoxLayout:
-						orientation: "horizontal"
-						md_bg_color: "#FFFFFF"
-						size_hint_y: 0.05
-						MDLabel:
-							text: "Efisiensi Rem Parkir"
-							halign: "left"
-							valign: "middle"
-							font_style: 'H6'
-							size_hint_x: 0.25
-
-						MDLabel:
-							id: lb_handbrake_efficiency
-							halign: "left"
-							valign: "middle"
-							font_style: 'H6'	
-							size_hint_x: 0.25	
-
-				MDBoxLayout:
-					orientation: "vertical"
-					size_hint_x: 0.5
-
-					MDLabel:
-						text: "REM UTAMA"
-						halign: "left"
-						valign: "middle"
-						font_style: 'H6'
-						size_hint_y: 0.05
-
-					MDBoxLayout:
-						orientation: "horizontal"
-						size_hint_y: 0.05
-						MDLabel:
-							text: "Sumbu No."
-							halign: "left"
-							valign: "middle"
-							font_style: 'H6'
-							size_hint_x: 0.16
-						
-						MDLabel:
-							text: "Rem Kiri"
-							halign: "left"
-							valign: "middle"
-							font_style: 'H6'
-							size_hint_x: 0.16						
-
-						MDLabel:
-							text: "Rem Kanan"
-							halign: "left"
-							valign: "middle"
-							font_style: 'H6'
-							size_hint_x: 0.16
-
-						MDLabel:
-							text: "Total"
-							halign: "left"
-							valign: "middle"
-							font_style: 'H6'	
-							size_hint_x: 0.16
-
-						MDLabel:
-							text: "Selisih"
-							halign: "left"
-							valign: "middle"
-							font_style: 'H6'	
-							size_hint_x: 0.16
-
-						MDLabel:
-							text: "Status"
-							halign: "left"
-							valign: "middle"
-							font_style: 'H6'
-							size_hint_x: 0.16
-
-					MDScrollView:
-						id: layout_scroll_brake
-						size_hint_y: 0.3
-						scroll_timeout:100
-						MDList:
-							id: layout_list_brake
-
-					MDBoxLayout:
-						orientation: "horizontal"
-						md_bg_color: "#FFFFFF"
-						size_hint_y: 0.05
-						MDLabel:
-							text: "Total Gaya Rem Utama"
-							halign: "left"
-							valign: "middle"
-							font_style: 'H6'
-							size_hint_x: 0.16
-
-						MDLabel:
-							id: lb_brake_left_sum
-							halign: "left"
-							valign: "middle"
-							font_style: 'H6'
-							size_hint_x: 0.16
-
-						MDLabel:
-							id: lb_brake_right_sum
-							halign: "left"
-							valign: "middle"
-							font_style: 'H6'
-							size_hint_x: 0.16
-
-						MDLabel:
-							id: lb_brake_total_sum
-							halign: "left"
-							valign: "middle"
-							font_style: 'H6'	
-							size_hint_x: 0.16			
-
-						MDLabel:
-							id: lb_brake_diff_sum
-							halign: "left"
-							valign: "middle"
-							font_style: 'H6'	
-							size_hint_x: 0.16
-
-						MDLabel:
-							id: lb_brake_status
-							halign: "left"
-							valign: "middle"
-							font_style: 'H6'	
-							size_hint_x: 0.16
-
-					MDBoxLayout:
-						orientation: "horizontal"
-						md_bg_color: "#FFFFFF"
-						size_hint_y: 0.05
-						MDLabel:
-							text: "Efisiensi Rem Utama"
-							halign: "left"
-							valign: "middle"
-							font_style: 'H6'
-							size_hint_x: 0.25
-
-						MDLabel:
-							id: lb_brake_efficiency
-							halign: "left"
-							valign: "middle"
-							font_style: 'H6'	
-							size_hint_x: 0.25	
-
-					MDBoxLayout:
-						orientation: "horizontal"
-						size_hint_y: 0.1
+						orientation: "vertical"	
+						size_hint_y: 0.37					
 
 						MDLabel:
 							text: "RESUME HASIL PENGUJIAN"
 							halign: "center"
 							valign: "middle"
 							font_style: 'H6'
+							size_hint_y: 0.1
 
-					MDLabel:
-						id: lb_test_result
-						halign: "center"
-						valign: "middle"
-						theme_text_color: "Custom"
-						font_style: 'H3'
-						size_hint_y: 0.25
+						MDLabel:
+							id: lb_test_result
+							halign: "center"
+							valign: "middle"
+							theme_text_color: "Custom"
+							font_style: 'H3'
+							size_hint_y: 0.25
 
 					MDBoxLayout:
 						orientation: "horizontal"
@@ -478,6 +237,240 @@
 							disabled: True
 							size_hint_x: 0.5
 							on_press: root.exec_save()
+
+				MDBoxLayout:
+					orientation: "vertical"
+					size_hint_x: 0.5
+
+					MDBoxLayout:
+						orientation: "vertical"	
+						size_hint_y: 0.47				
+
+						MDLabel:
+							text: "REM UTAMA"
+							halign: "left"
+							valign: "middle"
+							font_style: 'H6'
+							size_hint_y: 0.05
+
+						MDBoxLayout:
+							orientation: "horizontal"
+							size_hint_y: 0.05
+							MDLabel:
+								text: "Sumbu No."
+								halign: "left"
+								valign: "middle"
+								font_style: 'H6'
+								size_hint_x: 0.16
+							
+							MDLabel:
+								text: "Rem Kiri"
+								halign: "left"
+								valign: "middle"
+								font_style: 'H6'
+								size_hint_x: 0.16						
+
+							MDLabel:
+								text: "Rem Kanan"
+								halign: "left"
+								valign: "middle"
+								font_style: 'H6'
+								size_hint_x: 0.16
+
+							MDLabel:
+								text: "Total"
+								halign: "left"
+								valign: "middle"
+								font_style: 'H6'	
+								size_hint_x: 0.16
+
+							MDLabel:
+								text: "Selisih"
+								halign: "left"
+								valign: "middle"
+								font_style: 'H6'	
+								size_hint_x: 0.16
+
+							MDLabel:
+								text: "Status"
+								halign: "left"
+								valign: "middle"
+								font_style: 'H6'
+								size_hint_x: 0.16
+
+						MDScrollView:
+							id: layout_scroll_brake
+							size_hint_y: 0.3
+							scroll_timeout:100
+							MDList:
+								id: layout_list_brake
+
+						MDBoxLayout:
+							orientation: "horizontal"
+							md_bg_color: "#FFFFFF"
+							size_hint_y: 0.05
+							MDLabel:
+								text: "Total Gaya Rem Utama"
+								halign: "left"
+								valign: "middle"
+								font_style: 'H6'
+								size_hint_x: 0.30
+
+							MDLabel:
+								id: lb_brake_left_sum
+								halign: "left"
+								valign: "middle"
+								font_style: 'H6'
+								size_hint_x: 0.23
+
+							MDLabel:
+								id: lb_brake_right_sum
+								halign: "left"
+								valign: "middle"
+								font_style: 'H6'
+								size_hint_x: 0.23
+
+							MDLabel:
+								id: lb_brake_total_sum
+								halign: "left"
+								valign: "middle"
+								font_style: 'H6'	
+								size_hint_x: 0.23		
+
+						MDBoxLayout:
+							orientation: "horizontal"
+							md_bg_color: "#FFFFFF"
+							size_hint_y: 0.05
+							MDLabel:
+								text: "Efisiensi Rem Utama"
+								halign: "left"
+								valign: "middle"
+								font_style: 'H6'
+								size_hint_x: 0.30
+
+							MDLabel:
+								id: lb_brake_efficiency
+								halign: "left"
+								valign: "middle"
+								font_style: 'H6'	
+								size_hint_x: 0.45
+
+							MDLabel:
+								id: lb_brake_status
+								halign: "left"
+								valign: "middle"
+								font_style: 'H6'	
+								size_hint_x: 0.25
+
+					MDBoxLayout:
+						orientation: "vertical"	
+						size_hint_y: 0.06
+
+					MDBoxLayout:
+						orientation: "vertical"
+						size_hint_y: 0.47		
+
+						MDLabel:
+							text: "REM PARKIR"
+							halign: "left"
+							valign: "middle"
+							font_style: 'H6'
+							size_hint_y: 0.05
+
+						MDBoxLayout:
+							orientation: "horizontal"
+							size_hint_y: 0.05
+							MDLabel:
+								text: "Sumbu No."
+								halign: "left"
+								valign: "middle"
+								font_style: 'H6'
+								size_hint_x: 0.3
+
+							MDLabel:
+								text: "Rem Kiri"
+								halign: "left"
+								valign: "middle"
+								font_style: 'H6'
+								size_hint_x: 0.23	
+
+							MDLabel:
+								text: "Rem Kanan"
+								halign: "left"
+								valign: "middle"
+								font_style: 'H6'
+								size_hint_x: 0.23
+
+							MDLabel:
+								text: "Total"
+								halign: "left"
+								valign: "middle"
+								font_style: 'H6'
+								size_hint_x: 0.23
+
+						MDScrollView:
+							id: layout_scroll_handbrake
+							size_hint_y: 0.3
+							scroll_timeout:100
+							MDList:
+								id: layout_list_handbrake
+
+						MDBoxLayout:
+							orientation: "horizontal"
+							md_bg_color: "#FFFFFF"
+							size_hint_y: 0.05
+							MDLabel:
+								text: "Total Gaya Rem Parkir"
+								halign: "left"
+								valign: "middle"
+								font_style: 'H6'
+								size_hint_x: 0.30
+
+							MDLabel:
+								id: lb_handbrake_left_sum
+								halign: "left"
+								valign: "middle"
+								font_style: 'H6'
+								size_hint_x: 0.23
+
+							MDLabel:
+								id: lb_handbrake_right_sum
+								halign: "left"
+								valign: "middle"
+								font_style: 'H6'
+								size_hint_x: 0.23
+
+							MDLabel:
+								id: lb_handbrake_total_sum
+								halign: "left"
+								valign: "middle"
+								font_style: 'H6'	
+								size_hint_x: 0.23
+
+						MDBoxLayout:
+							orientation: "horizontal"
+							md_bg_color: "#FFFFFF"
+							size_hint_y: 0.05
+							MDLabel:
+								text: "Efisiensi Rem Parkir"
+								halign: "left"
+								valign: "middle"
+								font_style: 'H6'
+								size_hint_x: 0.30
+
+							MDLabel:
+								id: lb_handbrake_efficiency
+								halign: "left"
+								valign: "middle"
+								font_style: 'H6'	
+								size_hint_x: 0.45
+
+							MDLabel:
+								id: lb_handbrake_status
+								halign: "left"
+								valign: "middle"
+								font_style: 'H6'	
+								size_hint_x: 0.25
 
 		# footer layout
         MDBoxLayout:

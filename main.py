@@ -570,8 +570,8 @@ class ScreenMain(MDScreen):
                 screen_calibration.ids.lb_brake_r_val.text = str(dt_brake_r_val)
 
             self.ids.bt_calibrate.disabled = False if dt_user != '' else True
-            self.ids.bt_add_data.disabled = False if dt_user != '' else True
-            self.ids.bt_add_queue.disabled = False if dt_user != '' else True
+            # self.ids.bt_add_data.disabled = False if dt_user != '' else True
+            # self.ids.bt_add_queue.disabled = False if dt_user != '' else True
             self.ids.bt_logout.disabled = False if dt_user != '' else True
 
             self.ids.lb_operator.text = f'Login Sebagai: \n{dt_user}' if dt_user != '' else 'Silahkan Login'
@@ -890,7 +890,7 @@ class ScreenMain(MDScreen):
                         MDLabel(text=f"{db_antrian[7, i]}", size_hint_x= 0.05),
                         MDLabel(text=f"{db_antrian[8, i]}", size_hint_x= 0.05),
                         MDLabel(text='-' if db_antrian[9, i] == None else f"{db_bahan_bakar[np.where(db_bahan_bakar == db_antrian[9, i])[0][0],1]}" , size_hint_x= 0.08),
-                        MDLabel(text='-' if db_antrian[10, i] == None else f"{db_warna[np.where(db_warna == db_antrian[10, i])[0][0],1]}" , size_hint_x= 0.11),
+                        MDLabel(text='-' if db_antrian[10, i] == None else f"{db_warna[np.where(db_warna == db_antrian[10, i])[0][0],1]}" , size_hint_x= 0.08),
                         MDLabel(text='Lulus' if (int(db_antrian[11, i]) == 2) else 'Tidak Lulus' if (int(db_antrian[11, i]) == 1) else 'Belum Diuji', size_hint_x= 0.08),
                         MDLabel(text='Lulus' if (int(db_antrian[12, i]) == 2) else 'Tidak Lulus' if (int(db_antrian[12, i]) == 1) else 'Belum Diuji', size_hint_x= 0.07),
                         MDLabel(text='Lulus' if (int(db_antrian[13, i]) == 2) else 'Tidak Lulus' if (int(db_antrian[13, i]) == 1) else 'Belum Diuji', size_hint_x= 0.07),

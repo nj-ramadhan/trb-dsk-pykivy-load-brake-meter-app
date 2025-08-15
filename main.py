@@ -588,9 +588,9 @@ class ScreenMain(MDScreen):
             screen_resume.ids.lb_operator.text = f'Login Sebagai: \n{dt_user}' if dt_user != '' else 'Silahkan Login'
 
             if dt_user != '':
-                self.ids.img_user.source = f'https://{FTP_HOST}/sim_pkb/foto_user/{dt_foto_user}'
-                screen_home.ids.img_user.source = f'https://{FTP_HOST}/sim_pkb/foto_user/{dt_foto_user}'
-                screen_login.ids.img_user.source = f'https://{FTP_HOST}/sim_pkb/foto_user/{dt_foto_user}'
+                self.ids.img_user.source = f'https://{FTP_HOST}/system/storage/app/foto_user/{dt_foto_user}'
+                screen_home.ids.img_user.source = f'https://{FTP_HOST}/system/storage/app/foto_user/{dt_foto_user}'
+                screen_login.ids.img_user.source = f'https://{FTP_HOST}/system/storage/app/foto_user/{dt_foto_user}'
             else:
                 self.ids.img_user.source = 'assets/images/icon-login.png'
                 screen_home.ids.img_user.source = 'assets/images/icon-login.png'
@@ -819,10 +819,10 @@ class ScreenMain(MDScreen):
         global window_size_x, window_size_y
 
         try:
-            tb_antrian = mydb.cursor()
+            cursor = mydb.cursor()
             today = str(time.strftime("%Y-%m-%d", time.localtime()))
             delete_query = f"DELETE FROM {TB_DATA} WHERE DATE(tgl_daftar) != %s"
-            tb_antrian.execute(delete_query, (today,))
+            cursor.execute(delete_query, (today,))
             mydb.commit()
             toast_msg = f'Berhasil menghapus data kemarin'
         except Exception as e:
@@ -831,37 +831,38 @@ class ScreenMain(MDScreen):
             Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
         try:
-            tb_merk = mydb.cursor()
-            tb_merk.execute(f"SELECT ID, DESCRIPTION FROM {TB_MERK}")
-            result_tb_merk = tb_merk.fetchall()
-            mydb.commit()
+            cursor = mydb.cursor()
+            cursor.execute(f"SELECT ID, DESCRIPTION FROM {TB_MERK}")
+            result_tb_merk = cursor.fetchall()
             db_merk = np.array(result_tb_merk)
 
-            tb_bahan_bakar = mydb.cursor()
-            tb_bahan_bakar.execute(f"SELECT ID, DESCRIPTION FROM {TB_BAHAN_BAKAR}")
-            result_tb_bahan_bakar = tb_bahan_bakar.fetchall()
-            mydb.commit()
+            cursor.execute(f"SELECT ID, DESCRIPTION FROM {TB_BAHAN_BAKAR}")
+            result_tb_bahan_bakar = cursor.fetchall()
             db_bahan_bakar = np.array(result_tb_bahan_bakar)
 
-            tb_warna = mydb.cursor()
-            tb_warna.execute(f"SELECT id_warna, nama FROM {TB_WARNA}")
-            result_tb_warna = tb_warna.fetchall()
-            mydb.commit()
+            cursor.execute(f"SELECT id_warna, nama FROM {TB_WARNA}")
+            result_tb_warna = cursor.fetchall()
             db_warna = np.array(result_tb_warna)
 
-            tb_antrian = mydb.cursor()
-            tb_antrian.execute(f"SELECT noantrian, nopol, nouji, statusuji, merk, type, idjeniskendaraan, jbb, berat_kosong, bahan_bakar, warna, load_flag, brake_flag, handbrake_flag FROM {TB_DATA}")
-            result_tb_antrian = tb_antrian.fetchall()
-            mydb.commit()
-            if result_tb_antrian is None:
+            cursor.execute(f"SELECT COUNT(*) FROM {TB_DATA}")
+            result = cursor.fetchone()  # Returns tuple like (123,)
+
+            if result is None:
+                dt_dash_antri = 0
                 toast('Data Tabel cekident kosong')
-                dt_dash_antri = dt_dash_belum_uji = dt_dash_sudah_uji = 0
             else:
+                dt_dash_antri = result[0]
+
+                cursor.execute(f"SELECT noantrian, nopol, nouji, statusuji, merk, type, idjeniskendaraan, jbb, berat_kosong, bahan_bakar, warna, load_flag, brake_flag, handbrake_flag FROM {TB_DATA} WHERE load_flag = 0 OR brake_flag = 0 OR handbrake_flag = 0")
+                result_tb_antrian = cursor.fetchall()
                 db_antrian = np.array(result_tb_antrian).T
+
                 db_pendaftaran = np.array(result_tb_antrian)
-                dt_dash_antri = db_pendaftaran[:,11].size
-                dt_dash_belum_uji = np.where(db_pendaftaran[:,11] == 0)[0].size
-                dt_dash_sudah_uji = np.where(db_pendaftaran[:,11] == 1)[0].size + np.where(db_pendaftaran[:,11] == 2)[0].size
+                dt_dash_belum_uji = db_pendaftaran[:,0].size
+                dt_dash_sudah_uji = dt_dash_antri - dt_dash_belum_uji
+            
+            cursor.close()
+
         except Exception as e:
             toast_msg = f'Gagal mengambil data antrian harian'
             toast(toast_msg)
@@ -875,7 +876,7 @@ class ScreenMain(MDScreen):
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")   
         
-        try:           
+        try:
             layout_list = self.ids.layout_list
             for i in range(db_antrian[0,:].size):
                 layout_list.add_widget(

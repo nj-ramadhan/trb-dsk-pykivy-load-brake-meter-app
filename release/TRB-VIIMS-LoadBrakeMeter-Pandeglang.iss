@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "VIIMS - Axle Load & Brake Meter Application - Pandeglang"
-#define MyAppVersion "2.2.250929"
+#define MyAppVersion "2.3.251022"
 #define MyAppPublisher "PT. Tiga Ratu Berkarya"
 #define MyAppExeName "TRB-VIIMS-LoadBrakeMeterApp-Pandeglang.exe"
 #define MyAppAssocName "VIIMS - Axle Load & Brake Meter Files - Pandeglang"

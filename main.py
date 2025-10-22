@@ -684,13 +684,13 @@ class ScreenMain(MDScreen):
                 db_brake_total_value[dt_test_number] = int(db_brake_left_value[dt_test_number] + db_brake_right_value[dt_test_number])
 
                 # Efficiency: (total brake / total load) * 100
-                if dt_load_total_value > 0:
-                    dt_brake_efficiency_value = np.round(
-                        (db_brake_total_value[dt_test_number] / dt_load_total_value) * 100, 1
-                    )
-                else:
-                    dt_brake_efficiency_value = 0  # or np.nan, or None
-                    Logger.warning(f"{self.screen_manager.current}: dt_load_total_value is zero. Cannot calculate efficiency.")
+                # if dt_load_total_value > 0:
+                #     dt_brake_efficiency_value = np.round(
+                #         (db_brake_total_value[dt_test_number] / dt_load_total_value) * 100, 1
+                #     )
+                # else:
+                #     dt_brake_efficiency_value = 0  # or np.nan, or None
+                #     Logger.warning(f"{self.screen_manager.current}: dt_load_total_value is zero. Cannot calculate efficiency.")
 
                 # Brake difference: |left - right| / load * 100
                 if db_load_total_value[dt_test_number] > 0:
@@ -705,7 +705,7 @@ class ScreenMain(MDScreen):
                 dt_brake_total_value = int(np.sum(db_brake_total_value))
 
                 # Overall efficiency
-                if dt_load_total_value != 0:
+                if dt_load_total_value > 0:
                     dt_brake_efficiency_value = np.round((dt_brake_total_value / dt_load_total_value) * 100, 1)
                 else:
                     dt_brake_efficiency_value = 0.0
@@ -747,15 +747,6 @@ class ScreenMain(MDScreen):
                 # Initialize total for handbrake test
                 db_handbrake_total_value[dt_test_number] = int(db_handbrake_left_value[dt_test_number] + db_handbrake_right_value[dt_test_number])
 
-                # Handbrake efficiency: use handbrake total and dt_jbb (assuming jbb = axle load or test standard)
-                if dt_jbb > 0:
-                    dt_handbrake_efficiency_value = np.round(
-                        (db_handbrake_total_value[dt_test_number] / float(dt_jbb)) * 100, 1
-                    )
-                else:
-                    dt_handbrake_efficiency_value = 0
-                    Logger.warning(f"{self.screen_manager.current}: dt_jbb is invalid ({dt_jbb}). Setting efficiency to 0.")
-
                 # Handbrake difference: |left - right| / load * 100
                 if db_load_total_value[dt_test_number] > 0:
                     db_handbrake_difference_value[dt_test_number] = np.round(
@@ -770,10 +761,11 @@ class ScreenMain(MDScreen):
                 dt_handbrake_total_value = int(np.sum(db_handbrake_total_value))
 
                 # Overall handbrake efficiency
-                if dt_load_total_value != 0:
-                    dt_handbrake_efficiency_value = np.round(
-                        (dt_handbrake_total_value / dt_load_total_value) * 100, 1
-                    )
+                if dt_load_total_value > 0:
+                    if float(dt_jbb) > 0:
+                        dt_handbrake_efficiency_value = np.round(
+                            (db_handbrake_total_value[dt_test_number] / float(dt_jbb)) * 100, 1
+                        )
                 else:
                     dt_handbrake_efficiency_value = 0
                     Logger.warning(f"{self.screen_manager.current}: dt_load_total_value is zero. Overall efficiency set to 0.")
@@ -857,7 +849,7 @@ class ScreenMain(MDScreen):
             else:
                 dt_dash_antri = result[0]
 
-                cursor.execute(f"SELECT noantrian, nopol, nouji, statusuji, merk, type, idjeniskendaraan, jbb, berat_kosong, bahan_bakar, warna, load_flag, brake_flag, handbrake_flag FROM {TB_DATA} WHERE load_flag = 0 OR brake_flag = 0 OR handbrake_flag = 0")
+                cursor.execute(f"SELECT noantrian, nopol, nouji, statusuji, merk, type, idjeniskendaraan, jbb, berat_kosong, bahan_bakar, warna, load_flag, brake_flag, handbrake_flag FROM {TB_DATA} WHERE load_flag = 2 OR brake_flag = 2 OR handbrake_flag = 2")
                 result_tb_antrian = cursor.fetchall()
                 db_antrian = np.array(result_tb_antrian).T
 
@@ -2831,7 +2823,7 @@ class ScreenResume(MDScreen):
             pdf.cell(ln=0, h=10.0, align='L', w=0, txt=f"No Antrian: {dt_no_antri}", border=0)
             pdf.cell(ln=1, h=10.0, align='R', w=0, txt=f"No Uji: {dt_no_uji}", border=0)
             pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Jenis Kendaraan: {dt_jns_kend}", border=0)
-            pdf.cell(ln=0, h=10.0, align='L', w=0, txt=f"JBB: {dt_jbb}", border=0)
+            pdf.cell(ln=0, h=10.0, align='L', w=0, txt=f"JBB: {float(dt_jbb)}", border=0)
             pdf.cell(ln=1, h=10.0, align='R', w=0, txt=f"Berat Kosong: {float(dt_brt_ksg)}", border=0)
             pdf.cell(ln=1, h=10.0, w=0)
             pdf.set_font('Arial', '', 21.0)

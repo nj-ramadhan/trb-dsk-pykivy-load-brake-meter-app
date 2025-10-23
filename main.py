@@ -67,11 +67,11 @@ LB_UNIT = config['app']['LB_UNIT']
 LB_UNIT_ADDRESS = config['app']['LB_UNIT_ADDRESS']
 
 # SQL setting
-DB_HOST = "194.31.53.37"
-DB_USER = "Pndujikir2022!"
-DB_PASSWORD = "@Kirpnd2022!"
+DB_HOST = "156.67.217.60"
+DB_USER = "pkbsorong2024!"
+DB_PASSWORD = "@Sorongpkb2024"
+DB_NAME = "dishub"
 
-DB_NAME = "pkbpandeglang"
 TB_DATA = "tb_cekident"
 TB_USER = "users"
 TB_MERK = "merk"
@@ -361,8 +361,6 @@ class ScreenMain(MDScreen):
             screen_login = self.screen_manager.get_screen('screen_login')
             screen_menu = self.screen_manager.get_screen('screen_menu')
             screen_calibration = self.screen_manager.get_screen('screen_calibration')
-            screen_add_data = self.screen_manager.get_screen('screen_add_data')
-            screen_add_queue = self.screen_manager.get_screen('screen_add_queue')
 
             screen_load_meter = self.screen_manager.get_screen('screen_load_meter')
             screen_brake_meter = self.screen_manager.get_screen('screen_brake_meter')
@@ -379,10 +377,6 @@ class ScreenMain(MDScreen):
             screen_menu.ids.lb_date.text = str(time.strftime("%d/%m/%Y", time.localtime()))
             screen_calibration.ids.lb_time.text = str(time.strftime("%H:%M:%S", time.localtime()))
             screen_calibration.ids.lb_date.text = str(time.strftime("%d/%m/%Y", time.localtime()))
-            screen_add_data.ids.lb_time.text = str(time.strftime("%H:%M:%S", time.localtime()))
-            screen_add_data.ids.lb_date.text = str(time.strftime("%d/%m/%Y", time.localtime()))
-            screen_add_queue.ids.lb_time.text = str(time.strftime("%H:%M:%S", time.localtime()))
-            screen_add_queue.ids.lb_date.text = str(time.strftime("%d/%m/%Y", time.localtime()))
 
             screen_load_meter.ids.lb_time.text = str(time.strftime("%H:%M:%S", time.localtime()))
             screen_load_meter.ids.lb_date.text = str(time.strftime("%d/%m/%Y", time.localtime()))
@@ -509,10 +503,6 @@ class ScreenMain(MDScreen):
                 screen_menu.ids.lb_comm.text = 'PLC Tidak Terhubung'
                 screen_calibration.ids.lb_comm.color = colors['Red']['A200']
                 screen_calibration.ids.lb_comm.text = 'PLC Tidak Terhubung'
-                screen_add_data.ids.lb_comm.color = colors['Red']['A200']
-                screen_add_data.ids.lb_comm.text = 'PLC Tidak Terhubung'
-                screen_add_queue.ids.lb_comm.color = colors['Red']['A200']
-                screen_add_queue.ids.lb_comm.text = 'PLC Tidak Terhubung'
 
                 screen_load_meter.ids.lb_comm.color = colors['Red']['A200']
                 screen_load_meter.ids.lb_comm.text = 'PLC Tidak Terhubung'
@@ -534,11 +524,6 @@ class ScreenMain(MDScreen):
                 screen_menu.ids.lb_comm.text = 'PLC Terhubung'
                 screen_calibration.ids.lb_comm.color = colors['Blue']['200']
                 screen_calibration.ids.lb_comm.text = 'PLC Terhubung'
-                screen_add_data.ids.lb_comm.color = colors['Blue']['200']
-                screen_add_data.ids.lb_comm.text = 'PLC Terhubung'
-                screen_add_queue.ids.lb_comm.color = colors['Blue']['200']
-                screen_add_queue.ids.lb_comm.text = 'PLC Terhubung'
-
                 screen_load_meter.ids.lb_comm.color = colors['Blue']['200']
                 screen_load_meter.ids.lb_comm.text = 'PLC Terhubung'
                 screen_brake_meter.ids.lb_comm.color = colors['Blue']['200']
@@ -572,8 +557,6 @@ class ScreenMain(MDScreen):
                 screen_calibration.ids.lb_brake_r_val.text = str(dt_brake_r_val)
 
             self.ids.bt_calibrate.disabled = False if dt_user != '' else True
-            # self.ids.bt_add_data.disabled = False if dt_user != '' else True
-            # self.ids.bt_add_queue.disabled = False if dt_user != '' else True
             self.ids.bt_logout.disabled = False if dt_user != '' else True
 
             self.ids.lb_operator.text = f'Login Sebagai: \n{dt_user}' if dt_user != '' else 'Silahkan Login'
@@ -581,9 +564,6 @@ class ScreenMain(MDScreen):
             screen_login.ids.lb_operator.text = f'Login Sebagai: \n{dt_user}' if dt_user != '' else 'Silahkan Login'
             screen_menu.ids.lb_operator.text = f'Login Sebagai: \n{dt_user}' if dt_user != '' else 'Silahkan Login'
             screen_calibration.ids.lb_operator.text = f'Login Sebagai: \n{dt_user}' if dt_user != '' else 'Silahkan Login'
-            screen_add_data.ids.lb_operator.text = f'Login Sebagai: \n{dt_user}' if dt_user != '' else 'Silahkan Login'
-            screen_add_queue.ids.lb_operator.text = f'Login Sebagai: \n{dt_user}' if dt_user != '' else 'Silahkan Login'
-            
             screen_load_meter.ids.lb_operator.text = f'Login Sebagai: \n{dt_user}' if dt_user != '' else 'Silahkan Login'
             screen_brake_meter.ids.lb_operator.text = f'Login Sebagai: \n{dt_user}' if dt_user != '' else 'Silahkan Login'
             screen_handbrake_meter.ids.lb_operator.text = f'Login Sebagai: \n{dt_user}' if dt_user != '' else 'Silahkan Login'
@@ -643,13 +623,11 @@ class ScreenMain(MDScreen):
                 flag_play = False
                 Clock.unschedule(self.regular_get_data)
             
-            if flag_conn_stat:
-                MODBUS_CLIENT.connect()
+            if MODBUS_CLIENT.is_socket_open():
                 load_l_registers = MODBUS_CLIENT.read_holding_registers(REGISTER_DATA_LOAD_L, count=1, slave=1) #V1400
                 load_r_registers = MODBUS_CLIENT.read_holding_registers(REGISTER_DATA_LOAD_R, count=1, slave=1) #V1410
                 brake_l_registers = MODBUS_CLIENT.read_holding_registers(REGISTER_DATA_BRAKE_L, count=1, slave=1) #V1420
                 brake_r_registers = MODBUS_CLIENT.read_holding_registers(REGISTER_DATA_BRAKE_R, count=1, slave=1) #V1430
-                MODBUS_CLIENT.close()
 
             if self.screen_manager.current == 'screen_load_meter':
                 db_load_left_value[dt_test_number] = int(self.unsigned_to_signed(load_l_registers.registers[0]))
@@ -857,7 +835,7 @@ class ScreenMain(MDScreen):
             else:
                 dt_dash_antri = result[0]
 
-                cursor.execute(f"SELECT noantrian, nopol, nouji, statusuji, merk, type, idjeniskendaraan, jbb, berat_kosong, bahan_bakar, warna, load_flag, brake_flag, handbrake_flag FROM {TB_DATA} WHERE load_flag = 0 OR brake_flag = 0 OR handbrake_flag = 0")
+                cursor.execute(f"SELECT noantrian, nopol, nouji, statusuji, merk, type, idjeniskendaraan, jbb, berat_kosong, bahan_bakar, warna, load_flag, brake_flag, handbrake_flag FROM {TB_DATA} WHERE load_flag = 2 OR brake_flag = 2 OR handbrake_flag = 2")
                 result_tb_antrian = cursor.fetchall()
                 db_antrian = np.array(result_tb_antrian).T
 
@@ -995,26 +973,6 @@ class ScreenMain(MDScreen):
 
         except Exception as e:
             toast_msg = f'Error Navigate to Calibration Screen: {e}'
-            toast(toast_msg)
-            Logger.error(f"{self.name}: {toast_msg}, {e}")  
-
-    def exec_navigate_add_data(self):
-        global dt_user
-        try:
-            self.screen_manager.current = 'screen_add_data'
-
-        except Exception as e:
-            toast_msg = f'Error Navigate to Add Data Screen: {e}'
-            toast(toast_msg)
-            Logger.error(f"{self.name}: {toast_msg}, {e}")  
-
-    def exec_navigate_add_queue(self):
-        global dt_user
-        try:
-            self.screen_manager.current = 'screen_add_queue'
-
-        except Exception as e:
-            toast_msg = f'Error Navigate to Add Queue Screen: {e}'
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
@@ -1613,466 +1571,7 @@ class ScreenCalibration(MDScreen):
         except Exception as e:
             toast_msg = f'Terjadi kesalahan saat berpindah ke halaman Utama'
             toast(toast_msg)
-            Logger.error(f"{self.name}: {toast_msg}, {e}")  
-
-class ScreenAddData(MDScreen):
-    def __init__(self, **kwargs):
-        super(ScreenAddData, self).__init__(**kwargs)
-        Clock.schedule_once(self.delayed_init, 1)
-    
-    def delayed_init(self, dt):
-        self.ids.lb_title.text = APP_TITLE
-        self.ids.lb_subtitle.text = APP_SUBTITLE
-        self.ids.img_pemkab.source = f'assets/images/{IMG_LOGO_PEMKAB}'
-        self.ids.img_dishub.source = f'assets/images/{IMG_LOGO_DISHUB}'
-        self.ids.lb_pemkab.text = LB_PEMKAB
-        self.ids.lb_dishub.text = LB_DISHUB
-        self.ids.lb_unit.text = LB_UNIT
-        self.ids.lb_unit_address.text = LB_UNIT_ADDRESS
-
-    def exec_cancel(self):
-        try:
-            self.screen_manager.current = 'screen_main'
-
-        except Exception as e:
-            toast_msg = f'Terjadi kesalahan saat berpindah ke halaman Utama'
-            toast(toast_msg)
-            Logger.error(f"{self.name}: {toast_msg}, {e}")  
-
-    def on_enter(self):
-        """Called when screen is entered — safe to initialize dropdowns here."""
-        Clock.schedule_once(self.load_dropdowns, 0.1)  # Small delay to ensure UI is loaded
-
-    def on_leave(self):
-        """Clean up menus to avoid memory leaks or errors."""
-        if hasattr(self, 'menu_merk') and self.menu_merk:
-            self.menu_merk.dismiss()
-            self.menu_merk = None
-        if hasattr(self, 'menu_bahan_bakar') and self.menu_bahan_bakar:
-            self.menu_bahan_bakar.dismiss()
-            self.menu_bahan_bakar = None
-        if hasattr(self, 'menu_warna') and self.menu_warna:
-            self.menu_warna.dismiss()
-            self.menu_warna = None
-
-    def load_dropdowns(self, dt=None):
-        """Initialize dropdown menus for Merk, Bahan Bakar, Warna."""
-        try:
-            # --- Merk Dropdown ---
-            tb_merk = mydb.cursor()
-            tb_merk.execute(f"SELECT ID, DESCRIPTION FROM {TB_MERK}")
-            result_tb_merk = tb_merk.fetchall()
-            if result_tb_merk:
-                self.merk_items = [
-                    {
-                        "viewclass": "OneLineListItem",
-                        "text": row[1],
-                        "on_release": lambda x=row[1], id=row[0]: self.set_merk(x, id),
-                    } for row in result_tb_merk
-                ]
-                self.menu_merk = MDDropdownMenu(
-                    caller=self.ids.drop_merk,
-                    items=self.merk_items,
-                    width_mult=4,  # You can adjust this
-                )
-            else:
-                self.menu_merk = None
-
-            # --- Bahan Bakar Dropdown ---
-            tb_bahan_bakar = mydb.cursor()
-            tb_bahan_bakar.execute(f"SELECT ID, DESCRIPTION FROM {TB_BAHAN_BAKAR}")
-            result_tb_bahan_bakar = tb_bahan_bakar.fetchall()
-            if result_tb_bahan_bakar:
-                self.bahan_bakar_items = [
-                    {
-                        "viewclass": "OneLineListItem",
-                        "text": row[1],
-                        "on_release": lambda x=row[1], id=row[0]: self.set_bahan_bakar(x, id),
-                    } for row in result_tb_bahan_bakar
-                ]
-                self.menu_bahan_bakar = MDDropdownMenu(
-                    caller=self.ids.drop_bahan_bakar,
-                    items=self.bahan_bakar_items,
-                    width_mult=4,
-                )
-            else:
-                self.menu_bahan_bakar = None
-
-            # --- Warna Dropdown ---
-            tb_warna = mydb.cursor()
-            tb_warna.execute(f"SELECT id_warna, nama FROM {TB_WARNA}")
-            result_tb_warna = tb_warna.fetchall()
-            if result_tb_warna:
-                self.warna_items = [
-                    {
-                        "viewclass": "OneLineListItem",
-                        "text": row[1],
-                        "on_release": lambda x=row[1], id=row[0]: self.set_warna(x, id),
-                    } for row in result_tb_warna
-                ]
-                self.menu_warna = MDDropdownMenu(
-                    caller=self.ids.drop_warna,
-                    items=self.warna_items,
-                    width_mult=4,
-                )
-            else:
-                self.menu_warna = None
-
-        except Exception as e:
-            toast(f"Error loading dropdowns: {str(e)}")
-            Logger.error(f"ScreenAddData: Failed to load dropdowns - {e}")
-
-    # Set functions for dropdown selection
-    def set_merk(self, text_item, id_item):
-        self.ids.drop_merk.text = text_item
-        self.ids.drop_merk.merk_id = id_item
-        if self.menu_merk:
-            self.menu_merk.dismiss()
-
-    def set_bahan_bakar(self, text_item, id_item):
-        self.ids.drop_bahan_bakar.text = text_item
-        self.ids.drop_bahan_bakar.bahan_bakar_id = id_item
-        if self.menu_bahan_bakar:
-            self.menu_bahan_bakar.dismiss()
-
-    def set_warna(self, text_item, id_item):
-        self.ids.drop_warna.text = text_item
-        self.ids.drop_warna.warna_id = id_item
-        if self.menu_warna:
-            self.menu_warna.dismiss()
-        
-    def exec_register(self):
-        try:
-            dt_temp_no_uji = self.ids.tx_nouji.text.strip()
-            dt_temp_no_pol = self.ids.tx_nopol.text.strip()
-
-            if not dt_temp_no_uji or not dt_temp_no_pol:
-                toast("Nomor Uji dan Nomor Regristasi tidak boleh kosong!")
-                return
-
-            mycursor = mydb.cursor()
-
-            check_nouji_sql = f"SELECT COUNT(*) FROM {TB_DATA_MASTER} WHERE NOUJI = %s"
-            mycursor.execute(check_nouji_sql, (dt_temp_no_uji,))
-            result_nouji = mycursor.fetchone()
-            
-            if result_nouji and result_nouji[0] > 0:
-                toast("Nomor Uji ini sudah terdaftar!")
-                Logger.warning(f"{self.name}: Upaya menambahkan duplikat NOUJI: {dt_temp_no_uji}")
-                return 
-
-            check_nopol_sql = f"SELECT COUNT(*) FROM {TB_DATA_MASTER} WHERE NOPOL = %s"
-            mycursor.execute(check_nopol_sql, (dt_temp_no_pol,))
-            result_nopol = mycursor.fetchone()
-
-            if result_nopol and result_nopol[0] > 0:
-                toast("Nomor Polisi ini sudah terdaftar!")
-                Logger.warning(f"{self.name}: Upaya menambahkan duplikat NOPOL: {dt_temp_no_pol}")
-                return 
-
-            dt_temp_no_uji_new = self.ids.tx_nouji.text.strip()
-            dt_temp_nama = self.ids.tx_nama.text.strip()
-            dt_temp_alamat = self.ids.tx_alamat.text.strip()
-            dt_temp_type = self.ids.tx_type.text.strip()
-            dt_temp_jenis_kendaraan = self.ids.tx_jeniskendaraan.text.strip()
-            dt_temp_jbb = self.ids.tx_jbb.text.strip()
-            dt_temp_brt_ksg = self.ids.tx_beratkosong.text.strip()
-            dt_temp_tgl_uji_terakhir = str(time.strftime("%Y/%m/%d %H:%M:%S", time.localtime()))
-
-            # self.ids.lb_temp_nama.text = f'{dt_temp_nama}'
-            # self.ids.lb_temp_alamat.text = f'{dt_temp_alamat}'
-            # self.ids.lb_temp_no_uji.text = f'{dt_temp_no_uji}'
-            # self.ids.lb_temp_no_pol.text = f'{dt_temp_no_pol}'
-            # self.ids.lb_temp_status_uji.text = 'Berkala' if dt_temp_status_uji == 'B' else 'Uji Ulang' if dt_temp_status_uji == 'U' else 'Baru' if dt_temp_status_uji == 'BR' else 'Numpang Uji' if dt_temp_status_uji == 'NB' else 'Mutasi'
-            # self.ids.lb_temp_tgl_uji_terakhir.text = f'{dt_temp_tgl_uji_terakhir}'
-            # self.ids.lb_temp_tgl_uji_habis.text = f'{dt_temp_tgl_uji_habis}'
-            # self.ids.lb_temp_merk.text = '-' if dt_temp_id_merk == None else f"{db_merk[np.where(db_merk == dt_temp_id_merk)[0][0],1]}"
-            # self.ids.lb_temp_type.text = f'{dt_temp_type}'
-            # self.ids.lb_temp_jenis_kendaraan.text = f'{dt_temp_jenis_kendaraan}'
-            # self.ids.lb_temp_warna.text = '-' if dt_temp_warna == None else f"{db_warna[np.where(db_warna == dt_temp_warna)[0][0],1]}"
-            # self.ids.lb_temp_chasis.text = f'{dt_temp_chasis}'
-            # self.ids.lb_temp_mesin.text = f'{dt_temp_mesin}'
-            # self.ids.lb_temp_bahan_bakar.text = '-' if dt_temp_bhn_bkr == None else f"{db_bahan_bakar[np.where(db_bahan_bakar == dt_temp_bhn_bkr)[0][0],1]}"
-            # self.ids.lb_temp_jbb.text = f'{dt_temp_jbb}'
-            # self.ids.lb_temp_berat_kosong.text = f'{dt_temp_brt_ksg}'
-
-            # Validate dropdowns have values selected
-            if not hasattr(self.ids.drop_merk, 'merk_id'):
-                toast("Pilih Merk!")
-                return
-            if not hasattr(self.ids.drop_bahan_bakar, 'bahan_bakar_id'):
-                toast("Pilih Bahan Bakar!")
-                return
-            if not hasattr(self.ids.drop_warna, 'warna_id'):
-                toast("Pilih Warna!")
-                return
-
-            dt_temp_id_merk = self.ids.drop_merk.merk_id
-            dt_temp_bhn_bkr = self.ids.drop_bahan_bakar.bahan_bakar_id
-            dt_temp_warna = self.ids.drop_warna.warna_id
-
-            # Insert into database
-            mycursor = mydb.cursor()
-            sql = f"""
-                INSERT INTO {TB_DATA_MASTER} 
-                (NOUJI, NEW_NOUJI, NOPOL, NAMA, ALAMAT, MERK_ID, TYPE, idjeniskendaraan, BHN_BAKAR, JBB, BERATKOSONG, WARNA_KEND, TGL_UJI_PERDANA, TGL_UJI_TERAKHIR) 
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            """
-            values = (
-                dt_temp_no_uji,
-                dt_temp_no_uji_new,
-                dt_temp_no_pol,
-                dt_temp_nama,
-                dt_temp_alamat,
-                dt_temp_id_merk,
-                dt_temp_type,
-                dt_temp_jenis_kendaraan,
-                dt_temp_bhn_bkr,
-                dt_temp_jbb,
-                dt_temp_brt_ksg,
-                dt_temp_warna,
-                dt_temp_tgl_uji_terakhir,
-                dt_temp_tgl_uji_terakhir
-            )
-            mycursor.execute(sql, values)
-            mydb.commit()
-
-            toast("Data berhasil didaftarkan")
-            self.screen_manager.current = 'screen_main'
-
-        except Exception as e:
-            toast_msg = f'Terjadi kesalahan saat mendaftarkan data'
-            toast(toast_msg)
-            Logger.error(f"{self.name}: {toast_msg}, {e}") 
-
-class ScreenAddQueue(MDScreen):
-    def __init__(self, **kwargs):
-        super(ScreenAddQueue, self).__init__(**kwargs)
-        Clock.schedule_once(self.delayed_init, 1)
-    
-    def delayed_init(self, dt):
-        self.ids.lb_title.text = APP_TITLE
-        self.ids.lb_subtitle.text = APP_SUBTITLE
-        self.ids.img_pemkab.source = f'assets/images/{IMG_LOGO_PEMKAB}'
-        self.ids.img_dishub.source = f'assets/images/{IMG_LOGO_DISHUB}'
-        self.ids.lb_pemkab.text = LB_PEMKAB
-        self.ids.lb_dishub.text = LB_DISHUB
-        self.ids.lb_unit.text = LB_UNIT
-        self.ids.lb_unit_address.text = LB_UNIT_ADDRESS
-
-    def on_enter(self):
-        pass
-
-    def on_leave(self):
-        pass
-
-    def exec_cancel(self):
-        global dt_temp_no_uji, dt_temp_no_uji_new, dt_temp_no_wilayah, dt_temp_no_kendaraan, dt_temp_no_plat, dt_temp_no_pol
-        global dt_temp_nama, dt_temp_no_hp, dt_temp_alamat, dt_temp_id_izin, dt_temp_wilayah, dt_temp_provinsi, dt_temp_kabupaten_kota, dt_temp_kecamatan
-        global dt_temp_id_merk, dt_temp_id_subjenis, dt_temp_type, dt_temp_tahun_buat, dt_temp_silinder, dt_temp_warna, dt_temp_chasis, dt_temp_mesin, dt_temp_warna_plat
-        global dt_temp_bhn_bkr, dt_temp_jbb, dt_temp_daya_motor, dt_temp_tgl_uji_terakhir, dt_temp_tgl_uji_habis, dt_temp_status_uji, dt_temp_status_penerbitan, dt_temp_jenis_kendaraan, dt_temp_kode_jenis_kendaraan, dt_temp_kode_wilayah
-
-        try:
-            dt_temp_no_uji = dt_temp_no_uji_new = dt_temp_no_wilayah = dt_temp_no_kendaraan = dt_temp_no_plat = dt_temp_no_pol = ""
-            dt_temp_nama = dt_temp_no_hp = dt_temp_alamat = dt_temp_id_izin = dt_temp_wilayah = dt_temp_provinsi = dt_temp_kabupaten_kota = dt_temp_kecamatan = ""
-            dt_temp_id_merk = dt_temp_id_subjenis = dt_temp_type = dt_temp_tahun_buat = dt_temp_silinder = dt_temp_warna = dt_temp_chasis = dt_temp_mesin = dt_temp_warna_plat = ""
-            dt_temp_bhn_bkr = dt_temp_jbb = dt_temp_daya_motor = dt_temp_tgl_uji_terakhir = dt_temp_tgl_uji_habis = dt_temp_status_uji = dt_temp_status_penerbitan = dt_temp_jenis_kendaraan = dt_temp_kode_jenis_kendaraan = dt_temp_kode_wilayah = ""
-
-            self.ids.tx_nopol.text = "" 
-            self.ids.tx_nouji.text = "" 
-            self.ids.lb_temp_nama.text = self.ids.lb_temp_alamat.text = ""
-            self.ids.lb_temp_no_uji.text = self.ids.lb_temp_no_pol.text = self.ids.lb_temp_status_uji.text = self.ids.lb_temp_tgl_uji_terakhir.text = self.ids.lb_temp_tgl_uji_habis.text = ""
-            self.ids.lb_temp_merk.text = self.ids.lb_temp_type.text = self.ids.lb_temp_jenis_kendaraan.text = self.ids.lb_temp_warna.text = ""
-            self.ids.lb_temp_chasis.text = self.ids.lb_temp_mesin.text = self.ids.lb_temp_bahan_bakar.text = self.ids.lb_temp_jbb.text = ""
-            self.ids.bt_register.disabled = True
-
-            self.exec_navigate_main()
-            
-        except Exception as e:
-            toast_msg = f'Gagal Memuat Data'
-            toast(toast_msg)
-            Logger.error(f"{self.name}: {toast_msg}, {e}") 
-
-    def exec_find(self):
-        global mydb, db_users, db_merk, db_bahan_bakar, db_warna
-        global dt_id_user, dt_user, dt_foto_user
-        global dt_temp_no_uji, dt_temp_no_uji_new, dt_temp_no_wilayah, dt_temp_no_kendaraan, dt_temp_no_plat, dt_temp_no_pol
-        global dt_temp_nama, dt_temp_no_hp, dt_temp_alamat, dt_temp_id_izin, dt_temp_wilayah, dt_temp_provinsi, dt_temp_kabupaten_kota, dt_temp_kecamatan
-        global dt_temp_id_merk, dt_temp_id_subjenis, dt_temp_type, dt_temp_tahun_buat, dt_temp_silinder, dt_temp_warna, dt_temp_chasis, dt_temp_mesin, dt_temp_warna_plat
-        global dt_temp_bhn_bkr, dt_temp_jbb, dt_temp_daya_motor, dt_temp_tgl_uji_terakhir, dt_temp_tgl_uji_habis, dt_temp_status_uji, dt_temp_status_penerbitan, dt_temp_jenis_kendaraan, dt_temp_kode_jenis_kendaraan, dt_temp_kode_wilayah
-
-        try:
-            dt_find_no_pol = self.ids.tx_nopol.text
-            dt_find_no_uji = self.ids.tx_nouji.text
-            self.exec_fetch_master_data(dt_find_no_pol, dt_find_no_uji)
-
-            self.ids.lb_temp_nama.text = f'{dt_temp_nama}'
-            self.ids.lb_temp_alamat.text = f'{dt_temp_alamat}'
-            self.ids.lb_temp_no_uji.text = f'{dt_temp_no_uji}'
-            self.ids.lb_temp_no_pol.text = f'{dt_temp_no_pol}'
-            self.ids.lb_temp_status_uji.text = 'Berkala' if dt_temp_status_uji == 'B' else 'Uji Ulang' if dt_temp_status_uji == 'U' else 'Baru' if dt_temp_status_uji == 'BR' else 'Numpang Uji' if dt_temp_status_uji == 'NB' else 'Mutasi'
-            self.ids.lb_temp_tgl_uji_terakhir.text = f'{dt_temp_tgl_uji_terakhir}'
-            self.ids.lb_temp_tgl_uji_habis.text = f'{dt_temp_tgl_uji_habis}'
-            self.ids.lb_temp_merk.text = '-' if dt_temp_id_merk == None else f"{db_merk[np.where(db_merk == dt_temp_id_merk)[0][0],1]}"
-            self.ids.lb_temp_type.text = f'{dt_temp_type}'
-            self.ids.lb_temp_jenis_kendaraan.text = f'{dt_temp_jenis_kendaraan}'
-            self.ids.lb_temp_warna.text = '-' if dt_temp_warna == None else f"{db_warna[np.where(db_warna == dt_temp_warna)[0][0],1]}"
-            self.ids.lb_temp_chasis.text = f'{dt_temp_chasis}'
-            self.ids.lb_temp_mesin.text = f'{dt_temp_mesin}'
-            self.ids.lb_temp_bahan_bakar.text = '-' if dt_temp_bhn_bkr == None else f"{db_bahan_bakar[np.where(db_bahan_bakar == dt_temp_bhn_bkr)[0][0],1]}"
-            self.ids.lb_temp_jbb.text = f'{dt_temp_jbb}'
-            self.ids.lb_temp_berat_kosong.text = f'{dt_temp_brt_ksg}'
-            self.ids.bt_register.disabled = False
-            
-        except Exception as e:
-            toast_msg = f'Gagal Menemukan Data, Silahkan Isi Nomor Uji atau Nomor Polisi dengan Benar'
-            toast(toast_msg)
-            Logger.error(f"{self.name}: {toast_msg}, {e}") 
-
-    def exec_fetch_master_data(self, dt_find_no_pol, dt_find_no_uji):
-        global mydb, db_users, db_merk, db_bahan_bakar, db_warna
-        global dt_id_user, dt_user, dt_foto_user
-        global dt_temp_no_uji, dt_temp_no_uji_new, dt_temp_no_wilayah, dt_temp_no_kendaraan, dt_temp_no_plat, dt_temp_no_pol
-        global dt_temp_nama, dt_temp_no_hp, dt_temp_alamat, dt_temp_id_izin, dt_temp_wilayah, dt_temp_provinsi, dt_temp_kabupaten_kota, dt_temp_kecamatan
-        global dt_temp_id_merk, dt_temp_id_subjenis, dt_temp_type, dt_temp_tahun_buat, dt_temp_silinder, dt_temp_warna, dt_temp_chasis, dt_temp_mesin, dt_temp_warna_plat
-        global dt_temp_bhn_bkr, dt_temp_jbb, dt_temp_brt_ksg, dt_temp_daya_motor, dt_temp_tgl_uji_terakhir, dt_temp_tgl_uji_habis, dt_temp_status_uji, dt_temp_status_penerbitan, dt_temp_jenis_kendaraan, dt_temp_kode_jenis_kendaraan, dt_temp_kode_wilayah
-
-        try:
-            mycursor = mydb.cursor()
-            if dt_find_no_pol != "" and dt_find_no_uji == "":
-                mycursor.execute(f"SELECT NOUJI, NEW_NOUJI, NOWIL, NOKDR, PLAT, NOPOL, NAMA, NOHP, ALAMAT, ID_IZIN, WLY, PROP, KABKOT, KEC, MERK_ID, idjeniskendaraan, TYPE, TH_BUAT, SILINDER, WARNA_KEND, CHASIS, MESIN, WARNA_PLAT, BHN_BAKAR, JBB, BERATKOSONG, DAYAMOTOR, TGL_UJI_TERAKHIR, STATUSUJI, statuspenerbitan, idjeniskendaraan, kd_jnskendaraan, kodewilayah FROM {TB_DATA_MASTER} WHERE NOPOL = '{dt_find_no_pol}' ")
-            elif dt_find_no_uji != "":
-                mycursor.execute(f"SELECT NOUJI, NEW_NOUJI, NOWIL, NOKDR, PLAT, NOPOL, NAMA, NOHP, ALAMAT, ID_IZIN, WLY, PROP, KABKOT, KEC, MERK_ID, idjeniskendaraan, TYPE, TH_BUAT, SILINDER, WARNA_KEND, CHASIS, MESIN, WARNA_PLAT, BHN_BAKAR, JBB, BERATKOSONG, DAYAMOTOR, TGL_UJI_TERAKHIR, STATUSUJI, statuspenerbitan, idjeniskendaraan, kd_jnskendaraan, kodewilayah FROM {TB_DATA_MASTER} WHERE NOUJI = '{dt_find_no_uji}' ")
-            elif dt_find_no_uji == "" and dt_find_no_pol == "":
-                toast("Silahkan Isi Nomor Uji atau Nomor Polisi dengan Benar")
-            myresult = mycursor.fetchone()
-            mydb.commit()
-            db_master_data = np.array(myresult).T
-
-            if myresult is None:
-                toast('Data Tidak Ditemukan di Database, Silahkan Ajukan Pengujian Baru')
-                self.exec_cancel()
-            else:
-                dt_temp_no_uji = db_master_data[0]
-                dt_temp_no_uji_new = db_master_data[1]
-                dt_temp_no_wilayah = db_master_data[2]
-                dt_temp_no_kendaraan = db_master_data[3]
-                dt_temp_no_plat = db_master_data[4]
-                dt_temp_no_pol = db_master_data[5]
-                dt_temp_nama = db_master_data[6]
-                dt_temp_no_hp = db_master_data[7]
-                dt_temp_alamat = db_master_data[8]
-                dt_temp_id_izin = db_master_data[9]
-                dt_temp_wilayah = db_master_data[10]
-                dt_temp_provinsi = db_master_data[11]
-                dt_temp_kabupaten_kota = db_master_data[12]
-                dt_temp_kecamatan = db_master_data[13]
-                dt_temp_id_merk = db_master_data[14]
-                dt_temp_id_subjenis = db_master_data[15]
-                dt_temp_type = db_master_data[16]
-                dt_temp_tahun_buat = db_master_data[17]
-                dt_temp_silinder = db_master_data[18]
-                dt_temp_warna = db_master_data[19]
-                dt_temp_chasis = db_master_data[20]
-                dt_temp_mesin = db_master_data[21]
-                dt_temp_warna_plat = db_master_data[22]
-                dt_temp_bhn_bkr = db_master_data[23]
-                dt_temp_jbb = db_master_data[24]
-                dt_temp_brt_ksg = db_master_data[25]
-                dt_temp_daya_motor = db_master_data[26]
-                
-                dt_temp_status_uji = db_master_data[28]
-                dt_temp_status_penerbitan = db_master_data[29]
-                dt_temp_jenis_kendaraan = db_master_data[30]
-                dt_temp_kode_jenis_kendaraan = db_master_data[31]
-                dt_temp_kode_wilayah = db_master_data[32]
-
-                if(db_master_data[26] is not None):
-                    last_uji_date = db_master_data[27]
-                else:
-                    last_uji_date = datetime.datetime(1900, 1, 1)
-
-                if(last_uji_date.month <= 6):
-                    year_replaced = last_uji_date.year
-                    month_replaced = last_uji_date.month + 6
-                    day_replaced = last_uji_date.day
-                else:
-                    year_replaced = last_uji_date.year + 1
-                    month_replaced = last_uji_date.month - 6
-                    day_replaced = last_uji_date.day
-                
-                if(last_uji_date.day > 29):
-                    if month_replaced == 2:
-                        day_replaced = 29
-                    if month_replaced == 4 or month_replaced == 6 or month_replaced == 9 or month_replaced == 11:
-                        day_replaced = 30
-                    
-                dt_temp_tgl_uji_terakhir = str(last_uji_date.strftime('%d-%m-%Y'))
-                dt_temp_tgl_uji_habis = str(last_uji_date.replace(month=month_replaced, year=year_replaced, day=day_replaced).strftime('%d-%m-%Y'))
-                
-        except Exception as e:
-            toast_msg = f'Gagal Menemukan Data dari Database Master'
-            toast(toast_msg)
-            Logger.error(f"{self.name}: {toast_msg}, {e}") 
-
-    def exec_register(self):
-        global mydb, db_users, db_merk, db_bahan_bakar, db_warna
-        global dt_id_user, dt_user, dt_foto_user
-        global dt_temp_no_uji, dt_temp_no_uji_new, dt_temp_no_wilayah, dt_temp_no_kendaraan, dt_temp_no_plat, dt_temp_no_pol
-        global dt_temp_nama, dt_temp_no_hp, dt_temp_alamat, dt_temp_id_izin, dt_temp_wilayah, dt_temp_provinsi, dt_temp_kabupaten_kota, dt_temp_kecamatan
-        global dt_temp_id_merk, dt_temp_id_subjenis, dt_temp_type, dt_temp_tahun_buat, dt_temp_silinder, dt_temp_warna, dt_temp_chasis, dt_temp_mesin, dt_temp_warna_plat
-        global dt_temp_bhn_bkr, dt_temp_jbb, dt_temp_brt_ksg, dt_temp_daya_motor, dt_temp_tgl_uji_terakhir, dt_temp_tgl_uji_habis, dt_temp_status_uji, dt_temp_status_penerbitan, dt_temp_jenis_kendaraan, dt_temp_kode_jenis_kendaraan, dt_temp_kode_wilayah
-
-        try:
-            mycursor = mydb.cursor()
-            mycursor.execute(f"SELECT MAX(noantrian) FROM {TB_DATA}")
-            result = mycursor.fetchone()
-            last_noantrian = int(result[0]) if result[0] is not None else 0
-            noantrian = f"{last_noantrian + 1:04d}"
-
-            mycursor = mydb.cursor()
-            sql = f"INSERT INTO {TB_DATA} (noantrian, nopol, nouji, NEW_NOUJI, merk, type, idjeniskendaraan, jbb, berat_kosong, warna) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-            values = (noantrian, dt_temp_no_pol, dt_temp_no_uji, dt_temp_no_uji_new, dt_temp_id_merk, dt_temp_type, dt_temp_id_subjenis, dt_temp_jbb, dt_temp_brt_ksg, dt_temp_warna)
-            mycursor.execute(sql, values)
-            mydb.commit()
-
-        except Exception as e:
-            toast_msg = f'Gagal menambah data antrian baru'
-            toast(toast_msg)
-            Logger.error(f"{self.name}: {toast_msg}, {e}") 
-
-        self.exec_cancel()
-
-    def exec_navigate_home(self):
-        try:
-            self.screen_manager.current = 'screen_home'
-
-        except Exception as e:
-            toast_msg = f'Gagal Berpindah ke Halaman Awal'
-            toast(toast_msg)
-            Logger.error(f"{self.name}: {toast_msg}, {e}") 
-
-    def exec_navigate_login(self):
-        global dt_user
-        try:
-            if (dt_user == ""):
-                self.screen_manager.current = 'screen_login'
-            else:
-                toast(f"Anda sudah login sebagai {dt_user}")
-
-        except Exception as e:
-            toast_msg = f'Gagal Berpindah ke Halaman Login'
-            toast(toast_msg)
-            Logger.error(f"{self.name}: {toast_msg}, {e}") 
-
-    def exec_navigate_main(self):
-        try:
-            self.screen_manager.current = 'screen_main'
-
-        except Exception as e:
-            toast_msg = f'Gagal Berpindah ke Halaman Utama'
-            toast(toast_msg)
-            Logger.error(f"{self.name}: {toast_msg}, {e}") 
+            Logger.error(f"{self.name}: {toast_msg}, {e}")   
 
 class ScreenMenu(MDScreen):        
     def __init__(self, **kwargs):
@@ -2189,6 +1688,15 @@ class ScreenLoadMeter(MDScreen):
         self.ids.lb_load_l_val.text = "..."
         self.ids.lb_load_r_val.text = " "
 
+        if not MODBUS_CLIENT.is_socket_open(): # Cek dulu jika belum terhubung
+            try:
+                MODBUS_CLIENT.connect()
+                Logger.info("Modbus connection opened for testing.")
+            except Exception as e:
+                toast("Gagal terhubung ke PLC!")
+                Logger.error(f"Modbus connect error: {e}")
+                return
+            
         if(not flag_play):
             Clock.schedule_interval(screen_main.regular_get_data, GET_DATA_INTERVAL)
             flag_play = True
@@ -2200,6 +1708,10 @@ class ScreenLoadMeter(MDScreen):
         count_starting = COUNT_STARTING
         count_get_data = COUNT_ACQUISITION
         flag_play = False   
+        if MODBUS_CLIENT.is_socket_open():
+            MODBUS_CLIENT.close()
+            Logger.info("Modbus connection closed after testing.")
+        
         self.screen_manager.current = 'screen_menu'
 
 class ScreenBrakeMeter(MDScreen):        
@@ -2306,6 +1818,15 @@ class ScreenBrakeMeter(MDScreen):
         self.ids.bt_reload.disabled = True
         self.ids.lb_brake_l_val.text = "..."
         self.ids.lb_brake_r_val.text = " "
+        
+        if not MODBUS_CLIENT.is_socket_open(): # Cek dulu jika belum terhubung
+            try:
+                MODBUS_CLIENT.connect()
+                Logger.info("Modbus connection opened for testing.")
+            except Exception as e:
+                toast("Gagal terhubung ke PLC!")
+                Logger.error(f"Modbus connect error: {e}")
+                return
 
         if(not flag_play):
             Clock.schedule_interval(screen_main.regular_get_data, GET_DATA_INTERVAL)
@@ -2318,6 +1839,9 @@ class ScreenBrakeMeter(MDScreen):
         count_starting = COUNT_STARTING
         count_get_data = COUNT_ACQUISITION
         flag_play = False   
+        if MODBUS_CLIENT.is_socket_open():
+            MODBUS_CLIENT.close()
+            Logger.info("Modbus connection closed after testing.")
         self.screen_manager.current = 'screen_menu'
 
 class ScreenHandbrakeMeter(MDScreen):        
@@ -2425,6 +1949,15 @@ class ScreenHandbrakeMeter(MDScreen):
         self.ids.lb_handbrake_l_val.text = "..."
         self.ids.lb_handbrake_r_val.text = " "
 
+        if not MODBUS_CLIENT.is_socket_open(): # Cek dulu jika belum terhubung
+            try:
+                MODBUS_CLIENT.connect()
+                Logger.info("Modbus connection opened for testing.")
+            except Exception as e:
+                toast("Gagal terhubung ke PLC!")
+                Logger.error(f"Modbus connect error: {e}")
+                return
+        
         if(not flag_play):
             Clock.schedule_interval(screen_main.regular_get_data, GET_DATA_INTERVAL)
             flag_play = True
@@ -2436,6 +1969,9 @@ class ScreenHandbrakeMeter(MDScreen):
         count_starting = COUNT_STARTING
         count_get_data = COUNT_ACQUISITION
         flag_play = False   
+        if MODBUS_CLIENT.is_socket_open():
+            MODBUS_CLIENT.close()
+            Logger.info("Modbus connection closed after testing.")
         self.screen_manager.current = 'screen_menu'
 
 class ScreenResume(MDScreen):        
@@ -2459,20 +1995,24 @@ class ScreenResume(MDScreen):
         global dt_load_flag, db_load_left_value, db_load_right_value, db_load_total_value, db_load_flag, dt_id_user
         global dt_brake_flag, db_brake_left_value, db_brake_right_value, db_brake_total_value, db_brake_difference_value, db_brake_flag
         global dt_handbrake_flag, db_handbrake_left_value, db_handbrake_right_value, db_handbrake_total_value, db_handbrake_difference_value, db_handbrake_flag
-        global dt_load_total_value, dt_brake_total_value, dt_brake_efficiency_value, dt_brake_difference_value, dt_handbrake_total_value, dt_handbrake_efficiency_value, dt_handbrake_difference_value
+        global dt_load_total_value, dt_brake_total_value, dt_brake_efficiency_value, dt_brake_difference_value, dt_handbrake_total_value, dt_handbrake_efficiency_value, dt_handbrake_difference_value, dt_brake_efficiency_flag, dt_handbrake_efficiency_flag
         global dt_test_number
 
         self.exec_reload_table_detail()
         try:
             if(dt_brake_efficiency_value >= STANDARD_MIN_EFFICIENCY_BRAKE):
-                dt_brake_flag = 1            
+                dt_brake_flag = 1
+                dt_brake_efficiency_flag = 1           
             else:
                 dt_brake_flag = 0
+                dt_brake_efficiency_flag = 0
             
             if(dt_handbrake_efficiency_value >= STANDARD_MIN_EFFICIENCY_HANDBRAKE):
                 dt_handbrake_flag = 1
+                dt_handbrake_efficiency_flag = 1
             else:
                 dt_handbrake_flag = 0
+                dt_handbrake_efficiency_flag = 0
 
             dt_brake_resume_flag = all(x == 1 for x in db_brake_flag if x != 2)
             if(dt_brake_resume_flag and int(dt_brake_flag) == 1 and int(dt_handbrake_flag) == 1):
@@ -2600,8 +2140,8 @@ class ScreenResume(MDScreen):
         global mydb, db_antrian
         global db_load_left_value, db_load_right_value, db_load_total_value, db_load_flag, dt_id_user, dt_no_antri
         global db_brake_left_value, db_brake_right_value, db_brake_total_value, db_brake_difference_value, db_brake_flag
-        global db_handbrake_left_value, db_handbrake_right_value, db_handbrake_total_value, db_handbrake_difference_value, db_handbrake_flag
-        global dt_load_total_value, dt_brake_total_value, dt_brake_efficiency_value, dt_brake_difference_value, dt_handbrake_total_value, dt_handbrake_efficiency_value, dt_handbrake_difference_value
+        global db_handbrake_left_value, db_handbrake_right_value, db_handbrake_total_value, db_handbrake_difference_value, db_handbrake_flag, dt_handbrake_efficiency_flag
+        global dt_load_total_value, dt_brake_total_value, dt_brake_efficiency_value, dt_brake_difference_value, dt_handbrake_total_value, dt_handbrake_efficiency_value, dt_handbrake_difference_value, dt_brake_efficiency_flag
         global dt_test_number
         global db_brake_difference_value, db_brake_flag, db_brake_difference_s_flag
 
@@ -2674,12 +2214,12 @@ class ScreenResume(MDScreen):
                     "brake_difference_s10_value = %s, brake_difference_s11_value = %s, brake_difference_s12_value = %s"
                 )
                 sql6 = (
-                    ", brake_difference_s1_flag = %s, brake_difference_s2_flag = %s, brake_difference_s2_flag = %s, "
-                    "brake_difference_s3_flag = %s, brake_difference_s4_flag = %s, brake_difference_s4_flag = %s, "
-                    "brake_difference_s5_flag = %s, brake_difference_s6_flag = %s, brake_difference_s1_flag = %s, "
-                    "brake_s10_flag = %s, brake_s11_flag = %s, brake_s12_flag = %s"
+                    ", brake_difference_s1_flag = %s, brake_difference_s2_flag = %s, brake_difference_s3_flag = %s, "
+                    "brake_difference_s4_flag = %s, brake_difference_s5_flag = %s, brake_difference_s6_flag = %s, "
+                    "brake_difference_s7_flag = %s, brake_difference_s8_flag = %s, brake_difference_s9_flag = %s, "
+                    "brake_difference_s10_flag = %s, brake_difference_s11_flag = %s, brake_difference_s12_flag = %s"
                 )
-                sql5 = ", brake_total_value = %s, brake_efficiency_value = %s, brake_user = %s, brake_post = %s WHERE noantrian = %s"
+                sql5 = ", brake_total_value = %s, brake_efficiency_value = %s, brake_efficiency_flag = %s, brake_user = %s, brake_post = %s WHERE noantrian = %s"
 
 
                 sql = sql1 + sql2 + sql3 + sql4 + sql6 + sql5
@@ -2692,6 +2232,7 @@ class ScreenResume(MDScreen):
                     'db_brake_left_value': db_brake_left_value,
                     'db_brake_right_value': db_brake_right_value,
                     'db_brake_difference_value': db_brake_difference_value,
+                    'db_brake_difference_s_flag': db_brake_difference_s_flag,
                 }
 
                 for name, arr in arrays.items():
@@ -2707,12 +2248,13 @@ class ScreenResume(MDScreen):
                     *db_brake_difference_s_flag,          # 12
                     dt_brake_total_value,                 # 1
                     dt_brake_efficiency_value,            # 1
+                    dt_brake_efficiency_flag,             # 1
                     dt_id_user,                           # 1
                     dt_brake_post,                        # 1
                     dt_no_antri                           # 1
                 )
 
-                expected_params = 54 
+                expected_params = 55
                 if len(sql_val) != expected_params:
                     Logger.error(f"SQL Value count mismatch: expected {expected_params}, got {len(sql_val)}")
                 else:
@@ -2740,7 +2282,7 @@ class ScreenResume(MDScreen):
                     "handbrake_r_s7_value = %s, handbrake_r_s8_value = %s, handbrake_r_s9_value = %s, "
                     "handbrake_r_s10_value = %s, handbrake_r_s11_value = %s, handbrake_r_s12_value = %s"
                 )
-                sql6 = ", handbrake_total_value = %s, handbrake_efficiency_value = %s, handbrake_user = %s, handbrake_post = %s WHERE noantrian = %s"
+                sql6 = ", handbrake_total_value = %s, handbrake_efficiency_value = %s, handbrake_efficiency_flag = %s, handbrake_user = %s, handbrake_post = %s WHERE noantrian = %s"
                 sql = sql1 + sql2 + sql3 + sql6
 
                 sql_handbrake_flag = dt_handbrake_flag
@@ -2750,7 +2292,6 @@ class ScreenResume(MDScreen):
                 arrays = {
                     'db_handbrake_left_value': db_handbrake_left_value,
                     'db_handbrake_right_value': db_handbrake_right_value,
-                    'db_handbrake_difference_value': db_handbrake_difference_value,
                 }
 
                 for name, arr in arrays.items():
@@ -2764,12 +2305,13 @@ class ScreenResume(MDScreen):
                     *db_handbrake_right_value,                  # 12
                     dt_handbrake_total_value,                   # 1
                     dt_handbrake_efficiency_value,              # 1
+                    dt_handbrake_efficiency_flag,               # 1
                     dt_id_user,                                 # 1
                     dt_handbrake_post,                          # 1
                     dt_no_antri                                 # 1
                 )
 
-                expected_params = 30  # handbrake_flag + 5 arrays ×12 + user/post/noantri
+                expected_params = 31 # handbrake_flag + 5 arrays ×12 + user/post/noantri
                 if len(sql_val) != expected_params:
                     Logger.error(f"SQL Value count mismatch: expected {expected_params}, got {len(sql_val)}")
                 else:

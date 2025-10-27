@@ -107,7 +107,7 @@
 							orientation: "horizontal"
 
 							MDLabel:
-								text: "KALIBRASI AXLE LOAD KIRI"
+								text: "KALIBRASI AXLE LOAD"
 								halign: "center"
 								valign: "middle"
 								font_style: 'H6'
@@ -239,146 +239,146 @@
 							on_press: root.exec_calibrate_load_l_stop()
 							on_release: root.rel_calibrate_load_l_stop()
 
-					MDBoxLayout:
-						orientation: "vertical"
-						padding:20
-						spacing:20
+					# MDBoxLayout:
+					# 	orientation: "vertical"
+					# 	padding:20
+					# 	spacing:20
 						
-						MDBoxLayout:
-							orientation: "horizontal"
+					# 	MDBoxLayout:
+					# 		orientation: "horizontal"
 
-							MDLabel:
-								text: "KALIBRASI AXLE LOAD KANAN"
-								halign: "center"
-								valign: "middle"
-								font_style: 'H6'
-								size_hint_x: 0.5
+					# 		MDLabel:
+					# 			text: "KALIBRASI AXLE LOAD KANAN"
+					# 			halign: "center"
+					# 			valign: "middle"
+					# 			font_style: 'H6'
+					# 			size_hint_x: 0.5
 
-							MDLabel:
-								text: "Realtime:"
-								halign: "right"
-								valign: "middle"
-								font_style: 'H2'
-								size_hint_x: 0.2
+					# 		MDLabel:
+					# 			text: "Realtime:"
+					# 			halign: "right"
+					# 			valign: "middle"
+					# 			font_style: 'H2'
+					# 			size_hint_x: 0.2
 
-							MDLabel:
-								id:lb_load_r_val
-								text: "..."
-								halign: "center"
-								valign: "middle"
-								font_style: 'H2'
-								size_hint_x: 0.3
+					# 		MDLabel:
+					# 			id:lb_load_r_val
+					# 			text: "..."
+					# 			halign: "center"
+					# 			valign: "middle"
+					# 			font_style: 'H2'
+					# 			size_hint_x: 0.3
 
-						MDRectangleFlatIconButton:
-							id: bt_exec_calibrate_load_r_start
-							type: "large"
-							icon: "play"
-							size_hint_x: 0.3
-							text:"MULAI KALIBRASI"
-							text_color: "#EEEEEE"
-							md_bg_color: "#2CA02C"
-							font_style: 'H6'
-							on_press: root.exec_calibrate_load_r_start()
-							on_release: root.rel_calibrate_load_r_start()
+					# 	MDRectangleFlatIconButton:
+					# 		id: bt_exec_calibrate_load_r_start
+					# 		type: "large"
+					# 		icon: "play"
+					# 		size_hint_x: 0.3
+					# 		text:"MULAI KALIBRASI"
+					# 		text_color: "#EEEEEE"
+					# 		md_bg_color: "#2CA02C"
+					# 		font_style: 'H6'
+					# 		on_press: root.exec_calibrate_load_r_start()
+					# 		on_release: root.rel_calibrate_load_r_start()
 
-						MDBoxLayout:
-							orientation: "horizontal"
-							MDLabel:
-								text: "Kalibrasi Nol"
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-								size_hint_x: 0.7
+					# 	MDBoxLayout:
+					# 		orientation: "horizontal"
+					# 		MDLabel:
+					# 			text: "Kalibrasi Nol"
+					# 			halign: "left"
+					# 			valign: "middle"
+					# 			font_style: 'H6'
+					# 			size_hint_x: 0.7
 							
-							MDRectangleFlatIconButton:
-								id: bt_exec_calibrate_load_r_zero
-								type: "large"
-								size_hint_x: 0.3
-								icon: "gauge"
-								text:"KALIBRASI"
-								text_color: "#EEEEEE"
-								md_bg_color: "#2CA02C"
-								font_style: 'H6'
-								on_press: root.exec_calibrate_load_r_zero()	
-								on_release: root.rel_calibrate_load_r_zero()			
+					# 		MDRectangleFlatIconButton:
+					# 			id: bt_exec_calibrate_load_r_zero
+					# 			type: "large"
+					# 			size_hint_x: 0.3
+					# 			icon: "gauge"
+					# 			text:"KALIBRASI"
+					# 			text_color: "#EEEEEE"
+					# 			md_bg_color: "#2CA02C"
+					# 			font_style: 'H6'
+					# 			on_press: root.exec_calibrate_load_r_zero()	
+					# 			on_release: root.rel_calibrate_load_r_zero()			
 
-						MDBoxLayout:
-							orientation: "horizontal"
-							MDLabel:
-								text: "Kalibrasi Nilai 1"
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-								size_hint_x: 0.3
+					# 	MDBoxLayout:
+					# 		orientation: "horizontal"
+					# 		MDLabel:
+					# 			text: "Kalibrasi Nilai 1"
+					# 			halign: "left"
+					# 			valign: "middle"
+					# 			font_style: 'H6'
+					# 			size_hint_x: 0.3
 
-							MDTextField:
-								id: tx_calibrate_load_r_value1
-								hint_text: "Berat Beban Kalibrasi"
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-								size_hint_x: 0.4
-								type: "number"
-								input_filter: 'int'
-								text_color_focus: "#4471C4"
-								on_text_validate: root.exec_calibrate_load_r_value1()
+					# 		MDTextField:
+					# 			id: tx_calibrate_load_r_value1
+					# 			hint_text: "Berat Beban Kalibrasi"
+					# 			halign: "left"
+					# 			valign: "middle"
+					# 			font_style: 'H6'
+					# 			size_hint_x: 0.4
+					# 			type: "number"
+					# 			input_filter: 'int'
+					# 			text_color_focus: "#4471C4"
+					# 			on_text_validate: root.exec_calibrate_load_r_value1()
 							
-							MDRectangleFlatIconButton:
-								id: bt_exec_calibrate_load_r_value1
-								type: "large"
-								size_hint_x: 0.3
-								icon: "gauge"
-								text:"KALIBRASI"
-								text_color: "#EEEEEE"
-								md_bg_color: "#2CA02C"
-								font_style: 'H6'
-								on_press: root.exec_calibrate_load_r_value1()
-								on_release: root.rel_calibrate_load_r_value1()
+					# 		MDRectangleFlatIconButton:
+					# 			id: bt_exec_calibrate_load_r_value1
+					# 			type: "large"
+					# 			size_hint_x: 0.3
+					# 			icon: "gauge"
+					# 			text:"KALIBRASI"
+					# 			text_color: "#EEEEEE"
+					# 			md_bg_color: "#2CA02C"
+					# 			font_style: 'H6'
+					# 			on_press: root.exec_calibrate_load_r_value1()
+					# 			on_release: root.rel_calibrate_load_r_value1()
 
-						MDBoxLayout:
-							orientation: "horizontal"
-							MDLabel:
-								text: "Kalibrasi Nilai 2"
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-								size_hint_x: 0.3
+					# 	MDBoxLayout:
+					# 		orientation: "horizontal"
+					# 		MDLabel:
+					# 			text: "Kalibrasi Nilai 2"
+					# 			halign: "left"
+					# 			valign: "middle"
+					# 			font_style: 'H6'
+					# 			size_hint_x: 0.3
 
-							MDTextField:
-								id: tx_calibrate_load_r_value2
-								hint_text: "Berat Beban Kalibrasi"
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-								size_hint_x: 0.4
-								type: "number"
-								input_filter: 'int'
-								text_color_focus: "#4471C4"
-								on_text_validate: root.exec_calibrate_load_r_value2()
+					# 		MDTextField:
+					# 			id: tx_calibrate_load_r_value2
+					# 			hint_text: "Berat Beban Kalibrasi"
+					# 			halign: "left"
+					# 			valign: "middle"
+					# 			font_style: 'H6'
+					# 			size_hint_x: 0.4
+					# 			type: "number"
+					# 			input_filter: 'int'
+					# 			text_color_focus: "#4471C4"
+					# 			on_text_validate: root.exec_calibrate_load_r_value2()
 							
-							MDRectangleFlatIconButton:
-								id: bt_exec_calibrate_load_r_value2
-								type: "large"
-								size_hint_x: 0.3
-								icon: "gauge"
-								text:"KALIBRASI"
-								text_color: "#EEEEEE"
-								md_bg_color: "#2CA02C"
-								font_style: 'H6'
-								on_press: root.exec_calibrate_load_r_value2()
-								on_release: root.rel_calibrate_load_r_value2()
+					# 		MDRectangleFlatIconButton:
+					# 			id: bt_exec_calibrate_load_r_value2
+					# 			type: "large"
+					# 			size_hint_x: 0.3
+					# 			icon: "gauge"
+					# 			text:"KALIBRASI"
+					# 			text_color: "#EEEEEE"
+					# 			md_bg_color: "#2CA02C"
+					# 			font_style: 'H6'
+					# 			on_press: root.exec_calibrate_load_r_value2()
+					# 			on_release: root.rel_calibrate_load_r_value2()
 
-						MDRectangleFlatIconButton:
-							id: bt_exec_calibrate_load_r_stop
-							type: "large"
-							icon: "stop"
-							size_hint_x: 0.3
-							text:"STOP KALIBRASI"
-							text_color: "#EEEEEE"
-							md_bg_color: "#2CA02C"
-							font_style: 'H6'
-							on_press: root.exec_calibrate_load_r_stop()
-							on_release: root.rel_calibrate_load_r_stop()
+					# 	MDRectangleFlatIconButton:
+					# 		id: bt_exec_calibrate_load_r_stop
+					# 		type: "large"
+					# 		icon: "stop"
+					# 		size_hint_x: 0.3
+					# 		text:"STOP KALIBRASI"
+					# 		text_color: "#EEEEEE"
+					# 		md_bg_color: "#2CA02C"
+					# 		font_style: 'H6'
+					# 		on_press: root.exec_calibrate_load_r_stop()
+					# 		on_release: root.rel_calibrate_load_r_stop()
 
 				MDBoxLayout:
 					orientation: "vertical"
@@ -395,7 +395,7 @@
 							orientation: "horizontal"
 
 							MDLabel:
-								text: "KALIBRASI BRAKE KIRI"
+								text: "KALIBRASI BRAKE"
 								halign: "center"
 								valign: "middle"
 								font_style: 'H6'
@@ -527,146 +527,146 @@
 							on_press: root.exec_calibrate_brake_l_stop()
 							on_release: root.rel_calibrate_brake_l_stop()
 
-					MDBoxLayout:
-						orientation: "vertical"
-						padding:20
-						spacing:20
+					# MDBoxLayout:
+					# 	orientation: "vertical"
+					# 	padding:20
+					# 	spacing:20
 						
-						MDBoxLayout:
-							orientation: "horizontal"
+					# 	MDBoxLayout:
+					# 		orientation: "horizontal"
 
-							MDLabel:
-								text: "KALIBRASI BRAKE KANAN"
-								halign: "center"
-								valign: "middle"
-								font_style: 'H6'
-								size_hint_x: 0.5
+					# 		MDLabel:
+					# 			text: "KALIBRASI BRAKE KANAN"
+					# 			halign: "center"
+					# 			valign: "middle"
+					# 			font_style: 'H6'
+					# 			size_hint_x: 0.5
 
-							MDLabel:
-								text: "Realtime:"
-								halign: "right"
-								valign: "middle"
-								font_style: 'H2'
-								size_hint_x: 0.2
+					# 		MDLabel:
+					# 			text: "Realtime:"
+					# 			halign: "right"
+					# 			valign: "middle"
+					# 			font_style: 'H2'
+					# 			size_hint_x: 0.2
 
-							MDLabel:
-								id:lb_brake_r_val
-								text: "..."
-								halign: "center"
-								valign: "middle"
-								font_style: 'H2'
-								size_hint_x: 0.3
+					# 		MDLabel:
+					# 			id:lb_brake_r_val
+					# 			text: "..."
+					# 			halign: "center"
+					# 			valign: "middle"
+					# 			font_style: 'H2'
+					# 			size_hint_x: 0.3
 
-						MDRectangleFlatIconButton:
-							id: bt_exec_calibrate_brake_r_start
-							type: "large"
-							icon: "play"
-							size_hint_x: 0.3
-							text:"MULAI KALIBRASI"
-							text_color: "#EEEEEE"
-							md_bg_color: "#2CA02C"
-							font_style: 'H6'
-							on_press: root.exec_calibrate_brake_r_start()
-							on_release: root.rel_calibrate_brake_r_start()
+					# 	MDRectangleFlatIconButton:
+					# 		id: bt_exec_calibrate_brake_r_start
+					# 		type: "large"
+					# 		icon: "play"
+					# 		size_hint_x: 0.3
+					# 		text:"MULAI KALIBRASI"
+					# 		text_color: "#EEEEEE"
+					# 		md_bg_color: "#2CA02C"
+					# 		font_style: 'H6'
+					# 		on_press: root.exec_calibrate_brake_r_start()
+					# 		on_release: root.rel_calibrate_brake_r_start()
 
-						MDBoxLayout:
-							orientation: "horizontal"
-							MDLabel:
-								text: "Kalibrasi Nol"
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-								size_hint_x: 0.7
+					# 	MDBoxLayout:
+					# 		orientation: "horizontal"
+					# 		MDLabel:
+					# 			text: "Kalibrasi Nol"
+					# 			halign: "left"
+					# 			valign: "middle"
+					# 			font_style: 'H6'
+					# 			size_hint_x: 0.7
 							
-							MDRectangleFlatIconButton:
-								id: bt_exec_calibrate_brake_r_zero
-								type: "large"
-								size_hint_x: 0.3
-								icon: "gauge"
-								text:"KALIBRASI"
-								text_color: "#EEEEEE"
-								md_bg_color: "#2CA02C"
-								font_style: 'H6'
-								on_press: root.exec_calibrate_brake_r_zero()
-								on_release: root.rel_calibrate_brake_r_zero()				
+					# 		MDRectangleFlatIconButton:
+					# 			id: bt_exec_calibrate_brake_r_zero
+					# 			type: "large"
+					# 			size_hint_x: 0.3
+					# 			icon: "gauge"
+					# 			text:"KALIBRASI"
+					# 			text_color: "#EEEEEE"
+					# 			md_bg_color: "#2CA02C"
+					# 			font_style: 'H6'
+					# 			on_press: root.exec_calibrate_brake_r_zero()
+					# 			on_release: root.rel_calibrate_brake_r_zero()				
 
-						MDBoxLayout:
-							orientation: "horizontal"
-							MDLabel:
-								text: "Kalibrasi Nilai 1"
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-								size_hint_x: 0.3
+					# 	MDBoxLayout:
+					# 		orientation: "horizontal"
+					# 		MDLabel:
+					# 			text: "Kalibrasi Nilai 1"
+					# 			halign: "left"
+					# 			valign: "middle"
+					# 			font_style: 'H6'
+					# 			size_hint_x: 0.3
 
-							MDTextField:
-								id: tx_calibrate_brake_r_value1
-								hint_text: "Berat Beban Kalibrasi"
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-								size_hint_x: 0.4
-								type: "number"
-								input_filter: 'int'
-								text_color_focus: "#4471C4"
-								on_text_validate: root.exec_calibrate_brake_r_value1()								
+					# 		MDTextField:
+					# 			id: tx_calibrate_brake_r_value1
+					# 			hint_text: "Berat Beban Kalibrasi"
+					# 			halign: "left"
+					# 			valign: "middle"
+					# 			font_style: 'H6'
+					# 			size_hint_x: 0.4
+					# 			type: "number"
+					# 			input_filter: 'int'
+					# 			text_color_focus: "#4471C4"
+					# 			on_text_validate: root.exec_calibrate_brake_r_value1()								
 							
-							MDRectangleFlatIconButton:
-								id: bt_exec_calibrate_brake_r_value1
-								type: "large"
-								size_hint_x: 0.3
-								icon: "gauge"
-								text:"KALIBRASI"
-								text_color: "#EEEEEE"
-								md_bg_color: "#2CA02C"
-								font_style: 'H6'
-								on_press: root.exec_calibrate_brake_r_value1()
-								on_release: root.rel_calibrate_brake_r_value1()
+					# 		MDRectangleFlatIconButton:
+					# 			id: bt_exec_calibrate_brake_r_value1
+					# 			type: "large"
+					# 			size_hint_x: 0.3
+					# 			icon: "gauge"
+					# 			text:"KALIBRASI"
+					# 			text_color: "#EEEEEE"
+					# 			md_bg_color: "#2CA02C"
+					# 			font_style: 'H6'
+					# 			on_press: root.exec_calibrate_brake_r_value1()
+					# 			on_release: root.rel_calibrate_brake_r_value1()
 
-						MDBoxLayout:
-							orientation: "horizontal"
-							MDLabel:
-								text: "Kalibrasi Nilai 2"
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-								size_hint_x: 0.3
+					# 	MDBoxLayout:
+					# 		orientation: "horizontal"
+					# 		MDLabel:
+					# 			text: "Kalibrasi Nilai 2"
+					# 			halign: "left"
+					# 			valign: "middle"
+					# 			font_style: 'H6'
+					# 			size_hint_x: 0.3
 
-							MDTextField:
-								id: tx_calibrate_brake_r_value2
-								hint_text: "Berat Beban Kalibrasi"
-								halign: "left"
-								valign: "middle"
-								font_style: 'H6'
-								size_hint_x: 0.4
-								type: "number"
-								input_filter: 'int'
-								text_color_focus: "#4471C4"
-								on_text_validate: root.exec_calibrate_brake_r_value2()								
+					# 		MDTextField:
+					# 			id: tx_calibrate_brake_r_value2
+					# 			hint_text: "Berat Beban Kalibrasi"
+					# 			halign: "left"
+					# 			valign: "middle"
+					# 			font_style: 'H6'
+					# 			size_hint_x: 0.4
+					# 			type: "number"
+					# 			input_filter: 'int'
+					# 			text_color_focus: "#4471C4"
+					# 			on_text_validate: root.exec_calibrate_brake_r_value2()								
 							
-							MDRectangleFlatIconButton:
-								id: bt_exec_calibrate_brake_r_value2
-								type: "large"
-								size_hint_x: 0.3
-								icon: "gauge"
-								text:"KALIBRASI"
-								text_color: "#EEEEEE"
-								md_bg_color: "#2CA02C"
-								font_style: 'H6'
-								on_press: root.exec_calibrate_brake_r_value2()
-								on_release: root.rel_calibrate_brake_r_value2()
+					# 		MDRectangleFlatIconButton:
+					# 			id: bt_exec_calibrate_brake_r_value2
+					# 			type: "large"
+					# 			size_hint_x: 0.3
+					# 			icon: "gauge"
+					# 			text:"KALIBRASI"
+					# 			text_color: "#EEEEEE"
+					# 			md_bg_color: "#2CA02C"
+					# 			font_style: 'H6'
+					# 			on_press: root.exec_calibrate_brake_r_value2()
+					# 			on_release: root.rel_calibrate_brake_r_value2()
 
-						MDRectangleFlatIconButton:
-							id: bt_exec_calibrate_brake_r_stop
-							type: "large"
-							icon: "stop"
-							size_hint_x: 0.3
-							text:"STOP KALIBRASI"
-							text_color: "#EEEEEE"
-							md_bg_color: "#2CA02C"
-							font_style: 'H6'
-							on_press: root.exec_calibrate_brake_r_stop()
-							on_release: root.rel_calibrate_brake_r_stop()
+					# 	MDRectangleFlatIconButton:
+					# 		id: bt_exec_calibrate_brake_r_stop
+					# 		type: "large"
+					# 		icon: "stop"
+					# 		size_hint_x: 0.3
+					# 		text:"STOP KALIBRASI"
+					# 		text_color: "#EEEEEE"
+					# 		md_bg_color: "#2CA02C"
+					# 		font_style: 'H6'
+					# 		on_press: root.exec_calibrate_brake_r_stop()
+					# 		on_release: root.rel_calibrate_brake_r_stop()
 
 			MDBoxLayout:
 				orientation: "horizontal"

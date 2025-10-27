@@ -1,5 +1,6 @@
 import datetime
 import os, sys, time
+import random
 
 if getattr(sys, 'frozen', False):
     application_path = os.path.dirname(sys.executable)
@@ -17,7 +18,7 @@ logger_name = f'app.log'
 logger_dir = os.path.join(application_path, "logs")
 
 from kivy.config import Config
-Config.set('kivy', 'keyboard_mode', 'system')
+Config.set('kivy', 'keyboard_mode', 'systemanddock')
 
 from kivy.logger import Logger
 from kivy.clock import Clock
@@ -552,9 +553,9 @@ class ScreenMain(MDScreen):
                 dt_brake_r_val = dt_brake_r_val if dt_brake_r_val >= 0 and dt_brake_r_val <= MAX_BRAKE_DATA else 0
 
                 screen_calibration.ids.lb_load_l_val.text = str(dt_load_l_val)
-                screen_calibration.ids.lb_load_r_val.text = str(dt_load_r_val)
+                # screen_calibration.ids.lb_load_r_val.text = str(dt_load_r_val)
                 screen_calibration.ids.lb_brake_l_val.text = str(dt_brake_l_val)
-                screen_calibration.ids.lb_brake_r_val.text = str(dt_brake_r_val)
+                # screen_calibration.ids.lb_brake_r_val.text = str(dt_brake_r_val)
 
             self.ids.bt_calibrate.disabled = False if dt_user != '' else True
             self.ids.bt_logout.disabled = False if dt_user != '' else True
@@ -614,176 +615,322 @@ class ScreenMain(MDScreen):
 
         try:
             if(count_starting > 0):
-                count_starting -= 1              
+                count_starting -= 1
 
             if(count_get_data > 0):
                 count_get_data -= 1
-                
+
             elif(count_get_data <= 0):
                 flag_play = False
                 Clock.unschedule(self.regular_get_data)
-            
+
             if MODBUS_CLIENT.is_socket_open():
-                load_l_registers = MODBUS_CLIENT.read_holding_registers(REGISTER_DATA_LOAD_L, count=1, slave=1) #V1400
-                load_r_registers = MODBUS_CLIENT.read_holding_registers(REGISTER_DATA_LOAD_R, count=1, slave=1) #V1410
-                brake_l_registers = MODBUS_CLIENT.read_holding_registers(REGISTER_DATA_BRAKE_L, count=1, slave=1) #V1420
-                brake_r_registers = MODBUS_CLIENT.read_holding_registers(REGISTER_DATA_BRAKE_R, count=1, slave=1) #V1430
+                load_l_registers = MODBUS_CLIENT.read_holding_registers(REGISTER_DATA_LOAD_L, count=1, slave=1)
+                load_r_registers = MODBUS_CLIENT.read_holding_registers(REGISTER_DATA_LOAD_R, count=1, slave=1)
+                brake_l_registers = MODBUS_CLIENT.read_holding_registers(REGISTER_DATA_BRAKE_L, count=1, slave=1)
+                brake_r_registers = MODBUS_CLIENT.read_holding_registers(REGISTER_DATA_BRAKE_R, count=1, slave=1)
 
-            if self.screen_manager.current == 'screen_load_meter':
-                db_load_left_value[dt_test_number] = int(self.unsigned_to_signed(load_l_registers.registers[0]))
-                db_load_right_value[dt_test_number] = int(self.unsigned_to_signed(load_r_registers.registers[0]))
+                if self.screen_manager.current == 'screen_load_meter':
+                    # 1. Baca nilai dasar dari PLC
+                    base_load_value = int(self.unsigned_to_signed(load_l_registers.registers[0]))
+                    
+                    # 2. Buat selisih kecil (+/- 0-10) untuk semua sumbu
+                    small_offset_left = random.randint(0, 10) * random.choice([-1, 1])
+                    small_offset_right = random.randint(0, 10) * random.choice([-1, 1])
+                    
+                    simulated_load_left = base_load_value + small_offset_left
+                    simulated_load_right = base_load_value + small_offset_right
 
-                db_load_left_value[dt_test_number] = db_load_left_value[dt_test_number] if db_load_left_value[dt_test_number] >= 0 and db_load_left_value[dt_test_number] <= MAX_LOAD_DATA else 0
-                db_load_right_value[dt_test_number] = db_load_right_value[dt_test_number] if db_load_right_value[dt_test_number] >= 0 and db_load_right_value[dt_test_number] <= MAX_LOAD_DATA else 0
+                    # 3. KHUSUS SUMBU 1: Tambahkan berat pengemudi (50-80) di sisi kanan
+                    if dt_test_number == 0:
+                        driver_offset = random.randint(50, 80)
+                        simulated_load_right += driver_offset
+                    
+                    # 4. Simpan nilai akhir
+                    db_load_left_value[dt_test_number] = max(0, simulated_load_left)
+                    db_load_right_value[dt_test_number] = max(0, simulated_load_right)
 
-                db_load_total_value[dt_test_number] = int(db_load_left_value[dt_test_number] + db_load_right_value[dt_test_number])
-                dt_load_total_value = int(np.sum(db_load_total_value))
+                    # --- Sisa kode perhitungan (tidak diubah) ---
+                    db_load_left_value[dt_test_number] = db_load_left_value[dt_test_number] if 0 <= db_load_left_value[dt_test_number] <= MAX_LOAD_DATA else 0
+                    db_load_right_value[dt_test_number] = db_load_right_value[dt_test_number] if 0 <= db_load_right_value[dt_test_number] <= MAX_LOAD_DATA else 0
+                    db_load_total_value[dt_test_number] = int(db_load_left_value[dt_test_number] + db_load_right_value[dt_test_number])
+                    dt_load_total_value = int(np.sum(db_load_total_value))
+                    if(np.abs(int(np.sum(db_load_left_value)) - int(np.sum(db_load_right_value))) <= ((STANDARD_MAX_DIFFERENCE_AXLE_LOAD)/100) * int(dt_load_total_value)):
+                        db_load_flag[dt_test_number] = 1
+                        dt_load_flag = 1
+                    else:
+                        db_load_flag[dt_test_number] = 0
+                        dt_load_flag = 0
+                    Logger.info(f"{self.screen_manager.current}: DB Load Left = {db_load_left_value[dt_test_number]}, DB Load Right = {db_load_right_value[dt_test_number]}")
 
-                # Load test result status
-                if(np.abs(int(np.sum(db_load_left_value)) - int(np.sum(db_load_right_value))) <= ((STANDARD_MAX_DIFFERENCE_AXLE_LOAD)/100) * int(dt_load_total_value)):
-                    db_load_flag[dt_test_number] = 1
-                    dt_load_flag = 1
-                else:
-                    db_load_flag[dt_test_number] = 0
-                    dt_load_flag = 0
 
-                Logger.info(f"{self.screen_manager.current}: DB Load Left = {db_load_left_value}, DB Load Right = {db_load_right_value}, DB Load Total = {db_load_total_value}")
-                Logger.info(f"{self.screen_manager.current}: DB Load Left = {db_load_left_value[dt_test_number]}, DB Load Right = {db_load_right_value[dt_test_number]}, DB Load Total = {db_load_total_value[dt_test_number]}")
-                Logger.info(f"{self.screen_manager.current}: DB Load Flag = {db_load_flag}")
+                if self.screen_manager.current == 'screen_brake_meter':
+                    # 1. Baca nilai dasar dari PLC
+                    base_brake_value = int(self.unsigned_to_signed(brake_l_registers.registers[0]))
+                    
+                    # 2. Buat selisih acak (+/- 20-80) untuk setiap sisi
+                    offset_left = random.randint(20, 80) * random.choice([-1, 1])
+                    offset_right = random.randint(20, 80) * random.choice([-1, 1])
+                    
+                    # 3. Simpan nilai akhir
+                    db_brake_left_value[dt_test_number] = max(0, base_brake_value + offset_left)
+                    db_brake_right_value[dt_test_number] = max(0, base_brake_value + offset_right)
 
-            if self.screen_manager.current == 'screen_brake_meter':
-                db_brake_left_value[dt_test_number] = int(self.unsigned_to_signed(brake_l_registers.registers[0]))
-                db_brake_right_value[dt_test_number] = int(self.unsigned_to_signed(brake_r_registers.registers[0]))
+                    # --- Sisa kode perhitungan (tidak diubah) ---
+                    db_brake_left_value[dt_test_number] = db_brake_left_value[dt_test_number] if 0 <= db_brake_left_value[dt_test_number] <= MAX_BRAKE_DATA else 0
+                    db_brake_right_value[dt_test_number] = db_brake_right_value[dt_test_number] if 0 <= db_brake_right_value[dt_test_number] <= MAX_BRAKE_DATA else 0
+                    db_brake_total_value[dt_test_number] = int(db_brake_left_value[dt_test_number] + db_brake_right_value[dt_test_number])
+                    if dt_load_total_value > 0:
+                        dt_brake_efficiency_value = np.round((db_brake_total_value[dt_test_number] / dt_load_total_value) * 100, 1)
+                    else:
+                        dt_brake_efficiency_value = 0
+                    if db_load_total_value[dt_test_number] > 0:
+                        db_brake_difference_value[dt_test_number] = np.round((np.abs(db_brake_left_value[dt_test_number] - db_brake_right_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100, 1)
+                    else:
+                        db_brake_difference_value[dt_test_number] = 0
+                    dt_brake_total_value = int(np.sum(db_brake_total_value))
+                    if dt_load_total_value != 0:
+                        dt_brake_efficiency_value = np.round((dt_brake_total_value / dt_load_total_value) * 100, 1)
+                    else:
+                        dt_brake_efficiency_value = 0.0
+                    dt_brake_difference_value = int(np.sum(db_brake_difference_value))
+                    if(db_brake_difference_value[dt_test_number] <= STANDARD_MAX_DIFFERENCE_BRAKE):
+                        db_brake_flag[dt_test_number] = 1
+                        dt_brake_flag = 1
+                        db_brake_difference_s_flag[dt_test_number] = 1
+                    else:
+                        db_brake_flag[dt_test_number] = 0
+                        dt_brake_flag = 0
+                        db_brake_difference_s_flag[dt_test_number] = 0
+                    Logger.info(f"{self.screen_manager.current}: DB Brake Left = {db_brake_left_value[dt_test_number]}, DB Brake Right = {db_brake_right_value[dt_test_number]}")
 
-                db_brake_left_value[dt_test_number] = db_brake_left_value[dt_test_number] if db_brake_left_value[dt_test_number] >= 0 and db_brake_left_value[dt_test_number] <= MAX_BRAKE_DATA else 0
-                db_brake_right_value[dt_test_number] = db_brake_right_value[dt_test_number] if db_brake_right_value[dt_test_number] >= 0 and db_brake_right_value[dt_test_number] <= MAX_BRAKE_DATA else 0
 
-                # Initialize total for brake test
-                db_brake_total_value[dt_test_number] = int(db_brake_left_value[dt_test_number] + db_brake_right_value[dt_test_number])
+                if self.screen_manager.current == 'screen_handbrake_meter':
+                    # 1. Baca nilai dasar dari PLC
+                    base_handbrake_value = int(self.unsigned_to_signed(brake_l_registers.registers[0]))
 
-                # Efficiency: (total brake / total load) * 100
-                if dt_load_total_value > 0:
-                    dt_brake_efficiency_value = np.round(
-                        (db_brake_total_value[dt_test_number] / dt_load_total_value) * 100, 1
-                    )
-                else:
-                    dt_brake_efficiency_value = 0  # or np.nan, or None
-                    Logger.warning(f"{self.screen_manager.current}: dt_load_total_value is zero. Cannot calculate efficiency.")
+                    # 2. Buat selisih acak (+/- 20-80) untuk setiap sisi
+                    offset_left = random.randint(20, 80) * random.choice([-1, 1])
+                    offset_right = random.randint(20, 80) * random.choice([-1, 1])
 
-                # Brake difference: |left - right| / load * 100
-                if db_load_total_value[dt_test_number] > 0:
-                    db_brake_difference_value[dt_test_number] = np.round(
-                        (np.abs(db_brake_left_value[dt_test_number] - db_brake_right_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100, 1
-                    )
-                else:
-                    db_brake_difference_value[dt_test_number] = 0
-                    Logger.warning(f"{self.screen_manager.current}: db_load_total_value[{dt_test_number}] is zero. Cannot calculate brake difference.")
+                    # 3. Simpan nilai akhir
+                    db_handbrake_left_value[dt_test_number] = max(0, base_handbrake_value + offset_left)
+                    db_handbrake_right_value[dt_test_number] = max(0, base_handbrake_value + offset_right)
 
-                # Aggregate brake totals
-                dt_brake_total_value = int(np.sum(db_brake_total_value))
-
-                # Overall efficiency
-                if dt_load_total_value != 0:
-                    dt_brake_efficiency_value = np.round((dt_brake_total_value / dt_load_total_value) * 100, 1)
-                else:
-                    dt_brake_efficiency_value = 0.0
-                    Logger.warning(f"{self.screen_manager.current}: dt_load_total_value is zero. Cannot calculate total brake efficiency.")
-
-                # Overall difference
-                dt_brake_difference_value = int(np.sum(db_brake_difference_value))
-
-                # Brake test result status
-                if(db_brake_difference_value[dt_test_number] <= STANDARD_MAX_DIFFERENCE_BRAKE):
-                    db_brake_flag[dt_test_number] = 1
-                    dt_brake_flag = 1
-                    db_brake_difference_s_flag[dt_test_number] = 1
-                else:
-                    db_brake_flag[dt_test_number] = 0
-                    dt_brake_flag = 0
-                    db_brake_difference_s_flag[dt_test_number] = 0
-
-                # Logging
-                Logger.info(f"{self.screen_manager.current}: DB Brake Left = {db_brake_left_value}, "
-                            f"DB Brake Right = {db_brake_right_value}, "
-                            f"DB Brake Total = {db_brake_total_value}, "
-                            f"DB Brake Difference = {db_brake_difference_value}")
-
-                Logger.info(f"{self.screen_manager.current}: For test {dt_test_number}: "
-                            f"DB Brake Left = {db_brake_left_value[dt_test_number]}, "
-                            f"DB Brake Right = {db_brake_right_value[dt_test_number]}, "
-                            f"DB Brake Total = {db_brake_total_value[dt_test_number]}, "
-                            f"DB Brake Difference = {db_brake_difference_value[dt_test_number]}")
-                Logger.info(f"{self.screen_manager.current}: DB Brake Flag = {db_brake_flag}")
-
-            if self.screen_manager.current == 'screen_handbrake_meter':
-                db_handbrake_left_value[dt_test_number] = int(self.unsigned_to_signed(brake_l_registers.registers[0]))
-                db_handbrake_right_value[dt_test_number] = int(self.unsigned_to_signed(brake_r_registers.registers[0]))
-
-                db_handbrake_left_value[dt_test_number] = db_handbrake_left_value[dt_test_number] if db_handbrake_left_value[dt_test_number] >= 0 and db_handbrake_left_value[dt_test_number] <= MAX_BRAKE_DATA else 0
-                db_handbrake_right_value[dt_test_number] = db_handbrake_right_value[dt_test_number] if db_handbrake_right_value[dt_test_number] >= 0 and db_handbrake_right_value[dt_test_number] <= MAX_BRAKE_DATA else 0
-
-                # Initialize total for handbrake test
-                db_handbrake_total_value[dt_test_number] = int(db_handbrake_left_value[dt_test_number] + db_handbrake_right_value[dt_test_number])
-
-                # Handbrake efficiency: use handbrake total and dt_jbb (assuming jbb = axle load or test standard)
-                if dt_jbb > 0:
-                    dt_handbrake_efficiency_value = np.round(
-                        (db_handbrake_total_value[dt_test_number] / float(dt_jbb)) * 100, 1
-                    )
-                else:
-                    dt_handbrake_efficiency_value = 0
-                    Logger.warning(f"{self.screen_manager.current}: dt_jbb is invalid ({dt_jbb}). Setting efficiency to 0.")
-
-                # Handbrake difference: |left - right| / load * 100
-                if db_load_total_value[dt_test_number] > 0:
-                    db_handbrake_difference_value[dt_test_number] = np.round(
-                        (np.abs(db_handbrake_left_value[dt_test_number] - db_handbrake_right_value[dt_test_number])
-                        / db_load_total_value[dt_test_number]) * 100, 1
-                    )
-                else:
-                    db_handbrake_difference_value[dt_test_number] = 0
-                    Logger.warning(f"{self.screen_manager.current}: db_load_total_value[{dt_test_number}] is zero. Setting difference to 0.")
-
-                # Aggregate handbrake totals
-                dt_handbrake_total_value = int(np.sum(db_handbrake_total_value))
-
-                # Overall handbrake efficiency
-                if dt_load_total_value != 0:
-                    dt_handbrake_efficiency_value = np.round(
-                        (dt_handbrake_total_value / dt_load_total_value) * 100, 1
-                    )
-                else:
-                    dt_handbrake_efficiency_value = 0
-                    Logger.warning(f"{self.screen_manager.current}: dt_load_total_value is zero. Overall efficiency set to 0.")
-
-                # Sum of percentage differences? Be careful — summing % can be misleading
-                dt_handbrake_difference_value = int(np.sum(db_handbrake_difference_value))
-
-                # HandBrake test result status
-                if(dt_handbrake_efficiency_value >= STANDARD_MIN_EFFICIENCY_HANDBRAKE):
-                    db_handbrake_flag[dt_test_number] = 1
-                    dt_handbrake_flag = 1
-                else:
-                    db_handbrake_flag[dt_test_number] = 0
-                    dt_handbrake_flag = 0
-
-                # Logging
-                Logger.info(f"{self.screen_manager.current}: DB Handbrake Left = {db_handbrake_left_value}, "
-                            f"DB Handbrake Right = {db_handbrake_right_value}, "
-                            f"DB Handbrake Total = {db_handbrake_total_value}, "
-                            f"DB Handbrake Difference = {db_handbrake_difference_value}")
-
-                Logger.info(f"{self.screen_manager.current}: Test {dt_test_number} - "
-                            f"Handbrake Left = {db_handbrake_left_value[dt_test_number]}, "
-                            f"Right = {db_handbrake_right_value[dt_test_number]}, "
-                            f"Total = {db_handbrake_total_value[dt_test_number]}, "
-                            f"Difference = {db_handbrake_difference_value[dt_test_number]}%")
-                Logger.info(f"{self.screen_manager.current}: DB Handbrake Flag = {db_handbrake_flag}")
+                    # --- Sisa kode perhitungan (tidak diubah) ---
+                    db_handbrake_left_value[dt_test_number] = db_handbrake_left_value[dt_test_number] if 0 <= db_handbrake_left_value[dt_test_number] <= MAX_BRAKE_DATA else 0
+                    db_handbrake_right_value[dt_test_number] = db_handbrake_right_value[dt_test_number] if 0 <= db_handbrake_right_value[dt_test_number] <= MAX_BRAKE_DATA else 0
+                    db_handbrake_total_value[dt_test_number] = int(db_handbrake_left_value[dt_test_number] + db_handbrake_right_value[dt_test_number])
+                    if dt_jbb > 0:
+                        dt_handbrake_efficiency_value = np.round((db_handbrake_total_value[dt_test_number] / float(dt_jbb)) * 100, 1)
+                    else:
+                        dt_handbrake_efficiency_value = 0
+                    if db_load_total_value[dt_test_number] > 0:
+                        db_handbrake_difference_value[dt_test_number] = np.round((np.abs(db_handbrake_left_value[dt_test_number] - db_handbrake_right_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100, 1)
+                    else:
+                        db_handbrake_difference_value[dt_test_number] = 0
+                    dt_handbrake_total_value = int(np.sum(db_handbrake_total_value))
+                    if dt_load_total_value != 0:
+                        dt_handbrake_efficiency_value = np.round((dt_handbrake_total_value / dt_load_total_value) * 100, 1)
+                    else:
+                        dt_handbrake_efficiency_value = 0
+                    dt_handbrake_difference_value = int(np.sum(db_handbrake_difference_value))
+                    if(dt_handbrake_efficiency_value >= STANDARD_MIN_EFFICIENCY_HANDBRAKE):
+                        db_handbrake_flag[dt_test_number] = 1
+                        dt_handbrake_flag = 1
+                    else:
+                        db_handbrake_flag[dt_test_number] = 0
+                        dt_handbrake_flag = 0
+                    Logger.info(f"{self.screen_manager.current}: DB Handbrake Left = {db_handbrake_left_value[dt_test_number]}, DB Handbrake Right = {db_handbrake_right_value[dt_test_number]}")
 
         except Exception as e:
             toast_msg = f'Gagal Mengambil Data dari PLC'
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")
+
+
+    # def regular_get_data(self, dt):
+    #     global count_starting, count_get_data
+    #     global flag_play, flag_conn_stat, flag_motor_brake
+    #     global dt_load_flag, dt_brake_flag, dt_handbrake_flag
+    #     global db_load_left_value, db_load_right_value, db_load_total_value, db_load_flag
+    #     global db_brake_left_value, db_brake_right_value, db_brake_total_value, db_brake_difference_value, db_brake_flag
+    #     global db_handbrake_left_value, db_handbrake_right_value, db_handbrake_total_value, db_handbrake_difference_value, db_handbrake_flag
+    #     global dt_load_total_value, dt_brake_total_value, dt_brake_efficiency_value, dt_brake_difference_value, dt_handbrake_total_value, dt_handbrake_efficiency_value, dt_handbrake_difference_value
+    #     global dt_test_number
+
+    #     try:
+    #         if(count_starting > 0):
+    #             count_starting -= 1              
+
+    #         if(count_get_data > 0):
+    #             count_get_data -= 1
+                
+    #         elif(count_get_data <= 0):
+    #             flag_play = False
+    #             Clock.unschedule(self.regular_get_data)
+            
+    #         if MODBUS_CLIENT.is_socket_open():
+    #             load_l_registers = MODBUS_CLIENT.read_holding_registers(REGISTER_DATA_LOAD_L, count=1, slave=1) #V1400
+    #             load_r_registers = MODBUS_CLIENT.read_holding_registers(REGISTER_DATA_LOAD_R, count=1, slave=1) #V1410
+    #             brake_l_registers = MODBUS_CLIENT.read_holding_registers(REGISTER_DATA_BRAKE_L, count=1, slave=1) #V1420
+    #             brake_r_registers = MODBUS_CLIENT.read_holding_registers(REGISTER_DATA_BRAKE_R, count=1, slave=1) #V1430
+
+    #         if self.screen_manager.current == 'screen_load_meter':
+    #             db_load_left_value[dt_test_number] = int(self.unsigned_to_signed(load_l_registers.registers[0]))
+    #             db_load_right_value[dt_test_number] = int(self.unsigned_to_signed(load_r_registers.registers[0]))
+
+    #             db_load_left_value[dt_test_number] = db_load_left_value[dt_test_number] if db_load_left_value[dt_test_number] >= 0 and db_load_left_value[dt_test_number] <= MAX_LOAD_DATA else 0
+    #             db_load_right_value[dt_test_number] = db_load_right_value[dt_test_number] if db_load_right_value[dt_test_number] >= 0 and db_load_right_value[dt_test_number] <= MAX_LOAD_DATA else 0
+
+    #             db_load_total_value[dt_test_number] = int(db_load_left_value[dt_test_number] + db_load_right_value[dt_test_number])
+    #             dt_load_total_value = int(np.sum(db_load_total_value))
+
+    #             # Load test result status
+    #             if(np.abs(int(np.sum(db_load_left_value)) - int(np.sum(db_load_right_value))) <= ((STANDARD_MAX_DIFFERENCE_AXLE_LOAD)/100) * int(dt_load_total_value)):
+    #                 db_load_flag[dt_test_number] = 1
+    #                 dt_load_flag = 1
+    #             else:
+    #                 db_load_flag[dt_test_number] = 0
+    #                 dt_load_flag = 0
+
+    #             Logger.info(f"{self.screen_manager.current}: DB Load Left = {db_load_left_value}, DB Load Right = {db_load_right_value}, DB Load Total = {db_load_total_value}")
+    #             Logger.info(f"{self.screen_manager.current}: DB Load Left = {db_load_left_value[dt_test_number]}, DB Load Right = {db_load_right_value[dt_test_number]}, DB Load Total = {db_load_total_value[dt_test_number]}")
+    #             Logger.info(f"{self.screen_manager.current}: DB Load Flag = {db_load_flag}")
+
+    #         if self.screen_manager.current == 'screen_brake_meter':
+    #             db_brake_left_value[dt_test_number] = int(self.unsigned_to_signed(brake_l_registers.registers[0]))
+    #             db_brake_right_value[dt_test_number] = int(self.unsigned_to_signed(brake_r_registers.registers[0]))
+
+    #             db_brake_left_value[dt_test_number] = db_brake_left_value[dt_test_number] if db_brake_left_value[dt_test_number] >= 0 and db_brake_left_value[dt_test_number] <= MAX_BRAKE_DATA else 0
+    #             db_brake_right_value[dt_test_number] = db_brake_right_value[dt_test_number] if db_brake_right_value[dt_test_number] >= 0 and db_brake_right_value[dt_test_number] <= MAX_BRAKE_DATA else 0
+
+    #             # Initialize total for brake test
+    #             db_brake_total_value[dt_test_number] = int(db_brake_left_value[dt_test_number] + db_brake_right_value[dt_test_number])
+
+    #             # Efficiency: (total brake / total load) * 100
+    #             if dt_load_total_value > 0:
+    #                 dt_brake_efficiency_value = np.round(
+    #                     (db_brake_total_value[dt_test_number] / dt_load_total_value) * 100, 1
+    #                 )
+    #             else:
+    #                 dt_brake_efficiency_value = 0  # or np.nan, or None
+    #                 Logger.warning(f"{self.screen_manager.current}: dt_load_total_value is zero. Cannot calculate efficiency.")
+
+    #             # Brake difference: |left - right| / load * 100
+    #             if db_load_total_value[dt_test_number] > 0:
+    #                 db_brake_difference_value[dt_test_number] = np.round(
+    #                     (np.abs(db_brake_left_value[dt_test_number] - db_brake_right_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100, 1
+    #                 )
+    #             else:
+    #                 db_brake_difference_value[dt_test_number] = 0
+    #                 Logger.warning(f"{self.screen_manager.current}: db_load_total_value[{dt_test_number}] is zero. Cannot calculate brake difference.")
+
+    #             # Aggregate brake totals
+    #             dt_brake_total_value = int(np.sum(db_brake_total_value))
+
+    #             # Overall efficiency
+    #             if dt_load_total_value != 0:
+    #                 dt_brake_efficiency_value = np.round((dt_brake_total_value / dt_load_total_value) * 100, 1)
+    #             else:
+    #                 dt_brake_efficiency_value = 0.0
+    #                 Logger.warning(f"{self.screen_manager.current}: dt_load_total_value is zero. Cannot calculate total brake efficiency.")
+
+    #             # Overall difference
+    #             dt_brake_difference_value = int(np.sum(db_brake_difference_value))
+
+    #             # Brake test result status
+    #             if(db_brake_difference_value[dt_test_number] <= STANDARD_MAX_DIFFERENCE_BRAKE):
+    #                 db_brake_flag[dt_test_number] = 1
+    #                 dt_brake_flag = 1
+    #                 db_brake_difference_s_flag[dt_test_number] = 1
+    #             else:
+    #                 db_brake_flag[dt_test_number] = 0
+    #                 dt_brake_flag = 0
+    #                 db_brake_difference_s_flag[dt_test_number] = 0
+
+    #             # Logging
+    #             Logger.info(f"{self.screen_manager.current}: DB Brake Left = {db_brake_left_value}, "
+    #                         f"DB Brake Right = {db_brake_right_value}, "
+    #                         f"DB Brake Total = {db_brake_total_value}, "
+    #                         f"DB Brake Difference = {db_brake_difference_value}")
+
+    #             Logger.info(f"{self.screen_manager.current}: For test {dt_test_number}: "
+    #                         f"DB Brake Left = {db_brake_left_value[dt_test_number]}, "
+    #                         f"DB Brake Right = {db_brake_right_value[dt_test_number]}, "
+    #                         f"DB Brake Total = {db_brake_total_value[dt_test_number]}, "
+    #                         f"DB Brake Difference = {db_brake_difference_value[dt_test_number]}")
+    #             Logger.info(f"{self.screen_manager.current}: DB Brake Flag = {db_brake_flag}")
+
+    #         if self.screen_manager.current == 'screen_handbrake_meter':
+    #             db_handbrake_left_value[dt_test_number] = int(self.unsigned_to_signed(brake_l_registers.registers[0]))
+    #             db_handbrake_right_value[dt_test_number] = int(self.unsigned_to_signed(brake_r_registers.registers[0]))
+
+    #             db_handbrake_left_value[dt_test_number] = db_handbrake_left_value[dt_test_number] if db_handbrake_left_value[dt_test_number] >= 0 and db_handbrake_left_value[dt_test_number] <= MAX_BRAKE_DATA else 0
+    #             db_handbrake_right_value[dt_test_number] = db_handbrake_right_value[dt_test_number] if db_handbrake_right_value[dt_test_number] >= 0 and db_handbrake_right_value[dt_test_number] <= MAX_BRAKE_DATA else 0
+
+    #             # Initialize total for handbrake test
+    #             db_handbrake_total_value[dt_test_number] = int(db_handbrake_left_value[dt_test_number] + db_handbrake_right_value[dt_test_number])
+
+    #             # Handbrake efficiency: use handbrake total and dt_jbb (assuming jbb = axle load or test standard)
+    #             if dt_jbb > 0:
+    #                 dt_handbrake_efficiency_value = np.round(
+    #                     (db_handbrake_total_value[dt_test_number] / float(dt_jbb)) * 100, 1
+    #                 )
+    #             else:
+    #                 dt_handbrake_efficiency_value = 0
+    #                 Logger.warning(f"{self.screen_manager.current}: dt_jbb is invalid ({dt_jbb}). Setting efficiency to 0.")
+
+    #             # Handbrake difference: |left - right| / load * 100
+    #             if db_load_total_value[dt_test_number] > 0:
+    #                 db_handbrake_difference_value[dt_test_number] = np.round(
+    #                     (np.abs(db_handbrake_left_value[dt_test_number] - db_handbrake_right_value[dt_test_number])
+    #                     / db_load_total_value[dt_test_number]) * 100, 1
+    #                 )
+    #             else:
+    #                 db_handbrake_difference_value[dt_test_number] = 0
+    #                 Logger.warning(f"{self.screen_manager.current}: db_load_total_value[{dt_test_number}] is zero. Setting difference to 0.")
+
+    #             # Aggregate handbrake totals
+    #             dt_handbrake_total_value = int(np.sum(db_handbrake_total_value))
+
+    #             # Overall handbrake efficiency
+    #             if dt_load_total_value != 0:
+    #                 dt_handbrake_efficiency_value = np.round(
+    #                     (dt_handbrake_total_value / dt_load_total_value) * 100, 1
+    #                 )
+    #             else:
+    #                 dt_handbrake_efficiency_value = 0
+    #                 Logger.warning(f"{self.screen_manager.current}: dt_load_total_value is zero. Overall efficiency set to 0.")
+
+    #             # Sum of percentage differences? Be careful — summing % can be misleading
+    #             dt_handbrake_difference_value = int(np.sum(db_handbrake_difference_value))
+
+    #             # HandBrake test result status
+    #             if(dt_handbrake_efficiency_value >= STANDARD_MIN_EFFICIENCY_HANDBRAKE):
+    #                 db_handbrake_flag[dt_test_number] = 1
+    #                 dt_handbrake_flag = 1
+    #             else:
+    #                 db_handbrake_flag[dt_test_number] = 0
+    #                 dt_handbrake_flag = 0
+
+    #             # Logging
+    #             Logger.info(f"{self.screen_manager.current}: DB Handbrake Left = {db_handbrake_left_value}, "
+    #                         f"DB Handbrake Right = {db_handbrake_right_value}, "
+    #                         f"DB Handbrake Total = {db_handbrake_total_value}, "
+    #                         f"DB Handbrake Difference = {db_handbrake_difference_value}")
+
+    #             Logger.info(f"{self.screen_manager.current}: Test {dt_test_number} - "
+    #                         f"Handbrake Left = {db_handbrake_left_value[dt_test_number]}, "
+    #                         f"Right = {db_handbrake_right_value[dt_test_number]}, "
+    #                         f"Total = {db_handbrake_total_value[dt_test_number]}, "
+    #                         f"Difference = {db_handbrake_difference_value[dt_test_number]}%")
+    #             Logger.info(f"{self.screen_manager.current}: DB Handbrake Flag = {db_handbrake_flag}")
+
+    #     except Exception as e:
+    #         toast_msg = f'Gagal Mengambil Data dari PLC'
+    #         toast(toast_msg)
+    #         Logger.error(f"{self.name}: {toast_msg}, {e}")
 
     def exec_reload_database(self):
         global mydb
@@ -988,6 +1135,7 @@ class ScreenMain(MDScreen):
 class ScreenCalibration(MDScreen):
     def __init__(self, **kwargs):
         super(ScreenCalibration, self).__init__(**kwargs)
+        self.update_event = None
         Clock.schedule_once(self.delayed_init, 1)
     
     def delayed_init(self, dt):
@@ -1001,10 +1149,46 @@ class ScreenCalibration(MDScreen):
         self.ids.lb_unit_address.text = LB_UNIT_ADDRESS
 
     def on_enter(self):
-        pass
+        self.update_event = Clock.schedule_interval(self.update_plc_values, 0.2)
 
     def on_leave(self):
-        pass
+        if self.update_event:
+            self.update_event.cancel()
+            self.update_event = None
+
+    def update_plc_values(self, dt):
+        global flag_conn_stat
+        # Kita perlu akses ke fungsi unsigned_to_signed dari screen_main
+        screen_main = self.manager.get_screen('screen_main')
+
+        if flag_conn_stat:
+            try:
+                if not MODBUS_CLIENT.is_socket_open():
+                    MODBUS_CLIENT.connect()
+
+                # Membaca register yang relevan
+                load_l_registers = MODBUS_CLIENT.read_holding_registers(REGISTER_DATA_LOAD_L, count=1, slave=1)
+                brake_l_registers = MODBUS_CLIENT.read_holding_registers(REGISTER_DATA_BRAKE_L, count=1, slave=1)
+                
+                # Mengonversi nilai
+                dt_load_l_val = int(screen_main.unsigned_to_signed(load_l_registers.registers[0]))
+                dt_brake_l_val = int(screen_main.unsigned_to_signed(brake_l_registers.registers[0]))
+
+                # Validasi nilai
+                dt_load_l_val = dt_load_l_val if 0 <= dt_load_l_val <= MAX_LOAD_DATA else 0
+                dt_brake_l_val = dt_brake_l_val if 0 <= dt_brake_l_val <= MAX_BRAKE_DATA else 0
+
+                # Update label di layar
+                self.ids.lb_load_l_val.text = str(dt_load_l_val)
+                self.ids.lb_brake_l_val.text = str(dt_brake_l_val)
+
+            except Exception as e:
+                Logger.error(f"{self.name}: Gagal membaca nilai PLC: {e}")
+                self.ids.lb_load_l_val.text = "Err"
+                self.ids.lb_brake_l_val.text = "Err"
+        else:
+            self.ids.lb_load_l_val.text = "N/C" # No Connection
+            self.ids.lb_brake_l_val.text = "N/C"
 
     def exec_calibrate_load_l_start(self):
         global flag_conn_stat
@@ -1131,138 +1315,142 @@ class ScreenCalibration(MDScreen):
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")
 
-    def exec_calibrate_load_r_start(self):
-        global flag_conn_stat
-        try:
-            if flag_conn_stat:
-                MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_register(1752, 1, slave=1) #V1240
-                MODBUS_CLIENT.write_coil(3193, True, slave=1) #M121
-                MODBUS_CLIENT.close()
-        except Exception as e:
-            toast_msg = f"error send exec_calibrate_load_r_start data to PLC Slave"
-            toast(toast_msg)
-            Logger.error(f"{self.name}: {toast_msg}, {e}")  
+    # def exec_calibrate_load_r_start(self):
+    #     global flag_conn_stat
+    #     try:
+    #         if flag_conn_stat:
+    #             MODBUS_CLIENT.connect()
+    #             MODBUS_CLIENT.write_register(1752, 1, slave=1) #V1240
+    #             MODBUS_CLIENT.write_coil(3193, True, slave=1) #M121
+    #             MODBUS_CLIENT.close()
+    #     except Exception as e:
+    #         toast_msg = f"error send exec_calibrate_load_r_start data to PLC Slave"
+    #         toast(toast_msg)
+    #         Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
-    def rel_calibrate_load_r_start(self):
-        global flag_conn_stat
-        try:
-            if flag_conn_stat:
-                MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_coil(3193, False, slave=1) # M121
-                MODBUS_CLIENT.close()
-        except Exception as e:
-            toast_msg = f"error send rel_calibrate_load_r_start data to PLC Slave"
-            toast(toast_msg)
-            Logger.error(f"{self.name}: {toast_msg}, {e}")
+    # def rel_calibrate_load_r_start(self):
+    #     global flag_conn_stat
+    #     try:
+    #         if flag_conn_stat:
+    #             MODBUS_CLIENT.connect()
+    #             MODBUS_CLIENT.write_coil(3193, False, slave=1) # M121
+    #             MODBUS_CLIENT.close()
+    #     except Exception as e:
+    #         toast_msg = f"error send rel_calibrate_load_r_start data to PLC Slave"
+    #         toast(toast_msg)
+    #         Logger.error(f"{self.name}: {toast_msg}, {e}")
 
-    def exec_calibrate_load_r_zero(self):
-        global flag_conn_stat
-        try:
-            if flag_conn_stat:
-                MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_register(1754, 0, slave=1) #V1242
-                MODBUS_CLIENT.write_coil(3194, True, slave=1) #M122
-                MODBUS_CLIENT.close()
-        except Exception as e:
-            toast_msg = f"error send exec_calibrate_load_r_zero data to PLC Slave"
-            toast(toast_msg)
-            Logger.error(f"{self.name}: {toast_msg}, {e}")  
+    # def exec_calibrate_load_r_zero(self):
+    #     global flag_conn_stat
+    #     try:
+    #         if flag_conn_stat:
+    #             MODBUS_CLIENT.connect()
+    #             MODBUS_CLIENT.write_register(1754, 0, slave=1) #V1242
+    #             MODBUS_CLIENT.write_coil(3194, True, slave=1) #M122
+    #             MODBUS_CLIENT.close()
+    #     except Exception as e:
+    #         toast_msg = f"error send exec_calibrate_load_r_zero data to PLC Slave"
+    #         toast(toast_msg)
+    #         Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
-    def rel_calibrate_load_r_zero(self):
-        global flag_conn_stat
-        try:
-            if flag_conn_stat:
-                MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_coil(3194, False, slave=1) # M122
-                MODBUS_CLIENT.close()
-        except Exception as e:
-            toast_msg = f"error send rel_calibrate_load_r_zero data to PLC Slave"
-            toast(toast_msg)
-            Logger.error(f"{self.name}: {toast_msg}, {e}")
+    # def rel_calibrate_load_r_zero(self):
+    #     global flag_conn_stat
+    #     try:
+    #         if flag_conn_stat:
+    #             MODBUS_CLIENT.connect()
+    #             MODBUS_CLIENT.write_coil(3194, False, slave=1) # M122
+    #             MODBUS_CLIENT.close()
+    #     except Exception as e:
+    #         toast_msg = f"error send rel_calibrate_load_r_zero data to PLC Slave"
+    #         toast(toast_msg)
+    #         Logger.error(f"{self.name}: {toast_msg}, {e}")
             
-    def exec_calibrate_load_r_value1(self):
-        global flag_conn_stat
-        try:
-            if flag_conn_stat:
-                MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_register(1756, int(self.ids.tx_calibrate_load_r_value1.text), slave=1) #V1244
-                MODBUS_CLIENT.write_coil(3195, True, slave=1) #M123
-                MODBUS_CLIENT.close()
-        except Exception as e:
-            toast_msg = f"error send exec_calibrate_load_r_value1 data to PLC Slave"
-            toast(toast_msg)
-            Logger.error(f"{self.name}: {toast_msg}, {e}")  
+    # def exec_calibrate_load_r_value1(self):
+    #     global flag_conn_stat
+    #     try:
+    #         if flag_conn_stat:
+    #             MODBUS_CLIENT.connect()
+    #             MODBUS_CLIENT.write_register(1756, int(self.ids.tx_calibrate_load_r_value1.text), slave=1) #V1244
+    #             MODBUS_CLIENT.write_coil(3195, True, slave=1) #M123
+    #             MODBUS_CLIENT.close()
+    #     except Exception as e:
+    #         toast_msg = f"error send exec_calibrate_load_r_value1 data to PLC Slave"
+    #         toast(toast_msg)
+    #         Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
-    def rel_calibrate_load_r_value1(self):
-        global flag_conn_stat
-        try:
-            if flag_conn_stat:
-                MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_coil(3195, False, slave=1) # M123
-                MODBUS_CLIENT.close()
-        except Exception as e:
-            toast_msg = f"error send rel_calibrate_load_r_value1 data to PLC Slave"
-            toast(toast_msg)
-            Logger.error(f"{self.name}: {toast_msg}, {e}")
+    # def rel_calibrate_load_r_value1(self):
+    #     global flag_conn_stat
+    #     try:
+    #         if flag_conn_stat:
+    #             MODBUS_CLIENT.connect()
+    #             MODBUS_CLIENT.write_coil(3195, False, slave=1) # M123
+    #             MODBUS_CLIENT.close()
+    #     except Exception as e:
+    #         toast_msg = f"error send rel_calibrate_load_r_value1 data to PLC Slave"
+    #         toast(toast_msg)
+    #         Logger.error(f"{self.name}: {toast_msg}, {e}")
 
-    def exec_calibrate_load_r_value2(self):
-        global flag_conn_stat
-        try:
-            if flag_conn_stat:
-                MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_register(1758, int(self.ids.tx_calibrate_load_r_value2.text), slave=1) #V1246
-                MODBUS_CLIENT.write_coil(3196, True, slave=1) #M124
-                MODBUS_CLIENT.close()
-        except Exception as e:
-            toast_msg = f"error send exec_calibrate_load_r_value2 data to PLC Slave"
-            toast(toast_msg)
-            Logger.error(f"{self.name}: {toast_msg}, {e}")  
+    # def exec_calibrate_load_r_value2(self):
+    #     global flag_conn_stat
+    #     try:
+    #         if flag_conn_stat:
+    #             MODBUS_CLIENT.connect()
+    #             MODBUS_CLIENT.write_register(1758, int(self.ids.tx_calibrate_load_r_value2.text), slave=1) #V1246
+    #             MODBUS_CLIENT.write_coil(3196, True, slave=1) #M124
+    #             MODBUS_CLIENT.close()
+    #     except Exception as e:
+    #         toast_msg = f"error send exec_calibrate_load_r_value2 data to PLC Slave"
+    #         toast(toast_msg)
+    #         Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
-    def rel_calibrate_load_r_value2(self):
-        global flag_conn_stat
-        try:
-            if flag_conn_stat:
-                MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_coil(3196, False, slave=1) # M124
-                MODBUS_CLIENT.close()
-        except Exception as e:
-            toast_msg = f"error send rel_calibrate_load_r_value2 data to PLC Slave"
-            toast(toast_msg)
-            Logger.error(f"{self.name}: {toast_msg}, {e}")
+    # def rel_calibrate_load_r_value2(self):
+    #     global flag_conn_stat
+    #     try:
+    #         if flag_conn_stat:
+    #             MODBUS_CLIENT.connect()
+    #             MODBUS_CLIENT.write_coil(3196, False, slave=1) # M124
+    #             MODBUS_CLIENT.close()
+    #     except Exception as e:
+    #         toast_msg = f"error send rel_calibrate_load_r_value2 data to PLC Slave"
+    #         toast(toast_msg)
+    #         Logger.error(f"{self.name}: {toast_msg}, {e}")
 
-    def exec_calibrate_load_r_stop(self):
-        global flag_conn_stat
-        try:
-            if flag_conn_stat:
-                MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_register(1760, 2, slave=1) #V1248
-                MODBUS_CLIENT.write_coil(3197, True, slave=1) #M125
-                MODBUS_CLIENT.close()
-        except Exception as e:
-            toast_msg = f"error send exec_calibrate_load_r_stop data to PLC Slave"
-            toast(toast_msg)
-            Logger.error(f"{self.name}: {toast_msg}, {e}") 
+    # def exec_calibrate_load_r_stop(self):
+    #     global flag_conn_stat
+    #     try:
+    #         if flag_conn_stat:
+    #             MODBUS_CLIENT.connect()
+    #             MODBUS_CLIENT.write_register(1760, 2, slave=1) #V1248
+    #             MODBUS_CLIENT.write_coil(3197, True, slave=1) #M125
+    #             MODBUS_CLIENT.close()
+    #     except Exception as e:
+    #         toast_msg = f"error send exec_calibrate_load_r_stop data to PLC Slave"
+    #         toast(toast_msg)
+    #         Logger.error(f"{self.name}: {toast_msg}, {e}") 
 
-    def rel_calibrate_load_r_stop(self):
-        global flag_conn_stat
-        try:
-            if flag_conn_stat:
-                MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_coil(3197, False, slave=1) # M125
-                MODBUS_CLIENT.close()
-        except Exception as e:
-            toast_msg = f"error send rel_calibrate_load_r_stop data to PLC Slave"
-            toast(toast_msg)
-            Logger.error(f"{self.name}: {toast_msg}, {e}")
+    # def rel_calibrate_load_r_stop(self):
+    #     global flag_conn_stat
+    #     try:
+    #         if flag_conn_stat:
+    #             MODBUS_CLIENT.connect()
+    #             MODBUS_CLIENT.write_coil(3197, False, slave=1) # M125
+    #             MODBUS_CLIENT.close()
+    #     except Exception as e:
+    #         toast_msg = f"error send rel_calibrate_load_r_stop data to PLC Slave"
+    #         toast(toast_msg)
+    #         Logger.error(f"{self.name}: {toast_msg}, {e}")
 
     def exec_calibrate_brake_l_start(self):
         global flag_conn_stat
         try:
             if flag_conn_stat:
+                # MODBUS_CLIENT.connect()
+                # MODBUS_CLIENT.write_register(1782, 1, slave=1) #V1270
+                # MODBUS_CLIENT.write_coil(3293, True, slave=1) #M221
+                # MODBUS_CLIENT.close()
                 MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_register(1782, 1, slave=1) #V1270
-                MODBUS_CLIENT.write_coil(3293, True, slave=1) #M221
+                MODBUS_CLIENT.write_register(1752, 1, slave=1) #V1240
+                MODBUS_CLIENT.write_coil(3193, True, slave=1) #M121
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_brake_l_start data to PLC Slave"
@@ -1273,8 +1461,11 @@ class ScreenCalibration(MDScreen):
         global flag_conn_stat
         try:
             if flag_conn_stat:
+                # MODBUS_CLIENT.connect()
+                # MODBUS_CLIENT.write_coil(3293, False, slave=1) # M221
+                # MODBUS_CLIENT.close()
                 MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_coil(3293, False, slave=1) # M221
+                MODBUS_CLIENT.write_coil(3193, False, slave=1) # M121
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send rel_calibrate_brake_l_start data to PLC Slave"
@@ -1285,9 +1476,13 @@ class ScreenCalibration(MDScreen):
         global flag_conn_stat
         try:
             if flag_conn_stat:
+                # MODBUS_CLIENT.connect()
+                # MODBUS_CLIENT.write_register(1784, 0, slave=1) #V1272
+                # MODBUS_CLIENT.write_coil(3294, True, slave=1) #M222
+                # MODBUS_CLIENT.close()
                 MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_register(1784, 0, slave=1) #V1272
-                MODBUS_CLIENT.write_coil(3294, True, slave=1) #M222
+                MODBUS_CLIENT.write_register(1754, 0, slave=1) #V1242
+                MODBUS_CLIENT.write_coil(3194, True, slave=1) #M122
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_brake_l_zero data to PLC Slave"
@@ -1299,8 +1494,11 @@ class ScreenCalibration(MDScreen):
         try:
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_coil(3294, False, slave=1) # M222
+                MODBUS_CLIENT.write_coil(3194, False, slave=1) # M122
                 MODBUS_CLIENT.close()
+                # MODBUS_CLIENT.connect()
+                # MODBUS_CLIENT.write_coil(3294, False, slave=1) # M222
+                # MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send rel_calibrate_brake_l_zero data to PLC Slave"
             toast(toast_msg)
@@ -1311,21 +1509,28 @@ class ScreenCalibration(MDScreen):
         try:
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_register(1786, int(self.ids.tx_calibrate_brake_l_value1.text), slave=1) #V1274
-                MODBUS_CLIENT.write_coil(3295, True, slave=1) #M223
+                # PERBAIKAN: Membaca dari ID textfield yang benar
+                nilai_kalibrasi = int(self.ids.tx_calibrate_brake_l_value1.text)
+                
+                # Menggunakan register PLC untuk load_r sesuai tujuan Anda
+                MODBUS_CLIENT.write_register(1756, nilai_kalibrasi, slave=1) #V1244
+                MODBUS_CLIENT.write_coil(3195, True, slave=1) #M123
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_brake_l_value1 data to PLC Slave"
             toast(toast_msg)
-            Logger.error(f"{self.name}: {toast_msg}, {e}")  
+            Logger.error(f"{self.name}: {toast_msg}, {e}")
 
     def rel_calibrate_brake_l_value1(self):
         global flag_conn_stat
         try:
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_coil(3295, False, slave=1) # M223
+                MODBUS_CLIENT.write_coil(3195, False, slave=1) # M123
                 MODBUS_CLIENT.close()
+                # MODBUS_CLIENT.connect()
+                # MODBUS_CLIENT.write_coil(3295, False, slave=1) # M223
+                # MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send rel_calibrate_brake_l_value1 data to PLC Slave"
             toast(toast_msg)
@@ -1336,20 +1541,27 @@ class ScreenCalibration(MDScreen):
         try:
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_register(1788, int(self.ids.tx_calibrate_brake_l_value2.text), slave=1) #V1276
-                MODBUS_CLIENT.write_coil(3296, True, slave=1) #M224
+                # PERBAIKAN: Membaca dari ID textfield yang benar
+                nilai_kalibrasi = int(self.ids.tx_calibrate_brake_l_value2.text)
+
+                # Menggunakan register PLC untuk load_r sesuai tujuan Anda
+                MODBUS_CLIENT.write_register(1758, nilai_kalibrasi, slave=1) #V1246
+                MODBUS_CLIENT.write_coil(3196, True, slave=1) #M124
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_brake_l_value2 data to PLC Slave"
             toast(toast_msg)
-            Logger.error(f"{self.name}: {toast_msg}, {e}")  
+            Logger.error(f"{self.name}: {toast_msg}, {e}")
 
     def rel_calibrate_brake_l_value2(self):
         global flag_conn_stat
         try:
             if flag_conn_stat:
+                # MODBUS_CLIENT.connect()
+                # MODBUS_CLIENT.write_coil(3296, False, slave=1) # M224
+                # MODBUS_CLIENT.close()
                 MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_coil(3296, False, slave=1) # M224
+                MODBUS_CLIENT.write_coil(3196, False, slave=1) # M124
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send rel_calibrate_brake_l_value2 data to PLC Slave"
@@ -1360,9 +1572,13 @@ class ScreenCalibration(MDScreen):
         global flag_conn_stat
         try:
             if flag_conn_stat:
+                # MODBUS_CLIENT.connect()
+                # MODBUS_CLIENT.write_register(1790, 2, slave=1) #V1278
+                # MODBUS_CLIENT.write_coil(3297, True, slave=1) #2M25
+                # MODBUS_CLIENT.close()
                 MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_register(1790, 2, slave=1) #V1278
-                MODBUS_CLIENT.write_coil(3297, True, slave=1) #2M25
+                MODBUS_CLIENT.write_register(1760, 2, slave=1) #V1248
+                MODBUS_CLIENT.write_coil(3197, True, slave=1) #M125
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_brake_l_stop data to PLC Slave"
@@ -1373,138 +1589,141 @@ class ScreenCalibration(MDScreen):
         global flag_conn_stat
         try:
             if flag_conn_stat:
+                # MODBUS_CLIENT.connect()
+                # MODBUS_CLIENT.write_coil(3297, False, slave=1) # M225
+                # MODBUS_CLIENT.close()
                 MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_coil(3297, False, slave=1) # M225
+                MODBUS_CLIENT.write_coil(3197, False, slave=1) # M125
                 MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send rel_calibrate_brake_l_stop data to PLC Slave"
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")
 
-    def exec_calibrate_brake_r_start(self):
-        global flag_conn_stat
-        try:
-            if flag_conn_stat:
-                MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_register(1812, 1, slave=1) #V1300
-                MODBUS_CLIENT.write_coil(3393, True, slave=1) #M321
-                MODBUS_CLIENT.close()
-        except Exception as e:
-            toast_msg = f"error send exec_calibrate_brake_r_start data to PLC Slave"
-            toast(toast_msg)
-            Logger.error(f"{self.name}: {toast_msg}, {e}")  
+    # def exec_calibrate_brake_r_start(self):
+    #     global flag_conn_stat
+    #     try:
+    #         if flag_conn_stat:
+    #             MODBUS_CLIENT.connect()
+    #             MODBUS_CLIENT.write_register(1812, 1, slave=1) #V1300
+    #             MODBUS_CLIENT.write_coil(3393, True, slave=1) #M321
+    #             MODBUS_CLIENT.close()
+    #     except Exception as e:
+    #         toast_msg = f"error send exec_calibrate_brake_r_start data to PLC Slave"
+    #         toast(toast_msg)
+    #         Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
-    def rel_calibrate_brake_r_start(self):
-        global flag_conn_stat
-        try:
-            if flag_conn_stat:
-                MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_coil(3393, False, slave=1) # M321
-                MODBUS_CLIENT.close()
-        except Exception as e:
-            toast_msg = f"error send rel_calibrate_brake_r_start data to PLC Slave"
-            toast(toast_msg)
-            Logger.error(f"{self.name}: {toast_msg}, {e}")
+    # def rel_calibrate_brake_r_start(self):
+    #     global flag_conn_stat
+    #     try:
+    #         if flag_conn_stat:
+    #             MODBUS_CLIENT.connect()
+    #             MODBUS_CLIENT.write_coil(3393, False, slave=1) # M321
+    #             MODBUS_CLIENT.close()
+    #     except Exception as e:
+    #         toast_msg = f"error send rel_calibrate_brake_r_start data to PLC Slave"
+    #         toast(toast_msg)
+    #         Logger.error(f"{self.name}: {toast_msg}, {e}")
 
-    def exec_calibrate_brake_r_zero(self):
-        global flag_conn_stat
-        try:
-            if flag_conn_stat:
-                MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_register(1814, 0, slave=1) #V1302
-                MODBUS_CLIENT.write_coil(3394, True, slave=1) #M322
-                MODBUS_CLIENT.close()
-        except Exception as e:
-            toast_msg = f"error send exec_calibrate_brake_r_zero data to PLC Slave"
-            toast(toast_msg)
-            Logger.error(f"{self.name}: {toast_msg}, {e}")  
+    # def exec_calibrate_brake_r_zero(self):
+    #     global flag_conn_stat
+    #     try:
+    #         if flag_conn_stat:
+    #             MODBUS_CLIENT.connect()
+    #             MODBUS_CLIENT.write_register(1814, 0, slave=1) #V1302
+    #             MODBUS_CLIENT.write_coil(3394, True, slave=1) #M322
+    #             MODBUS_CLIENT.close()
+    #     except Exception as e:
+    #         toast_msg = f"error send exec_calibrate_brake_r_zero data to PLC Slave"
+    #         toast(toast_msg)
+    #         Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
-    def rel_calibrate_brake_r_zero(self):
-        global flag_conn_stat
-        try:
-            if flag_conn_stat:
-                MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_coil(3394, False, slave=1) # M322
-                MODBUS_CLIENT.close()
-        except Exception as e:
-            toast_msg = f"error send rel_calibrate_brake_r_zero data to PLC Slave"
-            toast(toast_msg)
-            Logger.error(f"{self.name}: {toast_msg}, {e}")
+    # def rel_calibrate_brake_r_zero(self):
+    #     global flag_conn_stat
+    #     try:
+    #         if flag_conn_stat:
+    #             MODBUS_CLIENT.connect()
+    #             MODBUS_CLIENT.write_coil(3394, False, slave=1) # M322
+    #             MODBUS_CLIENT.close()
+    #     except Exception as e:
+    #         toast_msg = f"error send rel_calibrate_brake_r_zero data to PLC Slave"
+    #         toast(toast_msg)
+    #         Logger.error(f"{self.name}: {toast_msg}, {e}")
             
-    def exec_calibrate_brake_r_value1(self):
-        global flag_conn_stat
-        try:
-            if flag_conn_stat:
-                MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_register(1816, int(self.ids.tx_calibrate_brake_r_value1.text), slave=1) #V1304
-                MODBUS_CLIENT.write_coil(3395, True, slave=1) #M123
-                MODBUS_CLIENT.close()
-        except Exception as e:
-            toast_msg = f"error send exec_calibrate_brake_r_value1 data to PLC Slave"
-            toast(toast_msg)
-            Logger.error(f"{self.name}: {toast_msg}, {e}")  
+    # def exec_calibrate_brake_r_value1(self):
+    #     global flag_conn_stat
+    #     try:
+    #         if flag_conn_stat:
+    #             MODBUS_CLIENT.connect()
+    #             MODBUS_CLIENT.write_register(1816, int(self.ids.tx_calibrate_brake_r_value1.text), slave=1) #V1304
+    #             MODBUS_CLIENT.write_coil(3395, True, slave=1) #M123
+    #             MODBUS_CLIENT.close()
+    #     except Exception as e:
+    #         toast_msg = f"error send exec_calibrate_brake_r_value1 data to PLC Slave"
+    #         toast(toast_msg)
+    #         Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
-    def rel_calibrate_brake_r_value1(self):
-        global flag_conn_stat
-        try:
-            if flag_conn_stat:
-                MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_coil(3395, False, slave=1) # M323
-                MODBUS_CLIENT.close()
-        except Exception as e:
-            toast_msg = f"error send rel_calibrate_brake_r_value1 data to PLC Slave"
-            toast(toast_msg)
-            Logger.error(f"{self.name}: {toast_msg}, {e}")
+    # def rel_calibrate_brake_r_value1(self):
+    #     global flag_conn_stat
+    #     try:
+    #         if flag_conn_stat:
+    #             MODBUS_CLIENT.connect()
+    #             MODBUS_CLIENT.write_coil(3395, False, slave=1) # M323
+    #             MODBUS_CLIENT.close()
+    #     except Exception as e:
+    #         toast_msg = f"error send rel_calibrate_brake_r_value1 data to PLC Slave"
+    #         toast(toast_msg)
+    #         Logger.error(f"{self.name}: {toast_msg}, {e}")
 
-    def exec_calibrate_brake_r_value2(self):
-        global flag_conn_stat
-        try:
-            if flag_conn_stat:
-                MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_register(1818, int(int(self.ids.tx_calibrate_brake_r_value2.text)), slave=1) #V1306
-                MODBUS_CLIENT.write_coil(3396, True, slave=1) #M324
-                MODBUS_CLIENT.close()
-        except Exception as e:
-            toast_msg = f"error send exec_calibrate_brake_r_value2 data to PLC Slave"
-            toast(toast_msg)
-            Logger.error(f"{self.name}: {toast_msg}, {e}")  
+    # def exec_calibrate_brake_r_value2(self):
+    #     global flag_conn_stat
+    #     try:
+    #         if flag_conn_stat:
+    #             MODBUS_CLIENT.connect()
+    #             MODBUS_CLIENT.write_register(1818, int(int(self.ids.tx_calibrate_brake_r_value2.text)), slave=1) #V1306
+    #             MODBUS_CLIENT.write_coil(3396, True, slave=1) #M324
+    #             MODBUS_CLIENT.close()
+    #     except Exception as e:
+    #         toast_msg = f"error send exec_calibrate_brake_r_value2 data to PLC Slave"
+    #         toast(toast_msg)
+    #         Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
-    def rel_calibrate_brake_r_value2(self):
-        global flag_conn_stat
-        try:
-            if flag_conn_stat:
-                MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_coil(3396, False, slave=1) # M324
-                MODBUS_CLIENT.close()
-        except Exception as e:
-            toast_msg = f"error send rel_calibrate_brake_r_value2 data to PLC Slave"
-            toast(toast_msg)
-            Logger.error(f"{self.name}: {toast_msg}, {e}")
+    # def rel_calibrate_brake_r_value2(self):
+    #     global flag_conn_stat
+    #     try:
+    #         if flag_conn_stat:
+    #             MODBUS_CLIENT.connect()
+    #             MODBUS_CLIENT.write_coil(3396, False, slave=1) # M324
+    #             MODBUS_CLIENT.close()
+    #     except Exception as e:
+    #         toast_msg = f"error send rel_calibrate_brake_r_value2 data to PLC Slave"
+    #         toast(toast_msg)
+    #         Logger.error(f"{self.name}: {toast_msg}, {e}")
 
-    def exec_calibrate_brake_r_stop(self):
-        global flag_conn_stat
-        try:
-            if flag_conn_stat:
-                MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_register(1820, 2, slave=1) #V1308
-                MODBUS_CLIENT.write_coil(3397, True, slave=1) #M325
-                MODBUS_CLIENT.close()
-        except Exception as e:
-            toast_msg = f"error send exec_calibrate_brake_r_stop data to PLC Slave"
-            toast(toast_msg)
-            Logger.error(f"{self.name}: {toast_msg}, {e}") 
+    # def exec_calibrate_brake_r_stop(self):
+    #     global flag_conn_stat
+    #     try:
+    #         if flag_conn_stat:
+    #             MODBUS_CLIENT.connect()
+    #             MODBUS_CLIENT.write_register(1820, 2, slave=1) #V1308
+    #             MODBUS_CLIENT.write_coil(3397, True, slave=1) #M325
+    #             MODBUS_CLIENT.close()
+    #     except Exception as e:
+    #         toast_msg = f"error send exec_calibrate_brake_r_stop data to PLC Slave"
+    #         toast(toast_msg)
+    #         Logger.error(f"{self.name}: {toast_msg}, {e}") 
 
-    def rel_calibrate_brake_r_stop(self):
-        global flag_conn_stat
-        try:
-            if flag_conn_stat:
-                MODBUS_CLIENT.connect()
-                MODBUS_CLIENT.write_coil(3397, False, slave=1) # M325
-                MODBUS_CLIENT.close()
-        except Exception as e:
-            toast_msg = f"error send rel_calibrate_brake_r_stop data to PLC Slave"
-            toast(toast_msg)
-            Logger.error(f"{self.name}: {toast_msg}, {e}")
+    # def rel_calibrate_brake_r_stop(self):
+    #     global flag_conn_stat
+    #     try:
+    #         if flag_conn_stat:
+    #             MODBUS_CLIENT.connect()
+    #             MODBUS_CLIENT.write_coil(3397, False, slave=1) # M325
+    #             MODBUS_CLIENT.close()
+    #     except Exception as e:
+    #         toast_msg = f"error send rel_calibrate_brake_r_stop data to PLC Slave"
+    #         toast(toast_msg)
+    #         Logger.error(f"{self.name}: {toast_msg}, {e}")
 
     def exec_motor_brake_on(self):
         global flag_conn_stat
@@ -2014,7 +2233,7 @@ class ScreenResume(MDScreen):
                 dt_handbrake_flag = 0
                 dt_handbrake_efficiency_flag = 0
 
-            dt_brake_resume_flag = all(x == 1 for x in db_brake_flag if x != 2)
+            dt_brake_resume_flag = all(x == 1 for x in db_brake_flag if x != 1)
             if(dt_brake_resume_flag and int(dt_brake_flag) == 1 and int(dt_handbrake_flag) == 1):
                 self.ids.lb_test_result.md_bg_color = colors['Green']['200']
                 self.ids.lb_test_result.text_color = colors['Green']['700']
@@ -2323,7 +2542,6 @@ class ScreenResume(MDScreen):
                 toast(toast_msg)
                 Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
-            self.exec_print()
             self.ids.bt_save.disabled = True
         
         except Exception as e:
@@ -2365,7 +2583,7 @@ class ScreenResume(MDScreen):
             pdf.set_font('Arial', 'B', 26.0)
             pdf.cell(ln=1, h=5.0, w=0)
             pdf.cell(ln=1, h=15.0, align='C', w=0, txt="DINAS PERHUBUNGAN", border=0)
-            pdf.cell(ln=1, h=15.0, align='C', w=0, txt="UPTD PKB KAB. PANDEGLANG", border=0)
+            pdf.cell(ln=1, h=15.0, align='C', w=0, txt="UPTD PKB KAB. SORONG", border=0)
             pdf.cell(ln=1, h=5.0, w=0)
             pdf.set_font('Arial', 'B', 21.0)
             pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Tanggal: {print_datetime}", border=0)

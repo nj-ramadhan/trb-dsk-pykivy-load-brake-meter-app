@@ -39,7 +39,6 @@ import numpy as np
 import configparser, hashlib, mysql.connector
 from pymodbus.client import ModbusTcpClient
 from fpdf import FPDF
-from escpos.printer import Serial
 
 colors = {
     "Red"   : {"A200": "#FF2A2A","A500": "#FF8080","A700": "#FFD5D5",},
@@ -2553,7 +2552,6 @@ class ScreenResume(MDScreen):
         try:
             global dt_load_flag, dt_brake_flag, dt_handbrake_flag
             
-            self.exec_print_thermal()
             self.exec_print_pdf()
 
         except Exception as e:
@@ -2681,77 +2679,6 @@ class ScreenResume(MDScreen):
             toast_msg = f'Gagal menyimpan ke pdf'
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")  
-
-    def exec_print_thermal(self):
-        global flag_play
-        global count_starting, count_get_data
-        global mydb, db_antrian
-        global dt_no_antri, dt_no_pol, dt_no_uji, dt_nama, dt_jns_kend
-        global dt_load_flag, dt_brake_flag, dt_handbrake_flag
-        global db_load_left_value, db_load_right_value, db_load_total_value, db_load_flag
-        global db_brake_left_value, db_brake_right_value, db_brake_total_value, db_brake_difference_value, db_brake_flag
-        global db_handbrake_left_value, db_handbrake_right_value, db_handbrake_total_value, db_handbrake_difference_value, db_handbrake_flag
-        global dt_load_total_value, dt_brake_total_value, dt_brake_efficiency_value, dt_brake_difference_value, dt_handbrake_total_value, dt_handbrake_efficiency_value, dt_handbrake_difference_value
-
-        try:
-            """ 9600 Baud, 8N1, Flow Control Enabled """
-            printer = Serial(devfile=PRINTER_THERM_COM,
-                    baudrate=PRINTER_THERM_BAUD,
-                    bytesize=PRINTER_THERM_BYTESIZE,
-                    parity=PRINTER_THERM_PARITY,
-                    stopbits=PRINTER_THERM_STOPBITS,
-                    timeout=PRINTER_THERM_TIMEOUT,
-                    dsrdtr=PRINTER_THERM_DSRDTR,)
-            print_datetime = str(time.strftime("%d %B %Y %H:%M:%S", time.localtime()))
-            
-            printer.image("assets/images/logo-dishub.png")
-            printer.image("assets/images/logo-pandeglang.png")
-            printer.textln(" \n ")
-            printer.textln("VEHICLE INSPECTION INTEGRATION SYSTEM")
-            printer.textln("AXLE LOAD & BRAKE")
-            printer.textln("================================================================")
-            printer.text(f"No Antrian: {dt_no_antri}\t")
-            printer.text(f"No Reg: {dt_no_pol}\t")
-            printer.textln(f"No Uji: {dt_no_uji}")
-            printer.textln("  ")
-            printer.textln(f"Jenis Kendaraan: {dt_jns_kend}")
-            printer.textln("  ")
-            printer.textln(f"Tanggal: {print_datetime}")
-            printer.textln("  ")
-            printer.textln(f"AXLE LOAD")
-            printer.text(f"No. Sumbu \tKiri \tKanan \tTotal")
-            for i in range(10):
-                if (db_load_total_value[i] > 0.0):
-                    printer.textln(f"S{i+1} \t{db_load_left_value[i]} \t{db_load_right_value[i]} \t{db_load_total_value[i]}")
-            printer.textln(f"Nilai Axle Load Total : {dt_load_total_value}")
-            printer.textln(f"Status Pengujian Axle Load : {'Lulus' if int(dt_load_flag) == 1 else 'Tidak Lulus' if int(dt_load_flag) == 0 else 'Belum Diuji'}")
-            printer.textln("  ")
-            printer.textln(f"REM UTAMA")
-            printer.text(f"No. Sumbu \tKiri \tKanan \tTotal \tSelisih")
-            for i in range(10):
-                if (db_load_total_value[i] > 0.0):
-                    printer.textln(f"S{i+1} \t{db_brake_left_value[i]} \t{db_brake_right_value[i]} \t{db_brake_total_value[i]} \t{db_brake_difference_value[i]}")
-            printer.textln(f"Nilai Rem Utama Total : {dt_brake_total_value}")
-            printer.textln(f"Nilai Efisiensi Rem Utama : {dt_brake_efficiency_value}")
-            printer.textln(f"Status Pengujian Rem : {'Lulus' if int(dt_brake_flag) == 1 else 'Tidak Lulus' if int(dt_brake_flag) == 0 else 'Belum Diuji'}")
-            printer.textln("  ")            
-            printer.textln(f"REM PARKIR")
-            printer.text(f"No. Sumbu \tKiri \tKanan \tTotal")
-            for i in range(10):
-                if (db_load_total_value[i] > 0.0):
-                    printer.textln(f"S{i+1} \t{db_handbrake_left_value[i]} \t{db_handbrake_right_value[i]} \t{db_handbrake_total_value[i]}")
-            printer.textln(f"Nilai Rem Parkir Total : {dt_handbrake_total_value}")
-            printer.textln(f"Nilai Efisiensi Rem Parkir : {dt_handbrake_efficiency_value}")
-            printer.textln(f"Status Pengujian Rem Parkir : {'Lulus' if int(dt_handbrake_flag) == 1 else 'Tidak Lulus' if int(dt_handbrake_flag) == 0 else 'Belum Diuji'}")
-            printer.textln("  ")
-            printer.textln("================================================================")
-            printer.cut()
-
-        except Exception as e:
-            toast_msg = f'Gagal mencetak menggunakan Thermal Printer'
-            toast(toast_msg)
-            Logger.error(f"{self.name}: {toast_msg}, {e}")  
-
 
     def exec_navigate_main(self):
         try:

@@ -40,9 +40,11 @@ import configparser, hashlib, mysql.connector
 from pymodbus.client import ModbusTcpClient
 from fpdf import FPDF
 from escpos.printer import Serial
+
 dt_id_user = 0     
 dt_user = ""
 dt_foto_user = ""
+
 colors = {
     "Red"   : {"A200": "#FF2A2A","A500": "#FF8080","A700": "#FFD5D5",},
     "Gray"  : {"200": "#CCCCCC","500": "#ECECEC","700": "#F9F9F9",},

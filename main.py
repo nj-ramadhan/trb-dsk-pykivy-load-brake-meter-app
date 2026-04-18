@@ -40,7 +40,9 @@ import configparser, hashlib, mysql.connector
 from pymodbus.client import ModbusTcpClient
 from fpdf import FPDF
 from escpos.printer import Serial
-
+dt_id_user = 0     
+dt_user = ""
+dt_foto_user = ""
 colors = {
     "Red"   : {"A200": "#FF2A2A","A500": "#FF8080","A700": "#FFD5D5",},
     "Gray"  : {"200": "#CCCCCC","500": "#ECECEC","700": "#F9F9F9",},
@@ -68,9 +70,9 @@ LB_UNIT = config['app']['LB_UNIT']
 LB_UNIT_ADDRESS = config['app']['LB_UNIT_ADDRESS']
 
 # SQL setting
-DB_HOST = "194.31.53.37"
-DB_USER = "Pndujikir2022!"
-DB_PASSWORD = "@Kirpnd2022!"
+DB_HOST = "187.77.112.162"
+DB_USER = "Pndujikir2026!"
+DB_PASSWORD = "@PndKir2026!"
 
 DB_NAME = "pkbpandeglang"
 TB_DATA = "tb_cekident"
@@ -80,9 +82,9 @@ TB_BAHAN_BAKAR = "bahanbakar"
 TB_WARNA = "warna"
 TB_DATA_MASTER = "identkendaraan"
 
-FTP_HOST = "194.31.53.37"
+FTP_HOST = "187.117.112.162"
 FTP_USER = "root"
-FTP_PASS = "@D15HUBp2022!"
+FTP_PASS = "@SorongNew2026"
 
 # system setting
 TIME_OUT = int(config['setting']['TIME_OUT'])
@@ -207,45 +209,43 @@ class ScreenLogin(MDScreen):
             Logger.error(f"{self.name}: {toast_msg}, {e}")  
 
     def exec_login(self):
-        global mydb, db_users
-        global dt_id_user, dt_user, dt_foto_user
-
+        global mydb, dt_id_user, dt_user, dt_foto_user
+        import bcrypt  # Pastikan library bcrypt terinstall
         screen_main = self.screen_manager.get_screen('screen_main')
 
         try:
             screen_main.exec_reload_database()
-            input_username = self.ids.tx_username.text
+            input_email = self.ids.tx_username.text  # tx_username digunakan untuk input email
             input_password = self.ids.tx_password.text        
-            # Adding salt at the last of the password
-            dataBase_password = input_password
-            # Encoding the password
-            hashed_password = hashlib.md5(dataBase_password.encode())
-
-            mycursor = mydb.cursor()
-            mycursor.execute(f"SELECT id_user, nama, username, password, image FROM {TB_USER} WHERE username = '{input_username}' and password = '{hashed_password.hexdigest()}'")
-            myresult = mycursor.fetchone()
-            db_users = np.array(myresult).T
             
-            if myresult is None:
-                toast_msg = f'Gagal Masuk, Nama Pengguna atau Password Salah'
-                toast(toast_msg) 
-                Logger.warning(f"{self.name}: {toast_msg}") 
-            else:
-                toast_msg = f'Berhasil Masuk, Selamat Datang {myresult[1]}'
-                toast(toast_msg)
-                Logger.info(f"{self.name}: {toast_msg}")  
+            mycursor = mydb.cursor()
+            # Query disamakan (tipe_user = '2')
+            query = "SELECT id, name, email, password FROM web_users WHERE email = %s AND tipe_user = '4'"
+            
+            mycursor.execute(query, (input_email,))
+            myresult = mycursor.fetchone()
+            
+            if myresult:
+                db_id, db_name, db_email, db_hashed_password = myresult
 
-                dt_id_user = myresult[0]
-                dt_user = myresult[1]
-                dt_foto_user = myresult[4]
-                self.ids.tx_username.text = ""
-                self.ids.tx_password.text = "" 
-                self.screen_manager.current = 'screen_main'
+                # Verifikasi menggunakan Bcrypt
+                if bcrypt.checkpw(input_password.encode('utf-8'), db_hashed_password.encode('utf-8')):
+                    toast(f"Berhasil Masuk, Selamat Datang {db_name}")
+                    dt_id_user = db_id
+                    dt_user = db_name
+                    dt_foto_user = "" # web_users tidak ada kolom image
+                    
+                    self.ids.tx_username.text = ""
+                    self.ids.tx_password.text = "" 
+                    self.screen_manager.current = 'screen_main'
+                else:
+                    toast("Maaf username dan password tidak sesuai")
+            else:
+                toast("Maaf username dan password tidak sesuai")
 
         except Exception as e:
-            toast_msg = f'Gagal masuk, silahkan isi nama user dan password yang sesuai'
-            toast(toast_msg)  
-            Logger.error(f"{self.name}: {toast_msg}, {e}")  
+            Logger.error(f"Login Error: {e}")
+            toast(f"Gagal masuk: {e}")  
 
     def exec_navigate_home(self):
         try:

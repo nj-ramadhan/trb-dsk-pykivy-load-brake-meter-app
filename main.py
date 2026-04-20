@@ -620,127 +620,87 @@ class ScreenMain(MDScreen):
             toast_msg = f'Gagal Memperbaharui Koneksi'
             toast(toast_msg)
             Logger.error(f"{self.name}: {toast_msg}, {e}")  
-            flag_conn_stat = False
+            flag_conn_stat = True
 
     def unsigned_to_signed(self, val):
         if val >= 32768:
             return val - 65536
         return val
-    # def regular_get_data(self, dt):
+    
+    # def regular_get_data(self, dt): // simulation 
     #     global count_starting, count_get_data
-    #     global flag_play, flag_conn_stat, flag_motor_brake
-    #     global dt_load_flag, dt_brake_flag, dt_handbrake_flag
+    #     global flag_play, flag_conn_stat
+    #     global dt_load_total_value, dt_load_flag, dt_test_number
     #     global db_load_left_value, db_load_right_value, db_load_total_value, db_load_flag
     #     global db_brake_left_value, db_brake_right_value, db_brake_total_value, db_brake_difference_value, db_brake_flag
     #     global db_handbrake_left_value, db_handbrake_right_value, db_handbrake_total_value, db_handbrake_difference_value, db_handbrake_flag
-    #     global dt_load_total_value, dt_brake_total_value, dt_brake_efficiency_value, dt_brake_difference_value, dt_handbrake_total_value, dt_handbrake_efficiency_value, dt_handbrake_difference_value
-    #     global dt_test_number
+    #     global dt_brake_total_value, dt_brake_efficiency_value, dt_brake_difference_value
+    #     global dt_handbrake_total_value, dt_handbrake_efficiency_value, dt_handbrake_difference_value
 
     #     try:
-    #         # 1. Logika Countdown (Tetap sama) simulasi
-    #         if(count_starting > 0):
-    #             count_starting -= 1              
-    #         if(count_get_data > 0):
+    #         # 1. Logika Hitung Mundur (Countdown)
+    #         if count_starting > 0:
+    #             count_starting -= 1
+    #             return # Menunggu persiapan selesai
+
+    #         if count_get_data > 0:
     #             count_get_data -= 1
-             
-    #         elif(count_get_data <= 0):
+    #         elif count_get_data <= 0:
     #             flag_play = False
     #             Clock.unschedule(self.regular_get_data)
-    #             return # Berhenti jika selesai
-    #         # 2. Logika Simulasi Data (MENGGANTIKAN BLOK MODBUS)
-    #         # Kita tidak perlu 'if flag_conn_stat:' karena ini simulasi
-         
-    #         # Buat 4 nilai acak sebagai "data sensor"
-    #         sim_load_l = random.randint(400, 2500)
-    #         sim_load_r = sim_load_l + random.randint(-50, 50) # Dibuat mirip
-    #         sim_brake_l = random.randint(300, 2000)
-    #         sim_brake_r = sim_brake_l + random.randint(-80, 80) # Dibuat mirip
-    #         # 3. Logika Kalkulasi (Menggunakan data simulasi)
+    #             toast(f"Pengujian Sumbu {dt_test_number + 1} Selesai")
+    #             return
+
+    #         # 2. GENERATOR DATA DUMMY (Simulasi Sensor)
     #         if self.screen_manager.current == 'screen_load_meter':
-    #             # Ganti pembacaan register dengan data simulasi
-    #             db_load_left_value[dt_test_number] = sim_load_l
-    #             db_load_right_value[dt_test_number] = sim_load_r
-    #             # Sisa logika (validasi, total, flag) tetap sama
-    #             db_load_left_value[dt_test_number] = db_load_left_value[dt_test_number] if db_load_left_value[dt_test_number] >= 0 and db_load_left_value[dt_test_number] <= MAX_LOAD_DATA else 0
-    #             db_load_right_value[dt_test_number] = db_load_right_value[dt_test_number] if db_load_right_value[dt_test_number] >= 0 and db_load_right_value[dt_test_number] <= MAX_LOAD_DATA else 0
+    #             # Simulasi berat per roda (400kg - 2500kg)
+    #             db_load_left_value[dt_test_number] = random.randint(500, 1500)
+    #             db_load_right_value[dt_test_number] = db_load_left_value[dt_test_number] + random.randint(-50, 50)
+                
+    #             # Kalkulasi Load
     #             db_load_total_value[dt_test_number] = int(db_load_left_value[dt_test_number] + db_load_right_value[dt_test_number])
     #             dt_load_total_value = int(np.sum(db_load_total_value))
-    #             if(np.abs(int(np.sum(db_load_left_value)) - int(np.sum(db_load_right_value))) <= ((STANDARD_MAX_DIFFERENCE_AXLE_LOAD)/100) * int(dt_load_total_value)):
+                
+    #             # Cek ambang batas (Selisih roda kiri-kanan)
+    #             diff = np.abs(db_load_left_value[dt_test_number] - db_load_right_value[dt_test_number])
+    #             if diff <= (STANDARD_MAX_DIFFERENCE_AXLE_LOAD / 100) * db_load_total_value[dt_test_number]:
     #                 db_load_flag[dt_test_number] = 1
-    #                 dt_load_flag = 1
     #             else:
     #                 db_load_flag[dt_test_number] = 0
-    #                 dt_load_flag = 0
-    #             Logger.info(f"SIMULASI: Load Left = {db_load_left_value[dt_test_number]}, Load Right = {db_load_right_value[dt_test_number]}")
-    #         if self.screen_manager.current == 'screen_brake_meter':
-    #             # Ganti pembacaan register dengan data simulasi
-    #             db_brake_left_value[dt_test_number] = sim_brake_l
-    #             db_brake_right_value[dt_test_number] = sim_brake_r
-    #             # Sisa logika (validasi, total, flag) tetap sama
-    #             db_brake_left_value[dt_test_number] = db_brake_left_value[dt_test_number] if db_brake_left_value[dt_test_number] >= 0 and db_brake_left_value[dt_test_number] <= MAX_BRAKE_DATA else 0
-    #             db_brake_right_value[dt_test_number] = db_brake_right_value[dt_test_number] if db_brake_right_value[dt_test_number] >= 0 and db_brake_right_value[dt_test_number] <= MAX_BRAKE_DATA else 0
+
+    #         elif self.screen_manager.current == 'screen_brake_meter':
+    #             # Simulasi gaya rem (300kg - 1200kg)
+    #             db_brake_left_value[dt_test_number] = random.randint(400, 1000)
+    #             db_brake_right_value[dt_test_number] = db_brake_left_value[dt_test_number] + random.randint(-100, 100)
+                
     #             db_brake_total_value[dt_test_number] = int(db_brake_left_value[dt_test_number] + db_brake_right_value[dt_test_number])
-    #             if db_load_total_value[dt_test_number] > 0:
-    #                 db_brake_difference_value[dt_test_number] = np.round(
-    #                     (np.abs(db_brake_left_value[dt_test_number] - db_brake_right_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100, 1
-    #                 )
-    #             else:
-    #                 db_brake_difference_value[dt_test_number] = 0
+                
+    #             # Hitung selisih rem (Difference)
+    #             load_total = db_load_total_value[dt_test_number] if db_load_total_value[dt_test_number] > 0 else 1000
+    #             db_brake_difference_value[dt_test_number] = np.round((np.abs(db_brake_left_value[dt_test_number] - db_brake_right_value[dt_test_number]) / load_total) * 100, 1)
+                
+    #             # Update Total Efficiency
     #             dt_brake_total_value = int(np.sum(db_brake_total_value))
     #             if dt_load_total_value > 0:
     #                 dt_brake_efficiency_value = np.round((dt_brake_total_value / dt_load_total_value) * 100, 1)
-    #             else:
-    #                 dt_brake_efficiency_value = 0.0
-    #             dt_brake_difference_value = int(np.sum(db_brake_difference_value))
-    #             if(db_brake_difference_value[dt_test_number] <= STANDARD_MAX_DIFFERENCE_BRAKE):
-    #                 db_brake_flag[dt_test_number] = 1
-    #                 dt_brake_flag = 1
-    #                 db_brake_difference_s_flag[dt_test_number] = 1
-    #             else:
-    #                 db_brake_flag[dt_test_number] = 0
-    #                 dt_brake_flag = 0
-    #                 db_brake_difference_s_flag[dt_test_number] = 0
-    #             Logger.info(f"SIMULASI: Brake Left = {db_brake_left_value[dt_test_number]}, Brake Right = {db_brake_right_value[dt_test_number]}")
+                
+    #             # Status Sumbu
+    #             db_brake_flag[dt_test_number] = 1 if db_brake_difference_value[dt_test_number] <= STANDARD_MAX_DIFFERENCE_BRAKE else 0
 
-    #         if self.screen_manager.current == 'screen_handbrake_meter':
-    #             # Ganti pembacaan register dengan data simulasi
-    #             # Kita gunakan data rem yang sama, tapi mungkin sedikit lebih lemah
-    #             db_handbrake_left_value[dt_test_number] = max(0, sim_brake_l - random.randint(0, 50))
-    #             db_handbrake_right_value[dt_test_number] = max(0, sim_brake_r - random.randint(0, 50))
-    #             # Sisa logika (validasi, total, flag) tetap sama
-    #             db_handbrake_left_value[dt_test_number] = db_handbrake_left_value[dt_test_number] if db_handbrake_left_value[dt_test_number] >= 0 and db_handbrake_left_value[dt_test_number] <= MAX_BRAKE_DATA else 0
-    #             db_handbrake_right_value[dt_test_number] = db_handbrake_right_value[dt_test_number] if db_handbrake_right_value[dt_test_number] >= 0 and db_handbrake_right_value[dt_test_number] <= MAX_BRAKE_DATA else 0
+    #         elif self.screen_manager.current == 'screen_handbrake_meter':
+    #             # Simulasi rem parkir
+    #             db_handbrake_left_value[dt_test_number] = random.randint(300, 800)
+    #             db_handbrake_right_value[dt_test_number] = db_handbrake_left_value[dt_test_number] + random.randint(-50, 50)
     #             db_handbrake_total_value[dt_test_number] = int(db_handbrake_left_value[dt_test_number] + db_handbrake_right_value[dt_test_number])
-    #             if db_load_total_value[dt_test_number] > 0:
-    #                 db_handbrake_difference_value[dt_test_number] = np.round(
-    #                     (np.abs(db_handbrake_left_value[dt_test_number] - db_handbrake_right_value[dt_test_number])
-    #                     / db_load_total_value[dt_test_number]) * 100, 1
-    #                 )
-    #             else:
-    #                 db_handbrake_difference_value[dt_test_number] = 0
+                
     #             dt_handbrake_total_value = int(np.sum(db_handbrake_total_value))
-    #             if dt_load_total_value > 0:
-    #                 if float(dt_jbb) > 0:
-    #                     dt_handbrake_efficiency_value = np.round(
-    #                         (db_handbrake_total_value[dt_test_number] / float(dt_jbb)) * 100, 1
-    #                     )
-    #             else:
-    #                 dt_handbrake_efficiency_value = 0
-    #             dt_handbrake_difference_value = int(np.sum(db_handbrake_difference_value))
-    #             if(dt_handbrake_efficiency_value >= STANDARD_MIN_EFFICIENCY_HANDBRAKE):
-    #                 db_handbrake_flag[dt_test_number] = 1
-    #                 dt_handbrake_flag = 1
-    #             else:
-    #                 db_handbrake_flag[dt_test_number] = 0
-    #                 dt_handbrake_flag = 0
-    #             Logger.info(f"SIMULASI: Handbrake Left = {db_handbrake_left_value[dt_test_number]}, Handbrake Right = {db_handbrake_right_value[dt_test_number]}")
+    #             jbb_val = float(dt_jbb) if dt_jbb != "" else 2000.0
+    #             dt_handbrake_efficiency_value = np.round((dt_handbrake_total_value / jbb_val) * 100, 1)
+                
+    #             db_handbrake_flag[dt_test_number] = 1 if dt_handbrake_efficiency_value >= STANDARD_MIN_EFFICIENCY_HANDBRAKE else 0
 
     #     except Exception as e:
-    #         toast_msg = f'Gagal SIMULASI Data'
-    #         toast(toast_msg)
-    #         Logger.error(f"{self.name}: SIMULASI ERROR: {e}")
-    #         flag_play = False # Hentikan simulasi jika ada error
-    #         Clock.unschedule(self.regular_get_data)
+    #         Logger.error(f"Simulasi Error: {e}")
 
     def regular_get_data(self, dt):
         global count_starting, count_get_data
@@ -2975,7 +2935,7 @@ class ScreenResume(MDScreen):
             toast(f"Data untuk No. Antrian {dt_no_antri} berhasil disimpan!")
             Logger.info(f"{self.name}: Data untuk noantrian={dt_no_antri} berhasil disimpan ke database.")
             
-            self.exec_print() 
+            # self.exec_print() 
             
             self.ids.bt_save.disabled = True
 

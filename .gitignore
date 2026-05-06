@@ -1,5 +1,7 @@
 # Ignore the virtual environment folder
 venv/
+.venv/
+*.cfg
 
 # Ignore PyInstaller build and distribution folders
 build/

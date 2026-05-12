@@ -7,8 +7,9 @@ venv/
 build/
 dist/
 release/
+Output/
+Application Folder/
 *.spec
-
 
 # Ignore Log files
 logs/

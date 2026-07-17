@@ -41,6 +41,22 @@ import configparser, mysql.connector
 from pymodbus.client import ModbusTcpClient
 from fpdf import FPDF
 from escpos.printer import Serial
+import logging
+from logging.handlers import RotatingFileHandler
+
+# Log khusus PLC/Modbus, terpisah dari log Kivy biasa. Disimpan di Documents (bukan
+# folder instalasi di Program Files, yang read-only untuk user biasa) supaya kalau
+# ada masalah pembacaan PLC di lokasi customer, folder ini tinggal di-zip dan dikirim.
+PLC_LOG_DIR = os.path.join(os.environ.get("USERPROFILE", os.path.expanduser("~")), "Documents", "VIIMS_PLC_Logs")
+os.makedirs(PLC_LOG_DIR, exist_ok=True)
+plc_logger = logging.getLogger('plc')
+plc_logger.setLevel(logging.DEBUG)
+_plc_log_handler = RotatingFileHandler(
+    os.path.join(PLC_LOG_DIR, 'plc.log'), maxBytes=10 * 1024 * 1024, backupCount=10, encoding='utf-8'
+)
+_plc_log_handler.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s] %(message)s'))
+plc_logger.addHandler(_plc_log_handler)
+plc_logger.propagate = False
 
 dt_id_user = 0
 dt_user = ""
@@ -124,6 +140,9 @@ class _SimulatedModbusResponse:
     def __init__(self, value):
         self.registers = [value]
 
+    def isError(self):
+        return False
+
 class SimulatedModbusClient:
     """PLC tiruan, dipakai saat SIMULATION_MODE = TRUE di config.ini (tidak ada PLC fisik).
     Meniru interface ModbusTcpClient (connect/close/connected/read_holding_registers/write_register/write_coil)
@@ -167,6 +186,49 @@ class SimulatedModbusClient:
         return True
 
 MODBUS_CLIENT = SimulatedModbusClient() if SIMULATION_MODE else ModbusTcpClient(MODBUS_IP_PLC)
+
+_REGISTER_NAMES = {
+    REGISTER_DATA_LOAD_L: 'LOAD_L',
+    REGISTER_DATA_LOAD_R: 'LOAD_R',
+    REGISTER_DATA_BRAKE_L: 'BRAKE_L',
+    REGISTER_DATA_BRAKE_R: 'BRAKE_R',
+}
+_plc_was_connected = None  # None = status koneksi belum pernah dicek
+
+def modbus_read_register(address, count=1, slave=1):
+    """Baca 1 holding register dari PLC lewat koneksi Modbus yang sudah ada (persisten,
+    tidak connect/close di tiap panggilan). Return None kalau pembacaan gagal/error,
+    supaya pemanggil bisa membedakan 'gagal baca dari PLC' dari 'nilai valid tapi di luar rentang'.
+    Setiap percobaan baca (berhasil atau gagal) dicatat ke plc_logger supaya semua
+    aktivitas komunikasi dengan PLC bisa ditelusuri kalau ada laporan masalah di lapangan."""
+    global _plc_was_connected
+
+    if not MODBUS_CLIENT.connected:
+        MODBUS_CLIENT.connect()
+
+    now_connected = MODBUS_CLIENT.connected
+    if now_connected != _plc_was_connected:
+        if now_connected:
+            plc_logger.info(f"Koneksi ke PLC ({MODBUS_IP_PLC}) tersambung.")
+        else:
+            plc_logger.warning(f"Koneksi ke PLC ({MODBUS_IP_PLC}) GAGAL/terputus.")
+        _plc_was_connected = now_connected
+
+    reg_name = _REGISTER_NAMES.get(address, str(address))
+
+    if not now_connected:
+        plc_logger.warning(f"Baca register {reg_name} ({address}) dilewati - PLC tidak tersambung.")
+        return None
+
+    result = MODBUS_CLIENT.read_holding_registers(address, count=count, slave=slave)
+    if result.isError():
+        plc_logger.error(f"Baca register {reg_name} ({address}) GAGAL: {result}")
+        Logger.warning(f"Modbus: gagal baca register {address}: {result}")
+        return None
+
+    raw = result.registers[0]
+    plc_logger.info(f"Baca register {reg_name} ({address}) = {raw}")
+    return raw
 
 # system standard
 STANDARD_MAX_AXLE_LOAD = float(config['standard']['STANDARD_MAX_AXLE_LOAD']) # in kg
@@ -609,27 +671,37 @@ class ScreenMain(MDScreen):
                 screen_resume.ids.lb_comm.text = 'PLC Terhubung'
 
             if(self.screen_manager.current == 'screen_calibration'):
-                MODBUS_CLIENT.connect()
-                load_l_registers = MODBUS_CLIENT.read_holding_registers(REGISTER_DATA_LOAD_L, count=1, slave=1) #V1400
-                load_r_registers = MODBUS_CLIENT.read_holding_registers(REGISTER_DATA_LOAD_R, count=1, slave=1) #V1410
-                brake_l_registers = MODBUS_CLIENT.read_holding_registers(REGISTER_DATA_BRAKE_L, count=1, slave=1) #V1420
-                brake_r_registers = MODBUS_CLIENT.read_holding_registers(REGISTER_DATA_BRAKE_R, count=1, slave=1) #V1430
-                MODBUS_CLIENT.close()
+                load_l_raw = modbus_read_register(REGISTER_DATA_LOAD_L, count=1, slave=1) #V1400
+                load_r_raw = modbus_read_register(REGISTER_DATA_LOAD_R, count=1, slave=1) #V1410
+                brake_l_raw = modbus_read_register(REGISTER_DATA_BRAKE_L, count=1, slave=1) #V1420
+                brake_r_raw = modbus_read_register(REGISTER_DATA_BRAKE_R, count=1, slave=1) #V1430
 
-                dt_load_l_val = int(self.unsigned_to_signed(load_l_registers.registers[0]))
-                dt_load_r_val = int(self.unsigned_to_signed(load_r_registers.registers[0]))
-                dt_brake_l_val = int(self.unsigned_to_signed(brake_l_registers.registers[0]))
-                dt_brake_r_val = int(self.unsigned_to_signed(brake_r_registers.registers[0]))
-
-                dt_load_l_val = dt_load_l_val if dt_load_l_val >= 0 and dt_load_l_val <= MAX_LOAD_DATA else 0
-                dt_load_r_val = dt_load_r_val if dt_load_r_val >= 0 and dt_load_r_val <= MAX_LOAD_DATA else 0
-                dt_brake_l_val = dt_brake_l_val if dt_brake_l_val >= 0 and dt_brake_l_val <= MAX_BRAKE_DATA else 0
-                dt_brake_r_val = dt_brake_r_val if dt_brake_r_val >= 0 and dt_brake_r_val <= MAX_BRAKE_DATA else 0
-
-                screen_calibration.ids.lb_load_l_val.text = str(dt_load_l_val)
-                screen_calibration.ids.lb_load_r_val.text = str(dt_load_r_val)
-                screen_calibration.ids.lb_brake_l_val.text = str(dt_brake_l_val)
-                screen_calibration.ids.lb_brake_r_val.text = str(dt_brake_r_val)
+                # Kalau pembacaan gagal (raw None), lewati update field itu saja - jangan
+                # timpa tampilan dengan 0 dan jangan gagalkan update tampilan lainnya.
+                if load_l_raw is not None:
+                    dt_load_l_val = int(self.unsigned_to_signed(load_l_raw))
+                    if dt_load_l_val < 0 or dt_load_l_val > MAX_LOAD_DATA:
+                        plc_logger.warning(f"LOAD_L di luar rentang (nilai={dt_load_l_val}, batas 0-{MAX_LOAD_DATA}), ditampilkan sebagai 0.")
+                    dt_load_l_val = dt_load_l_val if dt_load_l_val >= 0 and dt_load_l_val <= MAX_LOAD_DATA else 0
+                    screen_calibration.ids.lb_load_l_val.text = str(dt_load_l_val)
+                if load_r_raw is not None:
+                    dt_load_r_val = int(self.unsigned_to_signed(load_r_raw))
+                    if dt_load_r_val < 0 or dt_load_r_val > MAX_LOAD_DATA:
+                        plc_logger.warning(f"LOAD_R di luar rentang (nilai={dt_load_r_val}, batas 0-{MAX_LOAD_DATA}), ditampilkan sebagai 0.")
+                    dt_load_r_val = dt_load_r_val if dt_load_r_val >= 0 and dt_load_r_val <= MAX_LOAD_DATA else 0
+                    screen_calibration.ids.lb_load_r_val.text = str(dt_load_r_val)
+                if brake_l_raw is not None:
+                    dt_brake_l_val = int(self.unsigned_to_signed(brake_l_raw))
+                    if dt_brake_l_val < 0 or dt_brake_l_val > MAX_BRAKE_DATA:
+                        plc_logger.warning(f"BRAKE_L di luar rentang (nilai={dt_brake_l_val}, batas 0-{MAX_BRAKE_DATA}), ditampilkan sebagai 0.")
+                    dt_brake_l_val = dt_brake_l_val if dt_brake_l_val >= 0 and dt_brake_l_val <= MAX_BRAKE_DATA else 0
+                    screen_calibration.ids.lb_brake_l_val.text = str(dt_brake_l_val)
+                if brake_r_raw is not None:
+                    dt_brake_r_val = int(self.unsigned_to_signed(brake_r_raw))
+                    if dt_brake_r_val < 0 or dt_brake_r_val > MAX_BRAKE_DATA:
+                        plc_logger.warning(f"BRAKE_R di luar rentang (nilai={dt_brake_r_val}, batas 0-{MAX_BRAKE_DATA}), ditampilkan sebagai 0.")
+                    dt_brake_r_val = dt_brake_r_val if dt_brake_r_val >= 0 and dt_brake_r_val <= MAX_BRAKE_DATA else 0
+                    screen_calibration.ids.lb_brake_r_val.text = str(dt_brake_r_val)
 
             self.ids.bt_calibrate.disabled = False if dt_user != '' else True
             # self.ids.bt_add_data.disabled = False if dt_user != '' else True
@@ -664,17 +736,23 @@ class ScreenMain(MDScreen):
             Logger.error(f"{self.name}: {toast_msg}, {e}")
 
     def regular_update_connection(self, dt):
-        global flag_conn_stat
+        global flag_conn_stat, _plc_was_connected
 
         try:
             MODBUS_CLIENT.connect()
             flag_conn_stat = MODBUS_CLIENT.connected
-            MODBUS_CLIENT.close()
-            
+            if flag_conn_stat != _plc_was_connected:
+                if flag_conn_stat:
+                    plc_logger.info(f"Koneksi ke PLC ({MODBUS_IP_PLC}) tersambung.")
+                else:
+                    plc_logger.warning(f"Koneksi ke PLC ({MODBUS_IP_PLC}) GAGAL/terputus.")
+                _plc_was_connected = flag_conn_stat
+
         except Exception as e:
             toast_msg = f'Gagal Memperbaharui Koneksi'
             toast(toast_msg)
-            Logger.error(f"{self.name}: {toast_msg}, {e}")  
+            Logger.error(f"{self.name}: {toast_msg}, {e}")
+            plc_logger.error(f"regular_update_connection: exception saat cek koneksi PLC: {e}")
             flag_conn_stat = True
 
     def unsigned_to_signed(self, val):
@@ -778,156 +856,176 @@ class ScreenMain(MDScreen):
                 flag_play = False
                 Clock.unschedule(self.regular_get_data)
             
+            load_l_raw = load_r_raw = brake_l_raw = brake_r_raw = None
             if flag_conn_stat:
-                MODBUS_CLIENT.connect()
-                load_l_registers = MODBUS_CLIENT.read_holding_registers(REGISTER_DATA_LOAD_L, count=1, slave=1) #V1400
-                load_r_registers = MODBUS_CLIENT.read_holding_registers(REGISTER_DATA_LOAD_R, count=1, slave=1) #V1410
-                brake_l_registers = MODBUS_CLIENT.read_holding_registers(REGISTER_DATA_BRAKE_L, count=1, slave=1) #V1420
-                brake_r_registers = MODBUS_CLIENT.read_holding_registers(REGISTER_DATA_BRAKE_R, count=1, slave=1) #V1430
-                MODBUS_CLIENT.close()
+                load_l_raw = modbus_read_register(REGISTER_DATA_LOAD_L, count=1, slave=1) #V1400
+                load_r_raw = modbus_read_register(REGISTER_DATA_LOAD_R, count=1, slave=1) #V1410
+                brake_l_raw = modbus_read_register(REGISTER_DATA_BRAKE_L, count=1, slave=1) #V1420
+                brake_r_raw = modbus_read_register(REGISTER_DATA_BRAKE_R, count=1, slave=1) #V1430
 
             if self.screen_manager.current == 'screen_load_meter':
-                db_load_left_value[dt_test_number] = int(self.unsigned_to_signed(load_l_registers.registers[0]))
-                db_load_right_value[dt_test_number] = int(self.unsigned_to_signed(load_r_registers.registers[0]))
-
-                db_load_left_value[dt_test_number] = db_load_left_value[dt_test_number] if db_load_left_value[dt_test_number] >= 0 and db_load_left_value[dt_test_number] <= MAX_LOAD_DATA else 0
-                db_load_right_value[dt_test_number] = db_load_right_value[dt_test_number] if db_load_right_value[dt_test_number] >= 0 and db_load_right_value[dt_test_number] <= MAX_LOAD_DATA else 0
-
-                db_load_total_value[dt_test_number] = int(db_load_left_value[dt_test_number] + db_load_right_value[dt_test_number])
-                dt_load_total_value = int(np.sum(db_load_total_value))
-
-                # Load test result status
-                if(np.abs(int(np.sum(db_load_left_value)) - int(np.sum(db_load_right_value))) <= ((STANDARD_MAX_DIFFERENCE_AXLE_LOAD)/100) * int(dt_load_total_value)):
-                    db_load_flag[dt_test_number] = 1
-                    dt_load_flag = 1
+                if load_l_raw is None or load_r_raw is None:
+                    Logger.warning(f"{self.screen_manager.current}: Gagal baca register load dari PLC, nilai sumbu {dt_test_number} dipertahankan.")
                 else:
-                    db_load_flag[dt_test_number] = 0
-                    dt_load_flag = 0
+                    db_load_left_value[dt_test_number] = int(self.unsigned_to_signed(load_l_raw))
+                    db_load_right_value[dt_test_number] = int(self.unsigned_to_signed(load_r_raw))
 
-                Logger.info(f"{self.screen_manager.current}: DB Load Left = {db_load_left_value}, DB Load Right = {db_load_right_value}, DB Load Total = {db_load_total_value}")
-                Logger.info(f"{self.screen_manager.current}: DB Load Left = {db_load_left_value[dt_test_number]}, DB Load Right = {db_load_right_value[dt_test_number]}, DB Load Total = {db_load_total_value[dt_test_number]}")
-                Logger.info(f"{self.screen_manager.current}: DB Load Flag = {db_load_flag}")
+                    if db_load_left_value[dt_test_number] < 0 or db_load_left_value[dt_test_number] > MAX_LOAD_DATA:
+                        plc_logger.warning(f"Sumbu {dt_test_number}: LOAD_L di luar rentang (nilai={db_load_left_value[dt_test_number]}, batas 0-{MAX_LOAD_DATA}), dicatat sebagai 0.")
+                    if db_load_right_value[dt_test_number] < 0 or db_load_right_value[dt_test_number] > MAX_LOAD_DATA:
+                        plc_logger.warning(f"Sumbu {dt_test_number}: LOAD_R di luar rentang (nilai={db_load_right_value[dt_test_number]}, batas 0-{MAX_LOAD_DATA}), dicatat sebagai 0.")
+                    db_load_left_value[dt_test_number] = db_load_left_value[dt_test_number] if db_load_left_value[dt_test_number] >= 0 and db_load_left_value[dt_test_number] <= MAX_LOAD_DATA else 0
+                    db_load_right_value[dt_test_number] = db_load_right_value[dt_test_number] if db_load_right_value[dt_test_number] >= 0 and db_load_right_value[dt_test_number] <= MAX_LOAD_DATA else 0
+
+                    db_load_total_value[dt_test_number] = int(db_load_left_value[dt_test_number] + db_load_right_value[dt_test_number])
+                    dt_load_total_value = int(np.sum(db_load_total_value))
+
+                    # Load test result status
+                    if(np.abs(int(np.sum(db_load_left_value)) - int(np.sum(db_load_right_value))) <= ((STANDARD_MAX_DIFFERENCE_AXLE_LOAD)/100) * int(dt_load_total_value)):
+                        db_load_flag[dt_test_number] = 1
+                        dt_load_flag = 1
+                    else:
+                        db_load_flag[dt_test_number] = 0
+                        dt_load_flag = 0
+
+                    Logger.info(f"{self.screen_manager.current}: DB Load Left = {db_load_left_value}, DB Load Right = {db_load_right_value}, DB Load Total = {db_load_total_value}")
+                    Logger.info(f"{self.screen_manager.current}: DB Load Left = {db_load_left_value[dt_test_number]}, DB Load Right = {db_load_right_value[dt_test_number]}, DB Load Total = {db_load_total_value[dt_test_number]}")
+                    Logger.info(f"{self.screen_manager.current}: DB Load Flag = {db_load_flag}")
 
             if self.screen_manager.current == 'screen_brake_meter':
-                db_brake_left_value[dt_test_number] = int(self.unsigned_to_signed(brake_l_registers.registers[0]))
-                db_brake_right_value[dt_test_number] = int(self.unsigned_to_signed(brake_r_registers.registers[0]))
-
-                db_brake_left_value[dt_test_number] = db_brake_left_value[dt_test_number] if db_brake_left_value[dt_test_number] >= 0 and db_brake_left_value[dt_test_number] <= MAX_BRAKE_DATA else 0
-                db_brake_right_value[dt_test_number] = db_brake_right_value[dt_test_number] if db_brake_right_value[dt_test_number] >= 0 and db_brake_right_value[dt_test_number] <= MAX_BRAKE_DATA else 0
-
-                # Initialize total for brake test
-                db_brake_total_value[dt_test_number] = int(db_brake_left_value[dt_test_number] + db_brake_right_value[dt_test_number])
-
-                # Efficiency: (total brake / total load) * 100
-                # if dt_load_total_value > 0:
-                #     dt_brake_efficiency_value = np.round(
-                #         (db_brake_total_value[dt_test_number] / dt_load_total_value) * 100, 1
-                #     )
-                # else:
-                #     dt_brake_efficiency_value = 0  # or np.nan, or None
-                #     Logger.warning(f"{self.screen_manager.current}: dt_load_total_value is zero. Cannot calculate efficiency.")
-                # Brake difference: |left - right| / load * 100
-                
-                if db_load_total_value[dt_test_number] > 0:
-                    db_brake_difference_value[dt_test_number] = np.round(
-                        (np.abs(db_brake_left_value[dt_test_number] - db_brake_right_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100, 1
-                    )
+                if brake_l_raw is None or brake_r_raw is None:
+                    Logger.warning(f"{self.screen_manager.current}: Gagal baca register brake dari PLC, nilai sumbu {dt_test_number} dipertahankan.")
                 else:
-                    db_brake_difference_value[dt_test_number] = 0
-                    Logger.warning(f"{self.screen_manager.current}: db_load_total_value[{dt_test_number}] is zero. Cannot calculate brake difference.")
+                    db_brake_left_value[dt_test_number] = int(self.unsigned_to_signed(brake_l_raw))
+                    db_brake_right_value[dt_test_number] = int(self.unsigned_to_signed(brake_r_raw))
 
-                # Aggregate brake totals
-                dt_brake_total_value = int(np.sum(db_brake_total_value))
+                    if db_brake_left_value[dt_test_number] < 0 or db_brake_left_value[dt_test_number] > MAX_BRAKE_DATA:
+                        plc_logger.warning(f"Sumbu {dt_test_number}: BRAKE_L di luar rentang (nilai={db_brake_left_value[dt_test_number]}, batas 0-{MAX_BRAKE_DATA}), dicatat sebagai 0.")
+                    if db_brake_right_value[dt_test_number] < 0 or db_brake_right_value[dt_test_number] > MAX_BRAKE_DATA:
+                        plc_logger.warning(f"Sumbu {dt_test_number}: BRAKE_R di luar rentang (nilai={db_brake_right_value[dt_test_number]}, batas 0-{MAX_BRAKE_DATA}), dicatat sebagai 0.")
+                    db_brake_left_value[dt_test_number] = db_brake_left_value[dt_test_number] if db_brake_left_value[dt_test_number] >= 0 and db_brake_left_value[dt_test_number] <= MAX_BRAKE_DATA else 0
+                    db_brake_right_value[dt_test_number] = db_brake_right_value[dt_test_number] if db_brake_right_value[dt_test_number] >= 0 and db_brake_right_value[dt_test_number] <= MAX_BRAKE_DATA else 0
 
-                # Overall efficiency
-                if dt_load_total_value > 0:
-                    dt_brake_efficiency_value = np.round((dt_brake_total_value / dt_load_total_value) * 100, 1)
-                else:
-                    dt_brake_efficiency_value = 0.0
-                    Logger.warning(f"{self.screen_manager.current}: dt_load_total_value is zero. Cannot calculate total brake efficiency.")
+                    # Initialize total for brake test
+                    db_brake_total_value[dt_test_number] = int(db_brake_left_value[dt_test_number] + db_brake_right_value[dt_test_number])
 
-                # Overall difference
-                dt_brake_difference_value = int(np.sum(db_brake_difference_value))
+                    # Efficiency: (total brake / total load) * 100
+                    # if dt_load_total_value > 0:
+                    #     dt_brake_efficiency_value = np.round(
+                    #         (db_brake_total_value[dt_test_number] / dt_load_total_value) * 100, 1
+                    #     )
+                    # else:
+                    #     dt_brake_efficiency_value = 0  # or np.nan, or None
+                    #     Logger.warning(f"{self.screen_manager.current}: dt_load_total_value is zero. Cannot calculate efficiency.")
+                    # Brake difference: |left - right| / load * 100
 
-                # Brake test result status
-                if(db_brake_difference_value[dt_test_number] <= STANDARD_MAX_DIFFERENCE_BRAKE):
-                    db_brake_flag[dt_test_number] = 1
-                    dt_brake_flag = 1
-                    db_brake_difference_s_flag[dt_test_number] = 1
-                else:
-                    db_brake_flag[dt_test_number] = 0
-                    dt_brake_flag = 0
-                    db_brake_difference_s_flag[dt_test_number] = 0
+                    if db_load_total_value[dt_test_number] > 0:
+                        db_brake_difference_value[dt_test_number] = np.round(
+                            (np.abs(db_brake_left_value[dt_test_number] - db_brake_right_value[dt_test_number]) / db_load_total_value[dt_test_number]) * 100, 1
+                        )
+                    else:
+                        db_brake_difference_value[dt_test_number] = 0
+                        Logger.warning(f"{self.screen_manager.current}: db_load_total_value[{dt_test_number}] is zero. Cannot calculate brake difference.")
 
-                # Logging
-                Logger.info(f"{self.screen_manager.current}: DB Brake Left = {db_brake_left_value}, "
-                            f"DB Brake Right = {db_brake_right_value}, "
-                            f"DB Brake Total = {db_brake_total_value}, "
-                            f"DB Brake Difference = {db_brake_difference_value}")
+                    # Aggregate brake totals
+                    dt_brake_total_value = int(np.sum(db_brake_total_value))
 
-                Logger.info(f"{self.screen_manager.current}: For test {dt_test_number}: "
-                            f"DB Brake Left = {db_brake_left_value[dt_test_number]}, "
-                            f"DB Brake Right = {db_brake_right_value[dt_test_number]}, "
-                            f"DB Brake Total = {db_brake_total_value[dt_test_number]}, "
-                            f"DB Brake Difference = {db_brake_difference_value[dt_test_number]}")
-                Logger.info(f"{self.screen_manager.current}: DB Brake Flag = {db_brake_flag}")
+                    # Overall efficiency
+                    if dt_load_total_value > 0:
+                        dt_brake_efficiency_value = np.round((dt_brake_total_value / dt_load_total_value) * 100, 1)
+                    else:
+                        dt_brake_efficiency_value = 0.0
+                        Logger.warning(f"{self.screen_manager.current}: dt_load_total_value is zero. Cannot calculate total brake efficiency.")
+
+                    # Overall difference
+                    dt_brake_difference_value = int(np.sum(db_brake_difference_value))
+
+                    # Brake test result status
+                    if(db_brake_difference_value[dt_test_number] <= STANDARD_MAX_DIFFERENCE_BRAKE):
+                        db_brake_flag[dt_test_number] = 1
+                        dt_brake_flag = 1
+                        db_brake_difference_s_flag[dt_test_number] = 1
+                    else:
+                        db_brake_flag[dt_test_number] = 0
+                        dt_brake_flag = 0
+                        db_brake_difference_s_flag[dt_test_number] = 0
+
+                    # Logging
+                    Logger.info(f"{self.screen_manager.current}: DB Brake Left = {db_brake_left_value}, "
+                                f"DB Brake Right = {db_brake_right_value}, "
+                                f"DB Brake Total = {db_brake_total_value}, "
+                                f"DB Brake Difference = {db_brake_difference_value}")
+
+                    Logger.info(f"{self.screen_manager.current}: For test {dt_test_number}: "
+                                f"DB Brake Left = {db_brake_left_value[dt_test_number]}, "
+                                f"DB Brake Right = {db_brake_right_value[dt_test_number]}, "
+                                f"DB Brake Total = {db_brake_total_value[dt_test_number]}, "
+                                f"DB Brake Difference = {db_brake_difference_value[dt_test_number]}")
+                    Logger.info(f"{self.screen_manager.current}: DB Brake Flag = {db_brake_flag}")
 
             if self.screen_manager.current == 'screen_handbrake_meter':
-                db_handbrake_left_value[dt_test_number] = int(self.unsigned_to_signed(brake_l_registers.registers[0]))
-                db_handbrake_right_value[dt_test_number] = int(self.unsigned_to_signed(brake_r_registers.registers[0]))
-
-                db_handbrake_left_value[dt_test_number] = db_handbrake_left_value[dt_test_number] if db_handbrake_left_value[dt_test_number] >= 0 and db_handbrake_left_value[dt_test_number] <= MAX_BRAKE_DATA else 0
-                db_handbrake_right_value[dt_test_number] = db_handbrake_right_value[dt_test_number] if db_handbrake_right_value[dt_test_number] >= 0 and db_handbrake_right_value[dt_test_number] <= MAX_BRAKE_DATA else 0
-
-                # Initialize total for handbrake test
-                db_handbrake_total_value[dt_test_number] = int(db_handbrake_left_value[dt_test_number] + db_handbrake_right_value[dt_test_number])
-
-                # Handbrake difference: |left - right| / load * 100
-                if db_load_total_value[dt_test_number] > 0:
-                    db_handbrake_difference_value[dt_test_number] = np.round(
-                        (np.abs(db_handbrake_left_value[dt_test_number] - db_handbrake_right_value[dt_test_number])
-                        / db_load_total_value[dt_test_number]) * 100, 1
-                    )
+                if brake_l_raw is None or brake_r_raw is None:
+                    Logger.warning(f"{self.screen_manager.current}: Gagal baca register handbrake dari PLC, nilai sumbu {dt_test_number} dipertahankan.")
                 else:
-                    db_handbrake_difference_value[dt_test_number] = 0
-                    Logger.warning(f"{self.screen_manager.current}: db_load_total_value[{dt_test_number}] is zero. Setting difference to 0.")
+                    db_handbrake_left_value[dt_test_number] = int(self.unsigned_to_signed(brake_l_raw))
+                    db_handbrake_right_value[dt_test_number] = int(self.unsigned_to_signed(brake_r_raw))
 
-                # Aggregate handbrake totals
-                dt_handbrake_total_value = int(np.sum(db_handbrake_total_value))
+                    if db_handbrake_left_value[dt_test_number] < 0 or db_handbrake_left_value[dt_test_number] > MAX_BRAKE_DATA:
+                        plc_logger.warning(f"Sumbu {dt_test_number}: HANDBRAKE_L di luar rentang (nilai={db_handbrake_left_value[dt_test_number]}, batas 0-{MAX_BRAKE_DATA}), dicatat sebagai 0.")
+                    if db_handbrake_right_value[dt_test_number] < 0 or db_handbrake_right_value[dt_test_number] > MAX_BRAKE_DATA:
+                        plc_logger.warning(f"Sumbu {dt_test_number}: HANDBRAKE_R di luar rentang (nilai={db_handbrake_right_value[dt_test_number]}, batas 0-{MAX_BRAKE_DATA}), dicatat sebagai 0.")
+                    db_handbrake_left_value[dt_test_number] = db_handbrake_left_value[dt_test_number] if db_handbrake_left_value[dt_test_number] >= 0 and db_handbrake_left_value[dt_test_number] <= MAX_BRAKE_DATA else 0
+                    db_handbrake_right_value[dt_test_number] = db_handbrake_right_value[dt_test_number] if db_handbrake_right_value[dt_test_number] >= 0 and db_handbrake_right_value[dt_test_number] <= MAX_BRAKE_DATA else 0
 
-                # Overall handbrake efficiency
-                if dt_load_total_value > 0:
-                    if float(dt_jbb) > 0:
-                        dt_handbrake_efficiency_value = np.round(
-                            (db_handbrake_total_value[dt_test_number] / float(dt_jbb)) * 100, 1
+                    # Initialize total for handbrake test
+                    db_handbrake_total_value[dt_test_number] = int(db_handbrake_left_value[dt_test_number] + db_handbrake_right_value[dt_test_number])
+
+                    # Handbrake difference: |left - right| / load * 100
+                    if db_load_total_value[dt_test_number] > 0:
+                        db_handbrake_difference_value[dt_test_number] = np.round(
+                            (np.abs(db_handbrake_left_value[dt_test_number] - db_handbrake_right_value[dt_test_number])
+                            / db_load_total_value[dt_test_number]) * 100, 1
                         )
-                else:
-                    dt_handbrake_efficiency_value = 0
-                    Logger.warning(f"{self.screen_manager.current}: dt_load_total_value is zero. Overall efficiency set to 0.")
+                    else:
+                        db_handbrake_difference_value[dt_test_number] = 0
+                        Logger.warning(f"{self.screen_manager.current}: db_load_total_value[{dt_test_number}] is zero. Setting difference to 0.")
 
-                # Sum of percentage differences? Be careful — summing % can be misleading
-                dt_handbrake_difference_value = int(np.sum(db_handbrake_difference_value))
+                    # Aggregate handbrake totals
+                    dt_handbrake_total_value = int(np.sum(db_handbrake_total_value))
 
-                # HandBrake test result status
-                if(dt_handbrake_efficiency_value >= STANDARD_MIN_EFFICIENCY_HANDBRAKE):
-                    db_handbrake_flag[dt_test_number] = 1
-                    dt_handbrake_flag = 1
-                else:
-                    db_handbrake_flag[dt_test_number] = 0
-                    dt_handbrake_flag = 0
+                    # Overall handbrake efficiency
+                    if dt_load_total_value > 0:
+                        if float(dt_jbb) > 0:
+                            dt_handbrake_efficiency_value = np.round(
+                                (db_handbrake_total_value[dt_test_number] / float(dt_jbb)) * 100, 1
+                            )
+                    else:
+                        dt_handbrake_efficiency_value = 0
+                        Logger.warning(f"{self.screen_manager.current}: dt_load_total_value is zero. Overall efficiency set to 0.")
 
-                # Logging
-                Logger.info(f"{self.screen_manager.current}: DB Handbrake Left = {db_handbrake_left_value}, "
-                            f"DB Handbrake Right = {db_handbrake_right_value}, "
-                            f"DB Handbrake Total = {db_handbrake_total_value}, "
-                            f"DB Handbrake Difference = {db_handbrake_difference_value}")
+                    # Sum of percentage differences? Be careful — summing % can be misleading
+                    dt_handbrake_difference_value = int(np.sum(db_handbrake_difference_value))
 
-                Logger.info(f"{self.screen_manager.current}: Test {dt_test_number} - "
-                            f"Handbrake Left = {db_handbrake_left_value[dt_test_number]}, "
-                            f"Right = {db_handbrake_right_value[dt_test_number]}, "
-                            f"Total = {db_handbrake_total_value[dt_test_number]}, "
-                            f"Difference = {db_handbrake_difference_value[dt_test_number]}%")
-                Logger.info(f"{self.screen_manager.current}: DB Handbrake Flag = {db_handbrake_flag}")
+                    # HandBrake test result status
+                    if(dt_handbrake_efficiency_value >= STANDARD_MIN_EFFICIENCY_HANDBRAKE):
+                        db_handbrake_flag[dt_test_number] = 1
+                        dt_handbrake_flag = 1
+                    else:
+                        db_handbrake_flag[dt_test_number] = 0
+                        dt_handbrake_flag = 0
+
+                    # Logging
+                    Logger.info(f"{self.screen_manager.current}: DB Handbrake Left = {db_handbrake_left_value}, "
+                                f"DB Handbrake Right = {db_handbrake_right_value}, "
+                                f"DB Handbrake Total = {db_handbrake_total_value}, "
+                                f"DB Handbrake Difference = {db_handbrake_difference_value}")
+
+                    Logger.info(f"{self.screen_manager.current}: Test {dt_test_number} - "
+                                f"Handbrake Left = {db_handbrake_left_value[dt_test_number]}, "
+                                f"Right = {db_handbrake_right_value[dt_test_number]}, "
+                                f"Total = {db_handbrake_total_value[dt_test_number]}, "
+                                f"Difference = {db_handbrake_difference_value[dt_test_number]}%")
+                    Logger.info(f"{self.screen_manager.current}: DB Handbrake Flag = {db_handbrake_flag}")
 
         except Exception as e:
             toast_msg = f'Gagal Mengambil Data dari PLC'
@@ -1186,7 +1284,6 @@ class ScreenCalibration(MDScreen):
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1722, 1, slave=1) #V1210
                 MODBUS_CLIENT.write_coil(3093, True, slave=1) #M21
-                MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_load_l_start data to PLC Slave"
             toast(toast_msg)
@@ -1198,7 +1295,6 @@ class ScreenCalibration(MDScreen):
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_coil(3093, False, slave=1) #M21
-                MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send rel_calibrate_load_l_start data to PLC Slave"
             toast(toast_msg)
@@ -1211,7 +1307,6 @@ class ScreenCalibration(MDScreen):
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1724, 0, slave=1) #V1212
                 MODBUS_CLIENT.write_coil(3094, True, slave=1) #M22
-                MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_load_l_zero data to PLC Slave"
             toast(toast_msg)
@@ -1223,7 +1318,6 @@ class ScreenCalibration(MDScreen):
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_coil(3094, False, slave=1) # M22
-                MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send rel_calibrate_load_l_zero data to PLC Slave"
             toast(toast_msg)
@@ -1236,7 +1330,6 @@ class ScreenCalibration(MDScreen):
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1726, int(self.ids.tx_calibrate_load_l_value1.text), slave=1) #V1214
                 MODBUS_CLIENT.write_coil(3095, True, slave=1) #M23
-                MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_load_l_value1 data to PLC Slave"
             toast(toast_msg)
@@ -1248,7 +1341,6 @@ class ScreenCalibration(MDScreen):
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_coil(3095, False, slave=1) # M23
-                MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send rel_calibrate_load_l_value1 data to PLC Slave"
             toast(toast_msg)
@@ -1261,7 +1353,6 @@ class ScreenCalibration(MDScreen):
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1728, int(self.ids.tx_calibrate_load_l_value2.text), slave=1) #V1216
                 MODBUS_CLIENT.write_coil(3096, True, slave=1) #M24
-                MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_load_l_value2 data to PLC Slave"
             toast(toast_msg)
@@ -1273,7 +1364,6 @@ class ScreenCalibration(MDScreen):
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_coil(3096, False, slave=1) # M24
-                MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send rel_calibrate_load_l_value2 data to PLC Slave"
             toast(toast_msg)
@@ -1286,7 +1376,6 @@ class ScreenCalibration(MDScreen):
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1730, 2, slave=1) #V1218
                 MODBUS_CLIENT.write_coil(3097, True, slave=1) #M25
-                MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_load_l_stop data to PLC Slave"
             toast(toast_msg)
@@ -1298,7 +1387,6 @@ class ScreenCalibration(MDScreen):
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_coil(3097, False, slave=1) # M25
-                MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send rel_calibrate_load_l_stop data to PLC Slave"
             toast(toast_msg)
@@ -1311,7 +1399,6 @@ class ScreenCalibration(MDScreen):
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1752, 1, slave=1) #V1240
                 MODBUS_CLIENT.write_coil(3193, True, slave=1) #M121
-                MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_load_r_start data to PLC Slave"
             toast(toast_msg)
@@ -1323,7 +1410,6 @@ class ScreenCalibration(MDScreen):
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_coil(3193, False, slave=1) # M121
-                MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send rel_calibrate_load_r_start data to PLC Slave"
             toast(toast_msg)
@@ -1336,7 +1422,6 @@ class ScreenCalibration(MDScreen):
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1754, 0, slave=1) #V1242
                 MODBUS_CLIENT.write_coil(3194, True, slave=1) #M122
-                MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_load_r_zero data to PLC Slave"
             toast(toast_msg)
@@ -1348,7 +1433,6 @@ class ScreenCalibration(MDScreen):
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_coil(3194, False, slave=1) # M122
-                MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send rel_calibrate_load_r_zero data to PLC Slave"
             toast(toast_msg)
@@ -1361,7 +1445,6 @@ class ScreenCalibration(MDScreen):
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1756, int(self.ids.tx_calibrate_load_r_value1.text), slave=1) #V1244
                 MODBUS_CLIENT.write_coil(3195, True, slave=1) #M123
-                MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_load_r_value1 data to PLC Slave"
             toast(toast_msg)
@@ -1373,7 +1456,6 @@ class ScreenCalibration(MDScreen):
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_coil(3195, False, slave=1) # M123
-                MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send rel_calibrate_load_r_value1 data to PLC Slave"
             toast(toast_msg)
@@ -1386,7 +1468,6 @@ class ScreenCalibration(MDScreen):
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1758, int(self.ids.tx_calibrate_load_r_value2.text), slave=1) #V1246
                 MODBUS_CLIENT.write_coil(3196, True, slave=1) #M124
-                MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_load_r_value2 data to PLC Slave"
             toast(toast_msg)
@@ -1398,7 +1479,6 @@ class ScreenCalibration(MDScreen):
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_coil(3196, False, slave=1) # M124
-                MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send rel_calibrate_load_r_value2 data to PLC Slave"
             toast(toast_msg)
@@ -1411,7 +1491,6 @@ class ScreenCalibration(MDScreen):
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1760, 2, slave=1) #V1248
                 MODBUS_CLIENT.write_coil(3197, True, slave=1) #M125
-                MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_load_r_stop data to PLC Slave"
             toast(toast_msg)
@@ -1423,7 +1502,6 @@ class ScreenCalibration(MDScreen):
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_coil(3197, False, slave=1) # M125
-                MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send rel_calibrate_load_r_stop data to PLC Slave"
             toast(toast_msg)
@@ -1436,7 +1514,6 @@ class ScreenCalibration(MDScreen):
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1782, 1, slave=1) #V1270
                 MODBUS_CLIENT.write_coil(3293, True, slave=1) #M221
-                MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_brake_l_start data to PLC Slave"
             toast(toast_msg)
@@ -1448,7 +1525,6 @@ class ScreenCalibration(MDScreen):
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_coil(3293, False, slave=1) # M221
-                MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send rel_calibrate_brake_l_start data to PLC Slave"
             toast(toast_msg)
@@ -1461,7 +1537,6 @@ class ScreenCalibration(MDScreen):
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1784, 0, slave=1) #V1272
                 MODBUS_CLIENT.write_coil(3294, True, slave=1) #M222
-                MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_brake_l_zero data to PLC Slave"
             toast(toast_msg)
@@ -1473,7 +1548,6 @@ class ScreenCalibration(MDScreen):
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_coil(3294, False, slave=1) # M222
-                MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send rel_calibrate_brake_l_zero data to PLC Slave"
             toast(toast_msg)
@@ -1486,7 +1560,6 @@ class ScreenCalibration(MDScreen):
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1786, int(self.ids.tx_calibrate_brake_l_value1.text), slave=1) #V1274
                 MODBUS_CLIENT.write_coil(3295, True, slave=1) #M223
-                MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_brake_l_value1 data to PLC Slave"
             toast(toast_msg)
@@ -1498,7 +1571,6 @@ class ScreenCalibration(MDScreen):
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_coil(3295, False, slave=1) # M223
-                MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send rel_calibrate_brake_l_value1 data to PLC Slave"
             toast(toast_msg)
@@ -1511,7 +1583,6 @@ class ScreenCalibration(MDScreen):
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1788, int(self.ids.tx_calibrate_brake_l_value2.text), slave=1) #V1276
                 MODBUS_CLIENT.write_coil(3296, True, slave=1) #M224
-                MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_brake_l_value2 data to PLC Slave"
             toast(toast_msg)
@@ -1523,7 +1594,6 @@ class ScreenCalibration(MDScreen):
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_coil(3296, False, slave=1) # M224
-                MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send rel_calibrate_brake_l_value2 data to PLC Slave"
             toast(toast_msg)
@@ -1536,7 +1606,6 @@ class ScreenCalibration(MDScreen):
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1790, 2, slave=1) #V1278
                 MODBUS_CLIENT.write_coil(3297, True, slave=1) #2M25
-                MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_brake_l_stop data to PLC Slave"
             toast(toast_msg)
@@ -1548,7 +1617,6 @@ class ScreenCalibration(MDScreen):
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_coil(3297, False, slave=1) # M225
-                MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send rel_calibrate_brake_l_stop data to PLC Slave"
             toast(toast_msg)
@@ -1561,7 +1629,6 @@ class ScreenCalibration(MDScreen):
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1812, 1, slave=1) #V1300
                 MODBUS_CLIENT.write_coil(3393, True, slave=1) #M321
-                MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_brake_r_start data to PLC Slave"
             toast(toast_msg)
@@ -1573,7 +1640,6 @@ class ScreenCalibration(MDScreen):
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_coil(3393, False, slave=1) # M321
-                MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send rel_calibrate_brake_r_start data to PLC Slave"
             toast(toast_msg)
@@ -1586,7 +1652,6 @@ class ScreenCalibration(MDScreen):
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1814, 0, slave=1) #V1302
                 MODBUS_CLIENT.write_coil(3394, True, slave=1) #M322
-                MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_brake_r_zero data to PLC Slave"
             toast(toast_msg)
@@ -1598,7 +1663,6 @@ class ScreenCalibration(MDScreen):
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_coil(3394, False, slave=1) # M322
-                MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send rel_calibrate_brake_r_zero data to PLC Slave"
             toast(toast_msg)
@@ -1611,7 +1675,6 @@ class ScreenCalibration(MDScreen):
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1816, int(self.ids.tx_calibrate_brake_r_value1.text), slave=1) #V1304
                 MODBUS_CLIENT.write_coil(3395, True, slave=1) #M123
-                MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_brake_r_value1 data to PLC Slave"
             toast(toast_msg)
@@ -1623,7 +1686,6 @@ class ScreenCalibration(MDScreen):
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_coil(3395, False, slave=1) # M323
-                MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send rel_calibrate_brake_r_value1 data to PLC Slave"
             toast(toast_msg)
@@ -1636,7 +1698,6 @@ class ScreenCalibration(MDScreen):
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1818, int(int(self.ids.tx_calibrate_brake_r_value2.text)), slave=1) #V1306
                 MODBUS_CLIENT.write_coil(3396, True, slave=1) #M324
-                MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_brake_r_value2 data to PLC Slave"
             toast(toast_msg)
@@ -1648,7 +1709,6 @@ class ScreenCalibration(MDScreen):
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_coil(3396, False, slave=1) # M324
-                MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send rel_calibrate_brake_r_value2 data to PLC Slave"
             toast(toast_msg)
@@ -1661,7 +1721,6 @@ class ScreenCalibration(MDScreen):
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_register(1820, 2, slave=1) #V1308
                 MODBUS_CLIENT.write_coil(3397, True, slave=1) #M325
-                MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_calibrate_brake_r_stop data to PLC Slave"
             toast(toast_msg)
@@ -1673,7 +1732,6 @@ class ScreenCalibration(MDScreen):
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_coil(3397, False, slave=1) # M325
-                MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send rel_calibrate_brake_r_stop data to PLC Slave"
             toast(toast_msg)
@@ -1688,7 +1746,6 @@ class ScreenCalibration(MDScreen):
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_coil(3075, True, slave=1) #M3
-                MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_motor_brake_on data to PLC Slave"
             toast(toast_msg)
@@ -1702,7 +1759,6 @@ class ScreenCalibration(MDScreen):
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_coil(3075, False, slave=1) #M3
-                MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send rel_motor_brake_on data to PLC Slave"
             toast(toast_msg)
@@ -1717,7 +1773,6 @@ class ScreenCalibration(MDScreen):
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_coil(3076, True, slave=1) #M4
-                MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_motor_brake_off data to PLC Slave"
             toast(toast_msg)
@@ -1731,7 +1786,6 @@ class ScreenCalibration(MDScreen):
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_coil(3076, False, slave=1) #M4
-                MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send rel_motor_brake_on data to PLC Slave"
             toast(toast_msg)
@@ -2374,7 +2428,6 @@ class ScreenBrakeMeter(MDScreen):
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_coil(3075, True, slave=1) #M3
-                MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_motor_brake_on data to PLC Slave"
             toast(toast_msg)
@@ -2388,7 +2441,6 @@ class ScreenBrakeMeter(MDScreen):
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_coil(3075, False, slave=1) #M3
-                MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send rel_motor_brake_on data to PLC Slave"
             toast(toast_msg)
@@ -2403,7 +2455,6 @@ class ScreenBrakeMeter(MDScreen):
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_coil(3076, True, slave=1) #M4
-                MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_motor_brake_off data to PLC Slave"
             toast(toast_msg)
@@ -2417,7 +2468,6 @@ class ScreenBrakeMeter(MDScreen):
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_coil(3076, False, slave=1) #M4
-                MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send rel_motor_brake_on data to PLC Slave"
             toast(toast_msg)
@@ -2492,7 +2542,6 @@ class ScreenHandbrakeMeter(MDScreen):
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_coil(3075, True, slave=1) #M3
-                MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_motor_brake_on data to PLC Slave"
             toast(toast_msg)
@@ -2506,7 +2555,6 @@ class ScreenHandbrakeMeter(MDScreen):
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_coil(3075, False, slave=1) #M3
-                MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send rel_motor_brake_on data to PLC Slave"
             toast(toast_msg)
@@ -2521,7 +2569,6 @@ class ScreenHandbrakeMeter(MDScreen):
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_coil(3076, True, slave=1) #M4
-                MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send exec_motor_brake_off data to PLC Slave"
             toast(toast_msg)
@@ -2535,7 +2582,6 @@ class ScreenHandbrakeMeter(MDScreen):
             if flag_conn_stat:
                 MODBUS_CLIENT.connect()
                 MODBUS_CLIENT.write_coil(3076, False, slave=1) #M4
-                MODBUS_CLIENT.close()
         except Exception as e:
             toast_msg = f"error send rel_motor_brake_on data to PLC Slave"
             toast(toast_msg)
@@ -3042,6 +3088,16 @@ class ScreenResume(MDScreen):
             print_datetime = str(time.strftime("%Y/%m/%d %H:%M:%S", time.localtime()))
             pdf = FPDF(format=(200, 600), unit='mm')
             pdf.add_page()
+
+            def cell(**kwargs):
+                # Turun otomatis ke baris baru kalau cell akan melewati batas kanan kertas,
+                # supaya teks tidak tercetak di luar area kertas (invisible).
+                w = kwargs.get('w') or 0
+                h = kwargs.get('h') or 0
+                if w and pdf.get_x() + w > pdf.w - pdf.r_margin:
+                    pdf.ln(h)
+                pdf.cell(**kwargs)
+
             pdf.set_xy(0, 2)
             pdf.image(f"assets/images/{IMG_LOGO_DISHUB}", w=30.0, h=0, x=20)
             pdf.set_xy(0, 2)
@@ -3053,66 +3109,72 @@ class ScreenResume(MDScreen):
             pdf.cell(ln=1, h=5.0, w=0)
             pdf.set_font('Arial', 'B', 21.0)
             pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Tanggal: {print_datetime}", border=0)
-            pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"No Reg Kend: {dt_no_pol}", border=0)
-            pdf.cell(ln=0, h=10.0, align='L', w=0, txt=f"No Antrian: {dt_no_antri}", border=0)
-            pdf.cell(ln=1, h=10.0, align='R', w=0, txt=f"No Uji: {dt_no_uji}", border=0)
-            pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Jenis Kendaraan: {dt_jns_kend}", border=0)
-            pdf.cell(ln=0, h=10.0, align='L', w=0, txt=f"JBB: {float(dt_jbb)}", border=0)
-            pdf.cell(ln=1, h=10.0, align='R', w=0, txt=f"Berat Kosong: {float(dt_brt_ksg)}", border=0)
+            pdf.multi_cell(w=0, h=10.0, align='L', txt=f"No Reg Kend: {dt_no_pol}", border=0)
+            txt_no_antri = f"No Antrian: {dt_no_antri}"
+            cell(ln=0, h=10.0, align='L', w=pdf.get_string_width(txt_no_antri) + 4, txt=txt_no_antri, border=0)
+            txt_no_uji = f"No Uji: {dt_no_uji}"
+            cell(ln=1, h=10.0, align='R', w=pdf.get_string_width(txt_no_uji) + 4, txt=txt_no_uji, border=0)
+            pdf.multi_cell(w=0, h=10.0, align='L', txt=f"Jenis Kendaraan: {dt_jns_kend}", border=0)
+            txt_jbb = f"JBB: {float(dt_jbb)}"
+            cell(ln=0, h=10.0, align='L', w=pdf.get_string_width(txt_jbb) + 4, txt=txt_jbb, border=0)
+            txt_brt_ksg = f"Berat Kosong: {float(dt_brt_ksg)}"
+            cell(ln=1, h=10.0, align='R', w=pdf.get_string_width(txt_brt_ksg) + 4, txt=txt_brt_ksg, border=0)
             pdf.cell(ln=1, h=10.0, w=0)
             pdf.set_font('Arial', '', 21.0)
-            pdf.cell(ln=1, h=10.0, align='L', w=80, txt=f"AXLE LOAD")
-            pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"Sumbu No.")
-            pdf.cell(ln=0, h=10.0, align='L', w=40, txt=f"Kiri")
-            pdf.cell(ln=0, h=10.0, align='L', w=40, txt=f"Kanan")
-            pdf.cell(ln=1, h=10.0, align='L', w=40, txt=f"Total")
+            cell(ln=1, h=10.0, align='L', w=80, txt=f"AXLE LOAD")
+            cell(ln=0, h=10.0, align='L', w=80, txt=f"Sumbu No.")
+            cell(ln=0, h=10.0, align='L', w=40, txt=f"Kiri")
+            cell(ln=0, h=10.0, align='L', w=40, txt=f"Kanan")
+            cell(ln=1, h=10.0, align='L', w=40, txt=f"Total")
             for i in range(10):
                 if (db_load_total_value[i] > 0):
-                    pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"Sumbu {i+1}")
-                    pdf.cell(ln=0, h=10.0, align='L', w=40, txt=f"{int(db_load_left_value[i])} kg")
-                    pdf.cell(ln=0, h=10.0, align='L', w=40, txt=f"{int(db_load_right_value[i])} kg")
-                    pdf.cell(ln=1, h=10.0, align='L', w=40, txt=f"{int(db_load_total_value[i])} kg")
-            pdf.cell(ln=0, h=10.0, align='L', w=160, txt=f"Total :")
-            pdf.cell(ln=1, h=10.0, align='L', w=40, txt=f"{int(dt_load_total_value)} kg")
+                    cell(ln=0, h=10.0, align='L', w=80, txt=f"Sumbu {i+1}")
+                    cell(ln=0, h=10.0, align='L', w=40, txt=f"{int(db_load_left_value[i])} kg")
+                    cell(ln=0, h=10.0, align='L', w=40, txt=f"{int(db_load_right_value[i])} kg")
+                    cell(ln=1, h=10.0, align='L', w=40, txt=f"{int(db_load_total_value[i])} kg")
+            cell(ln=0, h=10.0, align='L', w=160, txt=f"Total :")
+            cell(ln=1, h=10.0, align='L', w=40, txt=f"{int(dt_load_total_value)} kg")
             pdf.cell(ln=1, h=5.0, w=0)
 
-            pdf.cell(ln=1, h=10.0, align='L', w=80, txt=f"REM UTAMA")
-            pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"Sumbu No.")
-            pdf.cell(ln=0, h=10.0, align='L', w=40, txt=f"Kiri")
-            pdf.cell(ln=0, h=10.0, align='L', w=40, txt=f"Kanan")
-            pdf.cell(ln=1, h=10.0, align='L', w=40, txt=f"Selisih")
+            cell(ln=1, h=10.0, align='L', w=80, txt=f"REM UTAMA")
+            cell(ln=0, h=10.0, align='L', w=80, txt=f"Sumbu No.")
+            cell(ln=0, h=10.0, align='L', w=40, txt=f"Kiri")
+            cell(ln=0, h=10.0, align='L', w=40, txt=f"Kanan")
+            cell(ln=1, h=10.0, align='L', w=40, txt=f"Selisih")
             for i in range(10):
                 if (db_brake_total_value[i] > 0):
-                    pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"Sumbu {i+1}")
-                    pdf.cell(ln=0, h=10.0, align='L', w=40, txt=f"{int(db_brake_left_value[i])} kg")
-                    pdf.cell(ln=0, h=10.0, align='L', w=40, txt=f"{int(db_brake_right_value[i])} kg")
-                    pdf.cell(ln=1, h=10.0, align='L', w=40, txt=f"{int(db_brake_difference_value[i])} %")
-            pdf.cell(ln=0, h=10.0, align='L', w=160, txt=f"Total :")
+                    cell(ln=0, h=10.0, align='L', w=80, txt=f"Sumbu {i+1}")
+                    cell(ln=0, h=10.0, align='L', w=40, txt=f"{int(db_brake_left_value[i])} kg")
+                    cell(ln=0, h=10.0, align='L', w=40, txt=f"{int(db_brake_right_value[i])} kg")
+                    cell(ln=1, h=10.0, align='L', w=40, txt=f"{int(db_brake_difference_value[i])} %")
+            cell(ln=0, h=10.0, align='L', w=160, txt=f"Total :")
             # pdf.cell(ln=1, h=10.0, align='L', w=40, txt=f"{int(dt_brake_total_value)} kg")
-            pdf.cell(ln=1, h=10.0, align='L', w=40, txt=f"{str(np.round(dt_brake_difference_value, 1)).replace('.', ',')} %")
-            pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Efisiensi : {str(np.round(dt_brake_efficiency_value, 1)).replace('.', ',')} %")
-            pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"Status Pengujian :")
+            cell(ln=1, h=10.0, align='L', w=40, txt=f"{str(np.round(dt_brake_difference_value, 1)).replace('.', ',')} %")
+            cell(ln=1, h=10.0, align='L', w=0, txt=f"Efisiensi : {str(np.round(dt_brake_efficiency_value, 1)).replace('.', ',')} %")
+            cell(ln=0, h=10.0, align='L', w=80, txt=f"Status Pengujian :")
             str_brake_result = f'Lulus' if int(dt_brake_flag) == 1 else 'Tidak Lulus' if int(dt_brake_flag) == 0 else 'Belum Diuji'
             Logger.info(f"Status Brake: {str_brake_result}, Brake Flag: {dt_brake_flag}")
-            pdf.cell(ln=1, h=10.0, align='R', w=30, txt=f"{str_brake_result}")
-            pdf.cell(ln=1, h=5.0, w=0) 
+            w_brake_result = max(30, pdf.get_string_width(str_brake_result) + 4)
+            cell(ln=1, h=10.0, align='R', w=w_brake_result, txt=f"{str_brake_result}")
+            pdf.cell(ln=1, h=5.0, w=0)
 
-            pdf.cell(ln=1, h=10.0, align='L', w=80, txt=f"REM PARKIR")
-            pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"Sumbu No.")
-            pdf.cell(ln=0, h=10.0, align='L', w=40, txt=f"Kiri")
-            pdf.cell(ln=1, h=10.0, align='L', w=40, txt=f"Kanan")
+            cell(ln=1, h=10.0, align='L', w=80, txt=f"REM PARKIR")
+            cell(ln=0, h=10.0, align='L', w=80, txt=f"Sumbu No.")
+            cell(ln=0, h=10.0, align='L', w=40, txt=f"Kiri")
+            cell(ln=1, h=10.0, align='L', w=40, txt=f"Kanan")
             for i in range(10):
                 if (db_handbrake_total_value[i] > 0):
-                    pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"Sumbu {i+1}")
-                    pdf.cell(ln=0, h=10.0, align='L', w=40, txt=f"{int(db_handbrake_left_value[i])} kg")
-                    pdf.cell(ln=1, h=10.0, align='L', w=40, txt=f"{int(db_handbrake_right_value[i])} kg")
-            pdf.cell(ln=0, h=10.0, align='L', w=160, txt=f"Total :")
-            pdf.cell(ln=1, h=10.0, align='L', w=40, txt=f"{int(dt_handbrake_total_value)} kg")
-            pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Efisiensi : {str(np.round(dt_handbrake_efficiency_value, 1)).replace('.', ',')} %")
-            pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"Status Pengujian :")
+                    cell(ln=0, h=10.0, align='L', w=80, txt=f"Sumbu {i+1}")
+                    cell(ln=0, h=10.0, align='L', w=40, txt=f"{int(db_handbrake_left_value[i])} kg")
+                    cell(ln=1, h=10.0, align='L', w=40, txt=f"{int(db_handbrake_right_value[i])} kg")
+            cell(ln=0, h=10.0, align='L', w=160, txt=f"Total :")
+            cell(ln=1, h=10.0, align='L', w=40, txt=f"{int(dt_handbrake_total_value)} kg")
+            cell(ln=1, h=10.0, align='L', w=0, txt=f"Efisiensi : {str(np.round(dt_handbrake_efficiency_value, 1)).replace('.', ',')} %")
+            cell(ln=0, h=10.0, align='L', w=80, txt=f"Status Pengujian :")
             str_handbrake_result = f'Lulus' if int(dt_handbrake_flag) == 1 else 'Tidak Lulus' if int(dt_handbrake_flag) == 0 else 'Belum Diuji'
             Logger.info(f"Status Handbrake: {str_handbrake_result}, Handbrake Flag: {dt_handbrake_flag}")
-            pdf.cell(ln=1, h=10.0, align='R', w=30, txt=f"{str_handbrake_result}")
+            w_handbrake_result = max(30, pdf.get_string_width(str_handbrake_result) + 4)
+            cell(ln=1, h=10.0, align='R', w=w_handbrake_result, txt=f"{str_handbrake_result}")
             pdf.cell(ln=1, h=5.0, w=0)
 
             pdf.cell(ln=1, h=10.0, align='C', w=0, txt=f"Resume Hasil Pengujian")

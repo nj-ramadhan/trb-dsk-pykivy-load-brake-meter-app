@@ -1,6 +1,7 @@
 import datetime
 import os, sys, time
 import random
+import threading
 
 if getattr(sys, 'frozen', False):
     application_path = os.path.dirname(sys.executable)
@@ -41,9 +42,14 @@ from pymodbus.client import ModbusTcpClient
 from fpdf import FPDF
 from escpos.printer import Serial
 
-dt_id_user = 0     
+dt_id_user = 0
 dt_user = ""
 dt_foto_user = ""
+
+def safe_toast(msg):
+    """Tampilkan toast dari thread manapun. Widget KivyMD hanya boleh
+    disentuh dari main thread, jadi panggilan ini dijadwalkan ke sana."""
+    Clock.schedule_once(lambda dt: toast(msg))
 
 colors = {
     "Red"   : {"A200": "#FF2A2A","A500": "#FF8080","A700": "#FFD5D5",},
@@ -73,20 +79,21 @@ LB_UNIT_ADDRESS = config['app']['LB_UNIT_ADDRESS']
 
 # SQL setting
 DB_HOST = "187.77.112.162"
-DB_USER = "Pndujikir2026!"
-DB_PASSWORD = "@PndKir2026!"
+DB_USER = "IntegrasiPnd@"
+DB_PASSWORD = "@PndIntegrated26"
 
 DB_NAME = "pkbpandeglang"
 TB_DATA = "tb_cekident"
 TB_USER = "users"
 TB_MERK = "merk"
 TB_BAHAN_BAKAR = "bahanbakar"
+
 TB_WARNA = "warna"
 TB_DATA_MASTER = "identkendaraan"
 
-FTP_HOST = "187.117.112.162"
+FTP_HOST = "76.13.16.159"
 FTP_USER = "root"
-FTP_PASS = "@SorongNew2026"
+FTP_PASS = "@PLandak2026"
 
 # system setting
 TIME_OUT = int(config['setting']['TIME_OUT'])
@@ -105,13 +112,61 @@ PRINTER_THERM_TIMEOUT = float(config['setting']['PRINTER_THERM_TIMEOUT'])
 PRINTER_THERM_DSRDTR = bool(config['setting']['PRINTER_THERM_DSRDTR'])
 
 MODBUS_IP_PLC = config['setting']['MODBUS_IP_PLC']
-MODBUS_CLIENT = ModbusTcpClient(MODBUS_IP_PLC)
+SIMULATION_MODE = config.getboolean('setting', 'SIMULATION_MODE', fallback=False)
 REGISTER_DATA_LOAD_L = int(config['setting']['REGISTER_DATA_LOAD_L']) # 1912 = V1400
 REGISTER_DATA_LOAD_R = int(config['setting']['REGISTER_DATA_LOAD_R']) # 1922 = V1410
 REGISTER_DATA_BRAKE_L = int(config['setting']['REGISTER_DATA_BRAKE_L']) # 1932 = V1420
 REGISTER_DATA_BRAKE_R = int(config['setting']['REGISTER_DATA_BRAKE_R']) # 1942 = V1430
 MAX_LOAD_DATA = int(config['setting']['MAX_LOAD_DATA'])
 MAX_BRAKE_DATA = int(config['setting']['MAX_BRAKE_DATA'])
+
+class _SimulatedModbusResponse:
+    def __init__(self, value):
+        self.registers = [value]
+
+class SimulatedModbusClient:
+    """PLC tiruan, dipakai saat SIMULATION_MODE = TRUE di config.ini (tidak ada PLC fisik).
+    Meniru interface ModbusTcpClient (connect/close/connected/read_holding_registers/write_register/write_coil)
+    agar seluruh kode yang memanggil MODBUS_CLIENT di file ini tidak perlu berubah."""
+
+    def __init__(self):
+        self.connected = True
+        self._coils = {}
+        self._holding_registers = {}
+        self._last_load_left = 0
+        self._last_brake_left = 0
+
+    def connect(self):
+        self.connected = True
+        return True
+
+    def close(self):
+        pass
+
+    def read_holding_registers(self, address, count=1, slave=1):
+        if address == REGISTER_DATA_LOAD_L:
+            self._last_load_left = random.randint(int(MAX_LOAD_DATA * 0.2), MAX_LOAD_DATA)
+            value = self._last_load_left
+        elif address == REGISTER_DATA_LOAD_R:
+            value = max(0, self._last_load_left + random.randint(-50, 50))
+        elif address == REGISTER_DATA_BRAKE_L:
+            self._last_brake_left = random.randint(int(MAX_BRAKE_DATA * 0.2), MAX_BRAKE_DATA)
+            value = self._last_brake_left
+        elif address == REGISTER_DATA_BRAKE_R:
+            value = max(0, self._last_brake_left + random.randint(-50, 50))
+        else:
+            value = self._holding_registers.get(address, 0)
+        return _SimulatedModbusResponse(value)
+
+    def write_register(self, address, value, slave=1):
+        self._holding_registers[address] = value
+        return True
+
+    def write_coil(self, address, value, slave=1):
+        self._coils[address] = value
+        return True
+
+MODBUS_CLIENT = SimulatedModbusClient() if SIMULATION_MODE else ModbusTcpClient(MODBUS_IP_PLC)
 
 # system standard
 STANDARD_MAX_AXLE_LOAD = float(config['standard']['STANDARD_MAX_AXLE_LOAD']) # in kg
@@ -222,18 +277,18 @@ class ScreenLogin(MDScreen):
             
             mycursor = mydb.cursor()
             # Query disamakan (tipe_user = '2')
-            query = "SELECT id, name, email, password FROM web_users WHERE email = %s AND tipe_user = '4'"
-            
+            query = "SELECT id_sumber, name, email, password FROM web_users WHERE email = %s AND tipe_user = '4'"
+
             mycursor.execute(query, (input_email,))
             myresult = mycursor.fetchone()
-            
+
             if myresult:
-                db_id, db_name, db_email, db_hashed_password = myresult
+                db_id_sumber, db_name, db_email, db_hashed_password = myresult
 
                 # Verifikasi menggunakan Bcrypt
                 if bcrypt.checkpw(input_password.encode('utf-8'), db_hashed_password.encode('utf-8')):
                     toast(f"Berhasil Masuk, Selamat Datang {db_name}")
-                    dt_id_user = db_id
+                    dt_id_user = db_id_sumber
                     dt_user = db_name
                     dt_foto_user = "" # web_users tidak ada kolom image
                     
@@ -2016,9 +2071,9 @@ class ScreenAddQueue(MDScreen):
         try:
             mycursor = mydb.cursor()
             if dt_find_no_pol != "" and dt_find_no_uji == "":
-                mycursor.execute(f"SELECT NOUJI, NEW_NOUJI, NOWIL, NOKDR, PLAT, NOPOL, NAMA, NOHP, ALAMAT, ID_IZIN, WLY, PROP, KABKOT, KEC, MERK_ID, idjeniskendaraan, TYPE, TH_BUAT, SILINDER, WARNA_KEND, CHASIS, MESIN, WARNA_PLAT, BHN_BAKAR, JBB, BERATKOSONG, DAYAMOTOR, TGL_UJI_TERAKHIR, STATUSUJI, statuspenerbitan, idjeniskendaraan, kd_jnskendaraan, kodewilayah FROM {TB_DATA_MASTER} WHERE NOPOL = '{dt_find_no_pol}' ")
+                mycursor.execute(f"SELECT NOUJI, NEW_NOUJI, NOWIL, NOKDR, PLAT, NOPOL, NAMA, NOHP, ALAMAT, ID_IZIN, WLY, PROP, KABKOT, KEC, MERK_ID, idjeniskendaraan, TYPE, TH_BUAT, SILINDER, WARNA_KEND, CHASIS, MESIN, WARNA_PLAT, BHN_BAKAR, JBB, BERATKOSONG, DAYAMOTOR, TGL_UJI_TERAKHIR, STATUSUJI, statuspenerbitan, idjeniskendaraan, kd_jnskendaraan, kodewilayah FROM {TB_DATA_MASTER} WHERE NOPOL = %s ", (dt_find_no_pol,))
             elif dt_find_no_uji != "":
-                mycursor.execute(f"SELECT NOUJI, NEW_NOUJI, NOWIL, NOKDR, PLAT, NOPOL, NAMA, NOHP, ALAMAT, ID_IZIN, WLY, PROP, KABKOT, KEC, MERK_ID, idjeniskendaraan, TYPE, TH_BUAT, SILINDER, WARNA_KEND, CHASIS, MESIN, WARNA_PLAT, BHN_BAKAR, JBB, BERATKOSONG, DAYAMOTOR, TGL_UJI_TERAKHIR, STATUSUJI, statuspenerbitan, idjeniskendaraan, kd_jnskendaraan, kodewilayah FROM {TB_DATA_MASTER} WHERE NOUJI = '{dt_find_no_uji}' ")
+                mycursor.execute(f"SELECT NOUJI, NEW_NOUJI, NOWIL, NOKDR, PLAT, NOPOL, NAMA, NOHP, ALAMAT, ID_IZIN, WLY, PROP, KABKOT, KEC, MERK_ID, idjeniskendaraan, TYPE, TH_BUAT, SILINDER, WARNA_KEND, CHASIS, MESIN, WARNA_PLAT, BHN_BAKAR, JBB, BERATKOSONG, DAYAMOTOR, TGL_UJI_TERAKHIR, STATUSUJI, statuspenerbitan, idjeniskendaraan, kd_jnskendaraan, kodewilayah FROM {TB_DATA_MASTER} WHERE NOUJI = %s ", (dt_find_no_uji,))
             elif dt_find_no_uji == "" and dt_find_no_pol == "":
                 toast("Silahkan Isi Nomor Uji atau Nomor Polisi dengan Benar")
             myresult = mycursor.fetchone()
@@ -2063,7 +2118,7 @@ class ScreenAddQueue(MDScreen):
                 dt_temp_kode_jenis_kendaraan = db_master_data[31]
                 dt_temp_kode_wilayah = db_master_data[32]
 
-                if(db_master_data[26] is not None):
+                if(db_master_data[27] is not None):
                     last_uji_date = db_master_data[27]
                 else:
                     last_uji_date = datetime.datetime(1900, 1, 1)
@@ -2881,11 +2936,16 @@ class ScreenResume(MDScreen):
     def exec_save(self):
         global mydb, dt_no_antri, dt_id_user
         global db_load_left_value, db_load_right_value, db_load_total_value, dt_load_total_value, dt_load_flag
-        global db_brake_left_value, db_brake_right_value, db_brake_total_value, db_brake_difference_value, db_brake_flag, dt_brake_total_value, dt_brake_efficiency_value, dt_brake_flag, dt_brake_efficiency_flag
+        global db_brake_left_value, db_brake_right_value, db_brake_total_value, db_brake_difference_value, db_brake_flag, dt_brake_total_value, dt_brake_efficiency_value, dt_brake_difference_value, dt_brake_flag, dt_brake_efficiency_flag
         global db_handbrake_left_value, db_handbrake_right_value, db_handbrake_total_value, dt_handbrake_total_value, dt_handbrake_efficiency_value, dt_handbrake_flag, dt_handbrake_efficiency_flag
         global db_brake_difference_s_flag # Pastikan ini ada di Program 1, jika tidak, tambahkan globalnya
 
         try:
+            try:
+                mydb.ping(reconnect=True, attempts=3, delay=2)
+            except mysql.connector.Error:
+                mydb = mysql.connector.connect(host=DB_HOST, user=DB_USER, password=DB_PASSWORD, database=DB_NAME)
+
             mycursor = mydb.cursor()
 
             post_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
@@ -2909,10 +2969,11 @@ class ScreenResume(MDScreen):
             for i in range(12): sql_parts.append(f"brake_r_s{i+1}_value = %s"); sql_values.append(int(db_brake_right_value[i]))
             for i in range(12): sql_parts.append(f"brake_total_s{i+1}_value = %s"); sql_values.append(int(db_brake_total_value[i]))
             for i in range(12): sql_parts.append(f"brake_difference_s{i+1}_value = %s"); sql_values.append(float(db_brake_difference_value[i]))
-            for i in range(12): sql_parts.append(f"brake_difference_s{i+1}_flag = %s"); sql_values.append(int(db_brake_flag[i])) # Seharusnya db_brake_difference_s_flag[i]
+            for i in range(12): sql_parts.append(f"brake_difference_s{i+1}_flag = %s"); sql_values.append(int(db_brake_difference_s_flag[i]))
             sql_parts.append("brake_total_value = %s"); sql_values.append(int(dt_brake_total_value))
             sql_parts.append("brake_efficiency_value = %s"); sql_values.append(float(dt_brake_efficiency_value))
             sql_parts.append("brake_efficiency_flag = %s"); sql_values.append(int(dt_brake_efficiency_flag))
+            sql_parts.append("brake_difference_value = %s"); sql_values.append(float(dt_brake_difference_value))
             sql_parts.append("brake_user = %s"); sql_values.append(int(user_id))
             sql_parts.append("brake_post = %s"); sql_values.append(post_time)
 
@@ -2934,9 +2995,9 @@ class ScreenResume(MDScreen):
 
             toast(f"Data untuk No. Antrian {dt_no_antri} berhasil disimpan!")
             Logger.info(f"{self.name}: Data untuk noantrian={dt_no_antri} berhasil disimpan ke database.")
-            
-            # self.exec_print() 
-            
+
+            self.exec_print()
+
             self.ids.bt_save.disabled = True
 
         except mysql.connector.Error as err:
@@ -2951,14 +3012,20 @@ class ScreenResume(MDScreen):
     def exec_print(self):
         try:
             global dt_load_flag, dt_brake_flag, dt_handbrake_flag
-            
-            self.exec_print_thermal()
-            self.exec_print_pdf()
+
+            # Cetak PDF melibatkan I/O disk yang bisa memakan waktu -
+            # dijalankan di background thread agar UI Kivy tidak freeze.
+            # Cetak thermal sengaja tidak dipanggil (fiturnya masih ada di
+            # exec_print_thermal, tinggal panggil lagi kalau dibutuhkan).
+            threading.Thread(target=self._exec_print_worker, daemon=True).start()
 
         except Exception as e:
             toast_msg = f'Gagal Mencetak Hasil Uji'
             toast(toast_msg)
-            Logger.error(f"{self.name}: {toast_msg}, {e}")  
+            Logger.error(f"{self.name}: {toast_msg}, {e}")
+
+    def _exec_print_worker(self):
+        self.exec_print_pdf()
 
     def exec_print_pdf(self):
         global flag_play
@@ -3022,7 +3089,7 @@ class ScreenResume(MDScreen):
                     pdf.cell(ln=1, h=10.0, align='L', w=40, txt=f"{int(db_brake_difference_value[i])} %")
             pdf.cell(ln=0, h=10.0, align='L', w=160, txt=f"Total :")
             # pdf.cell(ln=1, h=10.0, align='L', w=40, txt=f"{int(dt_brake_total_value)} kg")
-            pdf.cell(ln=1, h=10.0, align='L', w=40, txt=f"{str(np.round(db_brake_difference_value[i], 1)).replace('.', ',')} %")
+            pdf.cell(ln=1, h=10.0, align='L', w=40, txt=f"{str(np.round(dt_brake_difference_value, 1)).replace('.', ',')} %")
             pdf.cell(ln=1, h=10.0, align='L', w=0, txt=f"Efisiensi : {str(np.round(dt_brake_efficiency_value, 1)).replace('.', ',')} %")
             pdf.cell(ln=0, h=10.0, align='L', w=80, txt=f"Status Pengujian :")
             str_brake_result = f'Lulus' if int(dt_brake_flag) == 1 else 'Tidak Lulus' if int(dt_brake_flag) == 0 else 'Belum Diuji'
@@ -3051,8 +3118,7 @@ class ScreenResume(MDScreen):
             pdf.cell(ln=1, h=10.0, align='C', w=0, txt=f"Resume Hasil Pengujian")
             pdf.set_font('Arial', 'B', 26.0)
 
-            dt_brake_resume_flag = all(x == 1 for x in db_brake_flag if x != 2)
-            if(dt_brake_resume_flag and int(dt_brake_flag) == 1 and int(dt_handbrake_flag) == 1):
+            if(int(dt_brake_flag) == 1 and int(dt_handbrake_flag) == 1):
                 str_resume_result = f"LULUS"
             else:
                 str_resume_result = f"TIDAK LULUS"
@@ -3065,21 +3131,21 @@ class ScreenResume(MDScreen):
             
             if not os.path.exists(date_folder_path):
                 os.makedirs(date_folder_path)
-                toast(f"Folder created: {date_folder_path}")
+                safe_toast(f"Folder created: {date_folder_path}")
             else:
-                toast(f"Folder already exists: {date_folder_path}")
+                safe_toast(f"Folder already exists: {date_folder_path}")
 
             pdf_filename = f"Hasil_Uji_No_{dt_no_antri}.pdf"
             pdf_path = os.path.join(date_folder_path, pdf_filename)
 
             pdf.output(pdf_path, 'F')
-            toast(f"PDF saved to: {pdf_path}")
+            safe_toast(f"PDF saved to: {pdf_path}")
             os.startfile(pdf_path)
 
         except Exception as e:
             toast_msg = f'Gagal menyimpan ke pdf'
-            toast(toast_msg)
-            Logger.error(f"{self.name}: {toast_msg}, {e}")  
+            safe_toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")
 
     def exec_print_thermal(self):
         global flag_play
@@ -3128,7 +3194,7 @@ class ScreenResume(MDScreen):
             printer.textln(f"REM UTAMA")
             printer.text(f"No. Sumbu \tKiri \tKanan \tTotal \tSelisih")
             for i in range(10):
-                if (db_load_total_value[i] > 0.0):
+                if (db_brake_total_value[i] > 0.0):
                     printer.textln(f"S{i+1} \t{db_brake_left_value[i]} \t{db_brake_right_value[i]} \t{db_brake_total_value[i]} \t{db_brake_difference_value[i]}")
             printer.textln(f"Nilai Rem Utama Total : {dt_brake_total_value}")
             printer.textln(f"Nilai Efisiensi Rem Utama : {dt_brake_efficiency_value}")
@@ -3137,7 +3203,7 @@ class ScreenResume(MDScreen):
             printer.textln(f"REM PARKIR")
             printer.text(f"No. Sumbu \tKiri \tKanan \tTotal")
             for i in range(10):
-                if (db_load_total_value[i] > 0.0):
+                if (db_handbrake_total_value[i] > 0.0):
                     printer.textln(f"S{i+1} \t{db_handbrake_left_value[i]} \t{db_handbrake_right_value[i]} \t{db_handbrake_total_value[i]}")
             printer.textln(f"Nilai Rem Parkir Total : {dt_handbrake_total_value}")
             printer.textln(f"Nilai Efisiensi Rem Parkir : {dt_handbrake_efficiency_value}")
@@ -3148,8 +3214,8 @@ class ScreenResume(MDScreen):
 
         except Exception as e:
             toast_msg = f'Gagal mencetak menggunakan Thermal Printer'
-            toast(toast_msg)
-            Logger.error(f"{self.name}: {toast_msg}, {e}")  
+            safe_toast(toast_msg)
+            Logger.error(f"{self.name}: {toast_msg}, {e}")
 
 
     def exec_navigate_main(self):

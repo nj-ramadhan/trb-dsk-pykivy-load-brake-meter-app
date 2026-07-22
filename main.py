@@ -238,7 +238,18 @@ STANDARD_MAX_HANDBRAKE = float(config['standard']['STANDARD_MAX_HANDBRAKE']) # k
 STANDARD_MAX_DIFFERENCE_BRAKE = float(config['standard']['STANDARD_MAX_DIFFERENCE_BRAKE']) # %
 STANDARD_MIN_EFFICIENCY_BRAKE = float(config['standard']['STANDARD_MIN_EFFICIENCY_BRAKE']) # %
 STANDARD_MAX_DIFFERENCE_HANDBRAKE = float(config['standard']['STANDARD_MAX_DIFFERENCE_HANDBRAKE']) # %
-STANDARD_MIN_EFFICIENCY_HANDBRAKE = float(config['standard']['STANDARD_MIN_EFFICIENCY_HANDBRAKE']) # %
+STANDARD_MIN_EFFICIENCY_HANDBRAKE = float(config['standard']['STANDARD_MIN_EFFICIENCY_HANDBRAKE']) # % - mobil barang/bus
+STANDARD_MIN_EFFICIENCY_HANDBRAKE_PENUMPANG = float(config['standard']['STANDARD_MIN_EFFICIENCY_HANDBRAKE_PENUMPANG']) # % - kendaraan penumpang
+
+def get_standard_min_efficiency_handbrake():
+    """Ambang efisiensi rem parkir tergantung kd_jnskendaraan: 'A' (penumpang) -> 16%, selain itu (barang/bus) -> 12%."""
+    global dt_kode_jns_kend
+    try:
+        if dt_kode_jns_kend and str(dt_kode_jns_kend).strip().upper() == 'A':
+            return STANDARD_MIN_EFFICIENCY_HANDBRAKE_PENUMPANG
+    except NameError:
+        pass
+    return STANDARD_MIN_EFFICIENCY_HANDBRAKE
 
 class ScreenHome(MDScreen):
     def __init__(self, **kwargs):
@@ -405,8 +416,8 @@ class ScreenMain(MDScreen):
         global flag_conn_stat, flag_play, flag_motor_brake
         global count_starting, count_get_data
         global dt_user, dt_foto_user, dt_no_antri, dt_no_pol, dt_no_uji, dt_sts_uji, dt_nama
-        global dt_merk, dt_type, dt_jns_kend, dt_jbb, dt_brt_ksg, dt_warna, dt_chasis, dt_no_mesin    
-        global dt_id_user    
+        global dt_merk, dt_type, dt_jns_kend, dt_kode_jns_kend, dt_jbb, dt_brt_ksg, dt_warna, dt_chasis, dt_no_mesin
+        global dt_id_user
         global db_load_left_value, db_load_right_value, db_load_total_value, db_load_flag
         global dt_load_total_value, dt_load_flag, dt_id_user
         global db_brake_left_value, db_brake_right_value, db_brake_total_value, db_brake_difference_value, db_brake_flag
@@ -421,7 +432,7 @@ class ScreenMain(MDScreen):
 
         flag_conn_stat = flag_play = flag_motor_brake = False
         dt_user = dt_foto_user = dt_no_antri = dt_no_pol = dt_no_uji = dt_sts_uji = dt_nama = ""
-        dt_merk = dt_type = dt_jns_kend = dt_jbb = dt_brt_ksg = dt_warna = dt_chasis = dt_no_mesin = ""
+        dt_merk = dt_type = dt_jns_kend = dt_kode_jns_kend = dt_jbb = dt_brt_ksg = dt_warna = dt_chasis = dt_no_mesin = ""
         dt_id_user = 1
         dt_test_number = 0
         dt_dash_antri = dt_dash_belum_uji = dt_dash_sudah_uji = 0
@@ -994,20 +1005,19 @@ class ScreenMain(MDScreen):
                     dt_handbrake_total_value = int(np.sum(db_handbrake_total_value))
 
                     # Overall handbrake efficiency
-                    if dt_load_total_value > 0:
-                        if float(dt_jbb) > 0:
-                            dt_handbrake_efficiency_value = np.round(
-                                (db_handbrake_total_value[dt_test_number] / float(dt_jbb)) * 100, 1
-                            )
+                    if dt_load_total_value > 0 and float(dt_jbb) > 0:
+                        dt_handbrake_efficiency_value = np.round(
+                            (dt_handbrake_total_value / float(dt_jbb)) * 100, 1
+                        )
                     else:
                         dt_handbrake_efficiency_value = 0
-                        Logger.warning(f"{self.screen_manager.current}: dt_load_total_value is zero. Overall efficiency set to 0.")
+                        Logger.warning(f"{self.screen_manager.current}: dt_load_total_value or dt_jbb is zero. Overall efficiency set to 0.")
 
                     # Sum of percentage differences? Be careful — summing % can be misleading
                     dt_handbrake_difference_value = int(np.sum(db_handbrake_difference_value))
 
                     # HandBrake test result status
-                    if(dt_handbrake_efficiency_value >= STANDARD_MIN_EFFICIENCY_HANDBRAKE):
+                    if(dt_handbrake_efficiency_value >= get_standard_min_efficiency_handbrake()):
                         db_handbrake_flag[dt_test_number] = 1
                         dt_handbrake_flag = 1
                     else:
@@ -1079,7 +1089,7 @@ class ScreenMain(MDScreen):
             else:
                 dt_dash_antri = 0
 
-            query_belum_uji = f"SELECT noantrian, nopol, nouji, statusuji, merk, type, idjeniskendaraan, jbb, berat_kosong, bahan_bakar, warna, load_flag, brake_flag, handbrake_flag FROM {TB_DATA} WHERE load_flag = 2 OR brake_flag = 2 OR handbrake_flag = 2"
+            query_belum_uji = f"SELECT noantrian, nopol, nouji, statusuji, merk, type, idjeniskendaraan, jbb, berat_kosong, bahan_bakar, warna, load_flag, brake_flag, handbrake_flag, kd_jnskendaraan FROM {TB_DATA} WHERE load_flag = 2 OR brake_flag = 2 OR handbrake_flag = 2"
             cursor.execute(query_belum_uji)
             result_tb_antrian = cursor.fetchall() # Ini adalah list, aman meski kosong
             dt_dash_belum_uji = len(result_tb_antrian)
@@ -1145,7 +1155,7 @@ class ScreenMain(MDScreen):
     def on_antrian_row_press(self, instance):
         global mydb, db_antrian, db_merk, db_bahan_bakar, db_warna
         global dt_no_antri, dt_no_pol, dt_no_uji, dt_sts_uji
-        global dt_merk, dt_type, dt_jns_kend, dt_jbb, dt_brt_ksg, dt_bhn_bkr, dt_warna, dt_load_flag, dt_brake_flag, dt_handbrake_flag
+        global dt_merk, dt_type, dt_jns_kend, dt_kode_jns_kend, dt_jbb, dt_brt_ksg, dt_bhn_bkr, dt_warna, dt_load_flag, dt_brake_flag, dt_handbrake_flag
         global dt_id_user, dt_foto_user
 
         try:
@@ -1164,6 +1174,7 @@ class ScreenMain(MDScreen):
             dt_load_flag            = db_antrian[11, row]
             dt_brake_flag           = db_antrian[12, row]
             dt_handbrake_flag       = db_antrian[13, row]
+            dt_kode_jns_kend        = db_antrian[14, row]
 
             self.exec_navigate_menu()
 
@@ -2216,8 +2227,8 @@ class ScreenAddQueue(MDScreen):
             noantrian = f"{last_noantrian + 1:04d}"
 
             mycursor = mydb.cursor()
-            sql = f"INSERT INTO {TB_DATA} (noantrian, nopol, nouji, NEW_NOUJI, merk, type, idjeniskendaraan, jbb, berat_kosong, warna) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-            values = (noantrian, dt_temp_no_pol, dt_temp_no_uji, dt_temp_no_uji_new, dt_temp_id_merk, dt_temp_type, dt_temp_id_subjenis, dt_temp_jbb, dt_temp_brt_ksg, dt_temp_warna)
+            sql = f"INSERT INTO {TB_DATA} (noantrian, nopol, nouji, NEW_NOUJI, merk, type, idjeniskendaraan, jbb, berat_kosong, warna, kd_jnskendaraan) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+            values = (noantrian, dt_temp_no_pol, dt_temp_no_uji, dt_temp_no_uji_new, dt_temp_id_merk, dt_temp_type, dt_temp_id_subjenis, dt_temp_jbb, dt_temp_brt_ksg, dt_temp_warna, dt_temp_kode_jenis_kendaraan)
             mycursor.execute(sql, values)
             mydb.commit()
 
@@ -2643,7 +2654,7 @@ class ScreenResume(MDScreen):
 
         try:
             brake_efficiency_passed = (dt_brake_efficiency_value >= STANDARD_MIN_EFFICIENCY_BRAKE)
-            handbrake_efficiency_passed = (dt_handbrake_efficiency_value >= STANDARD_MIN_EFFICIENCY_HANDBRAKE)
+            handbrake_efficiency_passed = (dt_handbrake_efficiency_value >= get_standard_min_efficiency_handbrake())
             dt_brake_efficiency_flag = 1 if brake_efficiency_passed else 0
             dt_handbrake_efficiency_flag = 1 if handbrake_efficiency_passed else 0
 
@@ -2682,7 +2693,7 @@ class ScreenResume(MDScreen):
             self.ids.lb_brake_right_sum.text = f'{int(np.sum(db_brake_right_value))} kg'
             self.ids.lb_brake_total_sum.text = f'{int(dt_brake_total_value)} kg'
             self.ids.lb_brake_efficiency.text = f'{np.round(dt_brake_efficiency_value, 1)} %'
-            self.ids.lb_brake_status.text = f'Lulus' if dt_brake_flag == 1 else 'Tidak Lulus'
+            self.ids.lb_brake_status.text = f'Lulus' if brake_efficiency_passed else 'Tidak Lulus'
             self.ids.lb_handbrake_left_sum.text = f'{int(np.sum(db_handbrake_left_value))} kg'
             self.ids.lb_handbrake_right_sum.text = f'{int(np.sum(db_handbrake_right_value))} kg'
             self.ids.lb_handbrake_total_sum.text = f'{int(dt_handbrake_total_value)} kg'
